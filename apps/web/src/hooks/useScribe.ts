@@ -41,8 +41,8 @@ export interface UseScribeReturn {
 
 const SCRIBE_API_URL =
   typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_SCRIBE_API_URL ?? "http://localhost:8004")
-    : "http://localhost:8004";
+    ? (process.env.NEXT_PUBLIC_SCRIBE_API_URL ?? "http://localhost:8005")
+    : "http://localhost:8005";
 
 /**
  * Custom hook that manages the full ScribeAI ambient recording pipeline.

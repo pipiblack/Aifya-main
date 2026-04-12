@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     # AI Service
     ai_service_url: str = "http://localhost:8010"
+    vllm_medgemma_url: str = "http://localhost:8004/v1"
 
     # App
     debug: bool = False

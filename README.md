@@ -12,7 +12,7 @@ AI-native Hospital Management Information System built for Kenyan hospitals. 49 
 - **3 flagship AI modules**: ScribeAI (ambient clinical documentation), ClaimFlow (SHA claims automation), Clinical Trials (AI screening + REDCap sync)
 - **Offline-first**: core workflows (registration, vitals, prescriptions) work fully offline via IndexedDB + background sync
 - **Bilingual**: English and Swahili (next-intl), switchable per user
-- **Self-hosted AI**: DeepSeek-R1 671B, Qwen 3.5 72B, Distill-32B on A100 80GB GPUs via vLLM — no patient data leaves the facility
+- **Self-hosted AI**: DeepSeek-R1 671B, Qwen 3.5 72B, Distill-32B, MedGemma 27B on A100 80GB GPUs via vLLM — no patient data leaves the facility
 - **Event-sourced clinical data**: immutable audit trail, 20-year retention, FHIR R4 export
 - **Multi-tenant**: facility-scoped via JWT + PostgreSQL Row-Level Security
 
@@ -49,7 +49,7 @@ AI-native Hospital Management Information System built for Kenyan hospitals. 49 
 | **Backend** | Python 3.12+, FastAPI 0.115+, SQLAlchemy 2 (async), Pydantic 2, Celery 5 |
 | **Go Services** | Go 1.22+, Gin (billing-service, sync-service) |
 | **Data** | PostgreSQL 16 + TimescaleDB, Redis 7, Qdrant, MinIO, Kafka 3.7+ |
-| **AI** | vLLM 0.6+ (3 model endpoints), faster-whisper, LlamaIndex, BGE-M3 |
+| **AI** | vLLM 0.6+ (4 model endpoints), faster-whisper, LlamaIndex, BGE-M3, MedGemma 27B |
 | **Auth** | Keycloak 25 (OIDC/RBAC) |
 | **Infra** | Docker Compose, K3s, Traefik, Prometheus, Grafana, Loki, Tempo, Vault |
 | **Integrations** | SHA e-Claims, DHIS2, M-Pesa Daraja, REDCap v14+, FHIR R4, HL7/ASTM, KRA eTIMS |
@@ -176,8 +176,19 @@ Requires NVIDIA A100 80GB GPUs with vLLM installed:
 # DeepSeek-R1 671B (complex reasoning) — port 8001
 # Qwen 3.5 72B (general tasks) — port 8002
 # Distill-32B (fast, simple tasks) — port 8003
+# MedGemma 27B (clinical/medical tasks) — port 8004
+# Whisper (audio transcription) — port 8005
 # See services/ai-service/ for configuration
 ```
+
+**MedGemma 27B** is Google's medically fine-tuned Gemma 3 model (87.7% on MedQA). It handles:
+- Clinical documentation (ScribeAI SOAP notes)
+- Trial screening and eligibility matching
+- Medical imaging analysis (chest X-ray, retinal scans)
+- Drug interaction checks and CDS alerts
+- Bilingual patient education (English/Swahili)
+
+VRAM: ~54 GB BF16 or ~27 GB INT8 on a single A100 80GB. 128K context window.
 
 ## Development
 

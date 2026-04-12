@@ -737,7 +737,8 @@ Aifya uses self-hosted models with automatic routing based on task complexity:
 |-----------|-------|------|-----------|
 | Simple | Qwen 3.5 72B | 8002 | Template filling, simple Q&A |
 | Medium | Distill-32B | 8003 | Summaries, translations |
-| Complex | DeepSeek-R1 671B | 8001 | Clinical reasoning, multi-step analysis |
+| Complex | DeepSeek-R1 671B | 8001 | Multi-step reasoning, agentic workflows |
+| Medical | MedGemma 27B | 8004 | Clinical docs, ScribeAI, trial screening, CDS, imaging, prescriptions |
 
 ---
 
@@ -1152,6 +1153,7 @@ KEYCLOAK_CLIENT_SECRET=your_secret
 VLLM_DEEPSEEK_R1_URL=http://ai-gpu:8001/v1
 VLLM_QWEN_72B_URL=http://ai-gpu:8002/v1
 VLLM_DISTILL_32B_URL=http://ai-gpu:8003/v1
+VLLM_MEDGEMMA_27B_URL=http://ai-gpu:8004/v1
 AI_SERVICE_URL=http://ai-service:8025
 ```
 

@@ -30,6 +30,7 @@ logger = get_logger(__name__)
 
 # AI Service endpoint (vLLM multimodal or specialized model)
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
+MEDGEMMA_URL = os.getenv("VLLM_MEDGEMMA_27B_URL", "http://ai-service:8004/v1")
 
 
 class ImagingAnalyzer:
@@ -218,9 +219,9 @@ class ImagingAnalyzer:
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
-                    f"{AI_SERVICE_URL}/v1/chat/completions",
+                    f"{MEDGEMMA_URL}/chat/completions",
                     json={
-                        "model": "qwen-72b",
+                        "model": "medgemma-27b",
                         "messages": [
                             {
                                 "role": "user",
@@ -276,7 +277,7 @@ class ImagingAnalyzer:
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
-                    f"{AI_SERVICE_URL}/v1/imaging/tb-screen",
+                    f"{MEDGEMMA_URL}/imaging/tb-screen",
                     json={"image_url": image_url},
                 )
                 if response.status_code == 200:
@@ -304,7 +305,7 @@ class ImagingAnalyzer:
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
-                    f"{AI_SERVICE_URL}/v1/imaging/retinal-scan",
+                    f"{MEDGEMMA_URL}/imaging/retinal-scan",
                     json={"image_url": image_url},
                 )
                 if response.status_code == 200:

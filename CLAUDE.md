@@ -9,7 +9,7 @@
 **Backend:** Python 3.12+ / FastAPI 0.115+ / SQLAlchemy 2 async / Pydantic 2 / Celery 5
 **Go services:** Go 1.22+ / Gin (billing-service, sync-service)
 **Data:** PostgreSQL 16 + TimescaleDB, Redis 7, Qdrant, MinIO, Kafka 3.7+
-**AI:** vLLM 0.6+ (ports 8001-8003), faster-whisper, LlamaIndex, BGE-M3
+**AI:** vLLM 0.6+ (ports 8001-8004), faster-whisper, LlamaIndex, BGE-M3, MedGemma 27B
 **Analytics:** Apache Superset, Metabase, dbt, Airflow, MLflow, JupyterHub
 **Infra:** Docker, K3s, Traefik, Keycloak 25, Prometheus/Grafana/Loki/Tempo, Vault
 **Integrations:** REDCap API v14+, SHA e-Claims, DHIS2, M-Pesa Daraja, FHIR R4, HL7/ASTM, KRA eTIMS
@@ -94,7 +94,7 @@ Detailed specs in `docs/`. Read the relevant file BEFORE writing code for that a
 
 ### AI Integration
 - All LLM calls through `ai-service`. Never call vLLM from api-gateway directly.
-- Routing: simple→Qwen 72B (8002), medium→Distill-32B (8003), complex→R1 (8001).
+- Routing: simple→Qwen 72B (8002), medium→Distill-32B (8003), complex→R1 (8001), medical→MedGemma 27B (8004).
 - Log every AI I/O to `ai_interactions` event. Prompts in `services/ai-service/app/prompts/`.
 - Medical guardrails validate every AI response. Trial screening runs as async Celery task.
 - **Agentic workflows:** Discharge agent, screening agent, claims agent chain multiple AI steps.

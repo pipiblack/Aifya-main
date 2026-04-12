@@ -33,6 +33,7 @@ from app.services.agents.models import (
 logger = get_logger(__name__)
 
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8001")
+MEDGEMMA_URL = os.getenv("VLLM_MEDGEMMA_27B_URL", "http://ai-service:8004/v1")
 
 
 class AgentEngine:
@@ -451,12 +452,24 @@ class AgentEngine:
 
         prompt = prompt_templates.get(task, f"Perform task '{task}' with context: {context}")
 
+        # Route clinical tasks to MedGemma 27B; complex multi-step reasoning to R1
+        medical_tasks = {
+            "discharge_summary", "medication_reconciliation", "follow_up_plan",
+            "patient_education_bilingual", "trial_screening", "screening_report",
+        }
+        if task in medical_tasks:
+            model_url = f"{MEDGEMMA_URL}/chat/completions"
+            model_name = "medgemma-27b"
+        else:
+            model_url = f"{AI_SERVICE_URL}/v1/chat/completions"
+            model_name = "deepseek-r1"
+
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
-                    f"{AI_SERVICE_URL}/v1/chat/completions",
+                    model_url,
                     json={
-                        "model": "deepseek-r1",  # Complex tasks → R1
+                        "model": model_name,
                         "messages": [
                             {"role": "system", "content": "You are a clinical AI assistant for a Kenyan hospital. Respond with structured, evidence-based content."},
                             {"role": "user", "content": prompt},
@@ -469,10 +482,10 @@ class AgentEngine:
             if response.status_code == 200:
                 data = response.json()
                 text = data["choices"][0]["message"]["content"]
-                return {"task": task, "content": text, "model": "deepseek-r1"}
+                return {"task": task, "content": text, "model": model_name}
 
         except Exception as exc:
-            logger.warning("ai_generate_unavailable", task=task, error=str(exc))
+            logger.warning("ai_generate_unavailable", task=task, model=model_name, error=str(exc))
 
         return {"task": task, "content": f"AI service unavailable for {task}. Manual completion required.", "model": "fallback"}
 
