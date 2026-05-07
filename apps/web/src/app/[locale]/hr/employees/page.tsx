@@ -271,19 +271,24 @@ export default function EmployeesListPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={() => setShowCreate(false)}
+          role="presentation"
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={onSubmit}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="employee-dialog-title"
             className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl"
           >
             <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 id="employee-dialog-title" className="text-lg font-semibold text-foreground">
                 {t("addEmployee")}
               </h2>
               <button
                 type="button"
                 onClick={() => setShowCreate(false)}
+                aria-label={tc("cancel")}
                 className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/50"
               >
                 <X className="h-4 w-4" />
@@ -453,8 +458,14 @@ export default function EmployeesListPage() {
               <button
                 type="submit"
                 disabled={create.isPending}
-                className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
+                {create.isPending && (
+                  <span
+                    aria-hidden
+                    className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+                  />
+                )}
                 {tc("save")}
               </button>
             </div>

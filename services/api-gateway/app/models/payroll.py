@@ -47,7 +47,11 @@ class Employee(AuditMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     bank_name: Mapped[str | None] = mapped_column(String(100))
     bank_branch: Mapped[str | None] = mapped_column(String(100))
-    # Encrypted-at-rest at app layer; ciphertext stored as TEXT
+    # SECURITY-TODO: encrypt at rest before production. Currently stored as
+    # plaintext TEXT. See SECURITY-TODO.md for the migration plan
+    # (sqlalchemy_utils.EncryptedType or KMS envelope encryption). The
+    # payslip generator currently masks this field as "*** ENCRYPTED ***"
+    # rather than rendering the value.
     bank_account: Mapped[str | None] = mapped_column(Text)
     disability_exemption: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False

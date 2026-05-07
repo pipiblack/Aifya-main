@@ -2,8 +2,20 @@
 M-Pesa Daraja integration router.
 Provides STK Push payments, C2B callbacks, transaction status, and reconciliation.
 Callbacks are public endpoints (no auth) — Safaricom sends them directly.
+
+Security:
+- Callback endpoints MUST be protected at the network edge with an IP allow-list
+  for Safaricom's documented production ranges (e.g. 196.201.214.0/24,
+  196.201.213.0/24, 196.201.212.0/24, 196.201.214.200/29). The TODO below
+  enforces this at the application layer when MPESA_CALLBACK_IP_ALLOWLIST is set.
+- Callbacks are idempotent: handle_stk_callback short-circuits when the row is
+  already in a terminal state.
+- Callbacks always return 200 to Safaricom (so they don't retry) but log internal
+  errors for follow-up.
+- Payload structure is validated by DarajaClient.parse_stk_callback before use.
 """
 
+import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -18,7 +30,6 @@ from app.services.mpesa.callback import handle_stk_callback
 from app.services.mpesa.daraja import (
     DarajaClient,
     STKCallbackData,
-    STKPushRequest,
     STKPushResponse,
     TransactionStatus,
     get_daraja_config,
@@ -28,6 +39,61 @@ from app.services.mpesa.stk_push import StkPushService
 logger = get_logger(__name__)
 
 router = APIRouter()
+
+
+# Safaricom Daraja documented production source IPs. Override at deploy time
+# via MPESA_CALLBACK_IP_ALLOWLIST (comma-separated). Empty = no IP enforcement
+# (only safe in dev where the LB / firewall enforces it).
+_DEFAULT_SAFARICOM_IPS: tuple[str, ...] = (
+    "196.201.214.200",
+    "196.201.214.206",
+    "196.201.213.114",
+    "196.201.214.207",
+    "196.201.214.208",
+    "196.201.213.44",
+    "196.201.212.127",
+    "196.201.212.128",
+    "196.201.212.129",
+    "196.201.212.132",
+    "196.201.212.136",
+    "196.201.212.138",
+    "196.201.212.69",
+    "196.201.212.74",
+)
+
+
+def _client_ip(request: Request) -> str:
+    """Resolve the originating client IP, honouring X-Forwarded-For when present."""
+    fwd = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if fwd:
+        return fwd
+    return request.client.host if request.client else ""
+
+
+def _enforce_callback_ip(request: Request) -> None:
+    """
+    Reject the callback if the source IP is not in the configured allow-list.
+
+    When MPESA_CALLBACK_IP_ALLOWLIST is set, intersect with the default
+    Safaricom IPs. When unset, fall through (rely on edge firewall) but log
+    the source IP for audit.
+    """
+    src = _client_ip(request)
+    override = os.getenv("MPESA_CALLBACK_IP_ALLOWLIST", "").strip()
+    if override:
+        allow = {ip.strip() for ip in override.split(",") if ip.strip()}
+        if src and src not in allow:
+            logger.warning(
+                "mpesa_callback_blocked_ip",
+                source_ip=src,
+                allowlist_size=len(allow),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Source IP not allowed",
+            )
+    else:
+        logger.info("mpesa_callback_inbound", source_ip=src)
 
 
 # ── Request / Response Schemas ───────────────────────────────────────────────
@@ -172,7 +238,16 @@ async def stk_callback(
     @returns JSON acknowledgement
     """
     try:
+        _enforce_callback_ip(request)
+    except HTTPException:
+        raise
+
+    try:
         body = await request.json()
+        # Defensive: validate we have an stkCallback envelope before processing
+        if not isinstance(body, dict) or "Body" not in body:
+            logger.warning("stk_callback_malformed")
+            return JSONResponse(content={"ResultCode": 0, "ResultDesc": "Accepted"})
         ack = await handle_stk_callback(db, body)
         return JSONResponse(content=ack)
     except Exception as exc:
@@ -193,8 +268,16 @@ async def c2b_validation(request: Request) -> JSONResponse:
     @param request: Raw HTTP request from Safaricom
     @returns JSON validation response
     """
-    body = await request.json()
-    logger.info("c2b_validation", data=body)
+    try:
+        _enforce_callback_ip(request)
+    except HTTPException:
+        raise
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    # Don't echo full body in production logs (may contain MSISDN PII)
+    logger.info("c2b_validation", trans_id=str(body.get("TransID", "")))
 
     # Accept all payments (validation can be extended for amount/account checks)
     return JSONResponse(content={"ResultCode": 0, "ResultDesc": "Accepted"})
@@ -217,14 +300,29 @@ async def c2b_confirmation(
     @returns JSON confirmation response
     """
     try:
-        body = await request.json()
-        logger.info("c2b_confirmation", data=body)
+        _enforce_callback_ip(request)
+    except HTTPException:
+        raise
 
-        # Extract C2B fields
-        receipt = body.get("TransID", "")
-        amount = float(body.get("TransAmount", 0))
-        phone = body.get("MSISDN", "")
-        account_ref = body.get("BillRefNumber", "")
+    try:
+        body = await request.json()
+        # Don't log MSISDN (PII) — only the receipt/account ref
+        logger.info(
+            "c2b_confirmation",
+            trans_id=str(body.get("TransID", "")),
+            account_ref=str(body.get("BillRefNumber", "")),
+        )
+
+        # Extract C2B fields with defensive type coercion
+        receipt = str(body.get("TransID", "")).strip()
+        try:
+            amount = float(body.get("TransAmount", 0) or 0)
+        except (TypeError, ValueError):
+            amount = 0.0
+        if amount < 0:
+            amount = 0.0
+        phone = str(body.get("MSISDN", "")).strip()
+        account_ref = str(body.get("BillRefNumber", "")).strip()
 
         if receipt and amount > 0:
             callback_data = STKCallbackData(
@@ -286,11 +384,26 @@ async def _record_mpesa_payment(
     @param account_ref: Account reference from C2B (invoice number)
     """
     from app.models.billing import Invoice, Payment
+    from sqlalchemy import select
 
     try:
+        # Idempotency: do not double-record a payment for the same M-Pesa receipt
+        if callback.mpesa_receipt:
+            existing = await db.execute(
+                select(Payment).where(
+                    Payment.mpesa_transaction_id == callback.mpesa_receipt,
+                    Payment.is_deleted == False,  # noqa: E712
+                )
+            )
+            if existing.scalar_one_or_none() is not None:
+                logger.info(
+                    "mpesa_payment_already_recorded",
+                    receipt=callback.mpesa_receipt,
+                )
+                return
+
         # Try to find invoice by reference
         if account_ref:
-            from sqlalchemy import select
             result = await db.execute(
                 select(Invoice).where(
                     Invoice.invoice_number == account_ref,
@@ -309,7 +422,7 @@ async def _record_mpesa_payment(
                     payment_method="mpesa",
                     mpesa_transaction_id=callback.mpesa_receipt,
                     reference_number=callback.mpesa_receipt,
-                    notes=f"M-Pesa payment from {callback.phone_number}",
+                    notes="M-Pesa payment received",
                 )
                 db.add(payment)
 

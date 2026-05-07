@@ -265,17 +265,23 @@ export default function ChartOfAccountsPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-[fade-in_0.15s_ease-out]"
           onClick={() => setShowDialog(false)}
+          role="presentation"
         >
           <div
             className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="account-dialog-title"
           >
             <div className="mb-4 flex items-start justify-between">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 id="account-dialog-title" className="text-lg font-bold text-foreground">
                 {editingAccount ? t("editAccount") : t("addAccount")}
               </h2>
               <button
+                type="button"
                 onClick={() => setShowDialog(false)}
+                aria-label={tc("cancel")}
                 className="rounded-md p-1 text-muted-foreground hover:bg-muted"
               >
                 <X className="h-4 w-4" />
@@ -291,12 +297,14 @@ export default function ChartOfAccountsPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
+                <label htmlFor="account-code" className="mb-1 block text-sm font-medium text-foreground">
                   {t("code")} *
                 </label>
                 <input
+                  id="account-code"
                   {...register("code")}
                   disabled={!!editingAccount}
+                  aria-invalid={!!formErrors.code}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50 dark:border-border"
                 />
                 {formErrors.code && (
@@ -304,11 +312,13 @@ export default function ChartOfAccountsPage() {
                 )}
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
+                <label htmlFor="account-name" className="mb-1 block text-sm font-medium text-foreground">
                   {t("name")} *
                 </label>
                 <input
+                  id="account-name"
                   {...register("name")}
+                  aria-invalid={!!formErrors.name}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground dark:border-border"
                 />
                 {formErrors.name && (
@@ -317,10 +327,11 @@ export default function ChartOfAccountsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
+                  <label htmlFor="account-type" className="mb-1 block text-sm font-medium text-foreground">
                     {t("accountType")} *
                   </label>
                   <select
+                    id="account-type"
                     {...register("type")}
                     disabled={!!editingAccount}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50 dark:border-border"
@@ -335,10 +346,11 @@ export default function ChartOfAccountsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">
+                  <label htmlFor="account-cashflow" className="mb-1 block text-sm font-medium text-foreground">
                     {t("cashflowCategory")} *
                   </label>
                   <select
+                    id="account-cashflow"
                     {...register("cashflow_category")}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground dark:border-border"
                   >
@@ -364,8 +376,14 @@ export default function ChartOfAccountsPage() {
                 <button
                   type="submit"
                   disabled={createAccount.isPending || updateAccount.isPending}
-                  className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
+                  {(createAccount.isPending || updateAccount.isPending) && (
+                    <span
+                      aria-hidden
+                      className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+                    />
+                  )}
                   {tc("save")}
                 </button>
               </div>

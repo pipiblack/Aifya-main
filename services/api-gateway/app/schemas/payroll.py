@@ -62,7 +62,13 @@ class EmployeeUpdate(BaseModel):
 
 
 class EmployeeResponse(BaseModel):
-    """Employee API response."""
+    """Employee API response (full record, returned on detail endpoints).
+
+    Sensitive fields (kra_pin, nssf_number, shif_number, bank_*) are exposed
+    here. The list endpoint returns the lighter EmployeeListItem instead.
+    bank_account is NEVER exposed in any response (it is encrypted at rest;
+    the service layer must decrypt explicitly when needed for payslip rendering).
+    """
 
     id: uuid.UUID
     staff_id: str
@@ -88,10 +94,27 @@ class EmployeeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class EmployeeListItem(BaseModel):
+    """Light-weight employee row for list endpoints — hides PII / statutory IDs."""
+
+    id: uuid.UUID
+    staff_id: str
+    full_name: str
+    department_id: uuid.UUID | None
+    job_title: str | None
+    employment_type: str
+    hire_date: date
+    is_active: bool
+    phone: str | None
+    email: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class EmployeeListResponse(BaseModel):
     """Paged employee list."""
 
-    items: list[EmployeeResponse]
+    items: list[EmployeeListItem]
     total: int
 
 

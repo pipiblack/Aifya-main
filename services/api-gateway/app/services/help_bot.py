@@ -112,9 +112,30 @@ def _suggest_links(query: str) -> list[SuggestedLink]:
 
 
 _CLINICAL_RED_FLAGS = re.compile(
-    r"\b(dose|dosage|treat|treatment|prescribe|prescription|"
+    r"\b(dose|dosage|dosing|treat|treatment|prescribe|prescription|"
     r"diagnos|differential|interaction|contraindicat|antibiotic|"
-    r"chemo|chemotherapy|insulin|warfarin|paracetamol)\b",
+    r"chemo|chemotherapy|insulin|warfarin|paracetamol|amoxicillin|"
+    r"morphine|fentanyl|codeine|"
+    r"should\s+i\s+(prescribe|give|order|recommend|treat|administer)|"
+    r"what\s+(dose|dosage|drug|medication|medicine|antibiotic)|"
+    r"how\s+much\s+(\w+\s+){0,3}(give|prescribe|administer)|"
+    r"is\s+it\s+safe\s+to\s+(give|use|combine)|"
+    r"can\s+i\s+(give|prescribe|combine|stop)|"
+    r"side\s+effect|adverse\s+effect|drug\s+interaction)\b",
+    re.IGNORECASE,
+)
+
+# PHI red flags: identifiers that suggest the query carries patient data.
+_PHI_RED_FLAGS = re.compile(
+    r"\b("
+    r"\d{6,}"  # long numeric (likely MRN / phone / ID)
+    r"|MRN[:\s-]*\w+"
+    r"|patient[\s_-]*id[:\s=]*\w+"
+    r"|kra[\s_-]*pin[:\s=]*\w+"
+    r"|nssf[\s_-]*\w+"
+    r"|shif[\s_-]*\w+"
+    r"|@\w+\.\w+"  # email address
+    r")",
     re.IGNORECASE,
 )
 
@@ -136,6 +157,12 @@ async def answer_help_query(
 
     # Hard guardrail: never answer clinical questions through the help bot
     if _CLINICAL_RED_FLAGS.search(query):
+        # NOTE: do NOT include the query content in logs — may contain PHI
+        logger.info(
+            "help_bot_clinical_blocked",
+            facility_id=str(facility_id) if facility_id else None,
+            role=user_role,
+        )
         return AnswerResponse(
             answer=(
                 "This looks like a clinical question. For safety, the help "
@@ -147,6 +174,25 @@ async def answer_help_query(
                 SuggestedLink(label="Clinical Decision Support", href="/cds"),
             ],
             confidence=0.95,
+            model="guardrail",
+        )
+
+    # Hard guardrail: refuse if the query carries identifiers that suggest PHI
+    if _PHI_RED_FLAGS.search(query):
+        logger.warning(
+            "help_bot_phi_blocked",
+            facility_id=str(facility_id) if facility_id else None,
+            role=user_role,
+        )
+        return AnswerResponse(
+            answer=(
+                "It looks like your question contains patient identifiers "
+                "(MRN, phone, ID, email). Please remove personal information "
+                "and ask the question generally. The help bot does not "
+                "process patient data."
+            ),
+            suggested_links=[],
+            confidence=1.0,
             model="guardrail",
         )
 

@@ -1,5 +1,12 @@
 """
 AI Help Bot router — lightweight in-app navigation/help assistant.
+
+Security:
+- Clinical questions are refused via _CLINICAL_RED_FLAGS in services/help_bot.py.
+- PHI identifiers (MRN, phone, ID, email) cause an immediate refusal.
+- TODO(production): rate-limit per user (e.g. 30 req/min/user) using Redis. The
+  centrally configured slowapi/RateLimitMiddleware should cover this endpoint.
+- Query text is NEVER logged; only metadata (role, facility_id) is logged.
 """
 
 from __future__ import annotations

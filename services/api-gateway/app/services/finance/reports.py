@@ -88,6 +88,7 @@ async def get_general_ledger(
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id == account_id,
             Transaction.date < start,
         )
@@ -107,6 +108,7 @@ async def get_general_ledger(
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id == account_id,
             Transaction.date >= start,
             Transaction.date <= end,
@@ -160,7 +162,10 @@ async def get_trial_balance(
     end_date = as_of
     if period_id is not None:
         period_result = await db.execute(
-            select(AccountingPeriod).where(AccountingPeriod.id == period_id)
+            select(AccountingPeriod).where(
+                AccountingPeriod.id == period_id,
+                AccountingPeriod.facility_id == facility_id,
+            )
         )
         period = period_result.scalar_one()
         end_date = period.end_date
@@ -177,8 +182,18 @@ async def get_trial_balance(
             func.coalesce(func.sum(TransactionEntry.debit), 0).label("dr"),
             func.coalesce(func.sum(TransactionEntry.credit), 0).label("cr"),
         )
-        .join(TransactionEntry, TransactionEntry.account_id == Account.id, isouter=True)
-        .join(Transaction, TransactionEntry.transaction_id == Transaction.id, isouter=True)
+        .join(
+            TransactionEntry,
+            (TransactionEntry.account_id == Account.id)
+            & (TransactionEntry.facility_id == facility_id),
+            isouter=True,
+        )
+        .join(
+            Transaction,
+            (TransactionEntry.transaction_id == Transaction.id)
+            & (Transaction.facility_id == facility_id),
+            isouter=True,
+        )
         .where(
             Account.facility_id == facility_id,
             Account.is_deleted == False,  # noqa: E712
@@ -253,6 +268,7 @@ async def get_profit_loss(
         Account.type.in_(["income", "expense"]),
     ]
     txn_conds = [
+        Transaction.facility_id == facility_id,
         Transaction.date >= start,
         Transaction.date <= end,
     ]
@@ -268,7 +284,12 @@ async def get_profit_loss(
             func.coalesce(func.sum(TransactionEntry.debit), 0).label("dr"),
             func.coalesce(func.sum(TransactionEntry.credit), 0).label("cr"),
         )
-        .join(TransactionEntry, TransactionEntry.account_id == Account.id, isouter=True)
+        .join(
+            TransactionEntry,
+            (TransactionEntry.account_id == Account.id)
+            & (TransactionEntry.facility_id == facility_id),
+            isouter=True,
+        )
         .join(
             Transaction,
             and_(
@@ -349,11 +370,17 @@ async def get_balance_sheet(
             func.coalesce(func.sum(TransactionEntry.debit), 0).label("dr"),
             func.coalesce(func.sum(TransactionEntry.credit), 0).label("cr"),
         )
-        .join(TransactionEntry, TransactionEntry.account_id == Account.id, isouter=True)
+        .join(
+            TransactionEntry,
+            (TransactionEntry.account_id == Account.id)
+            & (TransactionEntry.facility_id == facility_id),
+            isouter=True,
+        )
         .join(
             Transaction,
             and_(
                 TransactionEntry.transaction_id == Transaction.id,
+                Transaction.facility_id == facility_id,
                 Transaction.date <= as_of_date,
             ),
             isouter=True,
@@ -459,6 +486,7 @@ async def get_cash_flow(
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id.in_(cash_account_ids),
             Transaction.date < start,
         )
@@ -482,6 +510,8 @@ async def get_cash_flow(
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             Account.facility_id == facility_id,
+            TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             Account.is_deleted == False,  # noqa: E712
             Transaction.date >= start,
             Transaction.date <= end,
@@ -493,6 +523,8 @@ async def get_cash_flow(
                     TransactionEntry.transaction_id == Transaction.id,
                 )
                 .where(
+                    Transaction.facility_id == facility_id,
+                    TransactionEntry.facility_id == facility_id,
                     TransactionEntry.account_id.in_(cash_account_ids)
                     if cash_account_ids
                     else False,
@@ -656,7 +688,10 @@ async def get_budget_vs_actual(
     @returns Per-account variance + percent used
     """
     period_result = await db.execute(
-        select(AccountingPeriod).where(AccountingPeriod.id == period_id)
+        select(AccountingPeriod).where(
+            AccountingPeriod.id == period_id,
+            AccountingPeriod.facility_id == facility_id,
+        )
     )
     period = period_result.scalar_one()
 
@@ -680,6 +715,7 @@ async def get_budget_vs_actual(
             .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
             .where(
                 TransactionEntry.facility_id == facility_id,
+                Transaction.facility_id == facility_id,
                 TransactionEntry.account_id == account.id,
                 Transaction.date >= period.start_date,
                 Transaction.date <= period.end_date,

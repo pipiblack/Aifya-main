@@ -19,13 +19,13 @@ from app.models.payroll import PayrollRun
 _logger = logging.getLogger(__name__)
 _ZERO = Decimal("0")
 
-# Account codes (per Aifya Finance chart of accounts)
-ACC_SALARIES_EXPENSE = "5001"
-ACC_BANK = "1002"
-ACC_PAYE_PAYABLE = "2034"
-ACC_NSSF_PAYABLE = "2035"
-ACC_SHIF_PAYABLE = "2032"
-ACC_HL_PAYABLE = "2033"
+# Account codes (must match app.services.finance.seed_data DEFAULT_ACCOUNTS)
+ACC_SALARIES_EXPENSE = "5000"
+ACC_BANK = "1020"
+ACC_PAYE_PAYABLE = "2200"
+ACC_NSSF_PAYABLE = "2210"
+ACC_SHIF_PAYABLE = "2220"
+ACC_HL_PAYABLE = "2230"
 
 
 def _build_salary_entries(run: PayrollRun) -> list[dict[str, Any]]:

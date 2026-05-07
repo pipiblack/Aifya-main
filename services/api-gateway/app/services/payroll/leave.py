@@ -167,17 +167,41 @@ async def submit_leave_request(
     """
     if end_date < start_date:
         raise ValueError("end_date must be >= start_date")
+    if start_date > date.today():
+        # Allow future leave but reject obviously bad input (>5 years out)
+        if (start_date - date.today()).days > 365 * 5:
+            raise ValueError("start_date is unreasonably far in the future")
+    if days_requested <= 0:
+        raise ValueError("days_requested must be > 0")
 
     lt = (
         await db.execute(
             select(LeaveType).where(
                 LeaveType.id == leave_type_id,
                 LeaveType.is_deleted.is_(False),
+                or_(
+                    LeaveType.facility_id == facility_id,
+                    LeaveType.facility_id.is_(None),
+                ),
             )
         )
     ).scalars().first()
     if lt is None:
-        raise ValueError("Invalid leave_type_id")
+        raise ValueError("Invalid leave_type_id for this facility")
+
+    # Verify the employee belongs to this facility (defence-in-depth)
+    from app.models.payroll import Employee
+    emp_check = (
+        await db.execute(
+            select(Employee.id).where(
+                Employee.id == employee_id,
+                Employee.facility_id == facility_id,
+                Employee.is_deleted.is_(False),
+            )
+        )
+    ).scalar_one_or_none()
+    if emp_check is None:
+        raise ValueError("Employee not found in this facility")
 
     deduction = Decimal("0")
     if not lt.paid:

@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { SyncProvider } from "@/components/providers/SyncProvider";
 import { OfflineIndicator } from "@/components/ui/OfflineIndicator";
+import { ToastProvider } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
 import { HelpBot } from "@/components/HelpBot";
 import "@/app/globals.css";
@@ -46,9 +47,11 @@ export default async function RootLayout({
             <QueryProvider>
               <AuthProvider>
                 <SyncProvider>
-                  <AppShell>{children}</AppShell>
-                  <OfflineIndicator />
-                  <HelpBot />
+                  <ToastProvider>
+                    <AppShell>{children}</AppShell>
+                    <OfflineIndicator />
+                    <HelpBot />
+                  </ToastProvider>
                 </SyncProvider>
               </AuthProvider>
             </QueryProvider>

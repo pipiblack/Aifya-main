@@ -104,6 +104,7 @@ export function Sidebar() {
     { key: "statutory", href: "/hr/payroll/statutory", icon: Shield, module: "hr" },
     { key: "reports", href: "/reports", icon: BarChart3, module: "reports" },
     { key: "analytics", href: "/analytics", icon: Activity, module: "analytics" },
+    { key: "performance", href: "/performance", icon: Activity, module: "analytics" },
     { key: "communications", href: "/communications", icon: MessageSquare, module: "communications" },
     { key: "integrations", href: "/integrations/fhir", icon: Plug, module: "fhir" },
     { key: "trials", href: "/trials", icon: FlaskConical, module: "clinical_trials", separator: true },

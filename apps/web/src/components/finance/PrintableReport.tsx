@@ -88,8 +88,9 @@ export function PrintableReport({
  * @param rows - Array of objects (keys become headers)
  */
 export function downloadCsv(filename: string, rows: Record<string, unknown>[]): void {
-  if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
+  const first = rows[0];
+  if (!first) return;
+  const headers = Object.keys(first);
   const escape = (v: unknown): string => {
     const s = v == null ? "" : String(v);
     if (s.includes(",") || s.includes("\"") || s.includes("\n")) {

@@ -5,17 +5,15 @@ import { useTranslations } from "next-intl";
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   Bed,
-  Calendar,
   CalendarDays,
   Clock,
   DollarSign,
   Download,
-  FileText,
   HeartPulse,
   Smile,
   Stethoscope,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import {
@@ -30,6 +28,7 @@ import {
   YAxis,
 } from "recharts";
 import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   type PerformancePeriod,
   useFacilityKPIs,
@@ -94,33 +93,40 @@ export default function PerformancePage() {
   return (
     <div className="animate-[fade-in_0.3s_ease-out] space-y-6 p-6 lg:p-8">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t("title")}
-          </h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as PerformancePeriod)}
-            className="rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm dark:bg-card"
-          >
-            {PERIODS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-          >
-            <Download className="h-4 w-4" />
-            {t("exportReport")}
-          </button>
-        </div>
+      <div className="print:hidden">
+        <PageHeader
+          icon={BarChart3}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("title") }]}
+          actions={
+            <>
+              <label htmlFor="performance-period" className="sr-only">
+                {t("title")}
+              </label>
+              <select
+                id="performance-period"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as PerformancePeriod)}
+                className="rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm dark:bg-card"
+              >
+                {PERIODS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              >
+                <Download className="h-4 w-4" />
+                {t("exportReport")}
+              </button>
+            </>
+          }
+        />
       </div>
 
       {/* KPI grid */}

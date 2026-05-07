@@ -20,6 +20,7 @@ from app.models.finance import (
     Account,
     AccountingPeriod,
     BankStatement,
+    FinanceAuditLog,
     Transaction,
     TransactionEntry,
 )
@@ -147,6 +148,7 @@ async def auto_match(
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id == account_id,
         )
     )
@@ -230,6 +232,21 @@ async def manual_match(
     stmt.matched_at = datetime.now(timezone.utc)
     stmt.matched_by = user_id
     stmt.updated_by = user_id
+
+    db.add(
+        FinanceAuditLog(
+            facility_id=facility_id,
+            action="manual_match_bank_statement",
+            table_name="bank_statements",
+            record_id=stmt.id,
+            user_id=user_id,
+            payload={
+                "entry_id": str(entry_id),
+                "amount": str(stmt.amount),
+            },
+        )
+    )
+
     await db.flush()
     return stmt
 
@@ -257,7 +274,10 @@ async def get_reconciliation_report(
     period_end: date_type | None = None
     if period_id is not None:
         period_result = await db.execute(
-            select(AccountingPeriod).where(AccountingPeriod.id == period_id)
+            select(AccountingPeriod).where(
+                AccountingPeriod.id == period_id,
+                AccountingPeriod.facility_id == facility_id,
+            )
         )
         period = period_result.scalar_one()
         period_end = period.end_date
@@ -271,6 +291,7 @@ async def get_reconciliation_report(
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id == account_id,
         )
     )
@@ -299,6 +320,7 @@ async def get_reconciliation_report(
         )
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id == account_id,
             TransactionEntry.debit > 0,
             BankStatement.id.is_(None),
@@ -319,6 +341,7 @@ async def get_reconciliation_report(
         )
         .where(
             TransactionEntry.facility_id == facility_id,
+            Transaction.facility_id == facility_id,
             TransactionEntry.account_id == account_id,
             TransactionEntry.credit > 0,
             BankStatement.id.is_(None),
@@ -335,6 +358,7 @@ async def get_reconciliation_report(
             BankStatement.facility_id == facility_id,
             BankStatement.account_id == account_id,
             BankStatement.status == "matched",
+            BankStatement.is_deleted == False,  # noqa: E712
         )
     )
     unmatched_stmt_q = await db.execute(
@@ -342,6 +366,7 @@ async def get_reconciliation_report(
             BankStatement.facility_id == facility_id,
             BankStatement.account_id == account_id,
             BankStatement.status == "unmatched",
+            BankStatement.is_deleted == False,  # noqa: E712
         )
     )
 
@@ -349,7 +374,9 @@ async def get_reconciliation_report(
     unmatched_entry_q = await db.execute(
         select(func.count(TransactionEntry.id))
         .outerjoin(
-            BankStatement, BankStatement.matched_entry_id == TransactionEntry.id
+            BankStatement,
+            (BankStatement.matched_entry_id == TransactionEntry.id)
+            & (BankStatement.facility_id == facility_id),
         )
         .where(
             TransactionEntry.facility_id == facility_id,

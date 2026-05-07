@@ -257,3 +257,61 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────── */
+/* Print stylesheet — used for finance/payroll report PDF export.       */
+/* Hides chrome, forces black-on-white, removes shadows and decoration. */
+/* ─────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide app chrome */
+  aside,
+  nav[aria-label="breadcrumbs"],
+  [role="dialog"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Force black-on-white for clean print */
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Remove shadows, soften borders for crisper output */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Cards/tables drop the rounded chrome border */
+  .rounded-xl,
+  .rounded-2xl {
+    border-color: #d1d5db !important;
+  }
+
+  /* Avoid awkward page breaks */
+  table,
+  tr,
+  td,
+  th,
+  .finance-print-body,
+  .avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Force section break before each printable report block on multi-section pages */
+  .print-section {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Set a consistent A4 margin */
+  @page {
+    size: A4;
+    margin: 18mm 14mm;
+  }
+}

@@ -84,7 +84,7 @@ async def send_message(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found",
         )
-    if not patient.phone:
+    if not patient.phone_number:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Patient has no phone number on file",
@@ -94,7 +94,7 @@ async def send_message(
         msg = await service.send_message(
             facility_id=current_user.facility_id,
             request=data,
-            recipient_phone=patient.phone,
+            recipient_phone=patient.phone_number,
         )
     except ValueError as exc:
         raise HTTPException(

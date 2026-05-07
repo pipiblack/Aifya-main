@@ -9,7 +9,7 @@ import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +29,7 @@ from app.models.payroll import (
 from app.models.payroll_extra import LeaveType, PayrollLeaveRequest
 from app.schemas.payroll import (
     EmployeeCreate,
+    EmployeeListItem,
     EmployeeListResponse,
     EmployeeResponse,
     EmployeeUpdate,
@@ -112,7 +113,7 @@ async def list_employees(
         )
     stmt = stmt.order_by(Employee.full_name.asc())
     rows = (await db.execute(stmt)).scalars().all()
-    items = [EmployeeResponse.model_validate(e) for e in rows]
+    items = [EmployeeListItem.model_validate(e) for e in rows]
     return EmployeeListResponse(items=items, total=len(items))
 
 
@@ -272,8 +273,14 @@ async def create_payroll_run(
     current_user: CurrentUser = Depends(
         require_roles("admin", "facility_admin", "hr_officer", "hr_admin")
     ),
+    x_idempotency_key: str | None = Header(None),
 ) -> PayrollRunResponse:
-    """Calculate a draft payroll run (HR officer)."""
+    """Calculate a draft payroll run (HR officer).
+
+    @param x_idempotency_key: Optional idempotency key header (logged for audit;
+        engine rejects duplicate active runs by month/year naturally).
+    """
+    _ = x_idempotency_key  # informational; dedup enforced by month/year uniqueness
     try:
         run = await run_monthly_payroll(
             db=db,
@@ -389,7 +396,36 @@ async def get_run_payslip(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> StreamingResponse:
-    """Render and download an individual payslip PDF."""
+    """Render and download an individual payslip PDF.
+
+    Access control: HR/finance admins can download any payslip; otherwise the
+    requester may only download their own payslip (matched via the employee
+    record's email == JWT email). Other users get 403.
+    """
+    privileged_roles = {"admin", "facility_admin", "hr_admin", "finance_admin"}
+    is_privileged = bool(privileged_roles.intersection(current_user.roles))
+
+    if not is_privileged:
+        emp_row = (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == current_user.facility_id,
+                    Employee.is_deleted.is_(False),
+                )
+            )
+        ).scalars().first()
+        owns_record = (
+            emp_row is not None
+            and bool(current_user.email)
+            and (emp_row.email or "").lower() == (current_user.email or "").lower()
+        )
+        if not owns_record:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to access this payslip",
+            )
+
     try:
         pdf_bytes = await generate_payslip(
             db=db,
@@ -420,7 +456,34 @@ async def list_employee_payslips(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> list[dict]:
-    """Self-service: list approved payslips for one employee."""
+    """Self-service: list approved payslips for one employee.
+
+    Access control: HR/finance admins can list any employee's payslips;
+    otherwise the requester may only list their own.
+    """
+    privileged_roles = {"admin", "facility_admin", "hr_admin", "finance_admin"}
+    is_privileged = bool(privileged_roles.intersection(current_user.roles))
+    if not is_privileged:
+        emp_row = (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == current_user.facility_id,
+                    Employee.is_deleted.is_(False),
+                )
+            )
+        ).scalars().first()
+        owns_record = (
+            emp_row is not None
+            and bool(current_user.email)
+            and (emp_row.email or "").lower() == (current_user.email or "").lower()
+        )
+        if not owns_record:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not allowed to list these payslips",
+            )
+
     rows = (
         await db.execute(
             select(

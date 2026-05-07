@@ -141,19 +141,24 @@ export default function LeaveManagementPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={() => setShowRequest(false)}
+          role="presentation"
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={onSubmit}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="leave-dialog-title"
             className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-xl"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 id="leave-dialog-title" className="text-lg font-semibold text-foreground">
                 {t("requestLeave")}
               </h2>
               <button
                 type="button"
                 onClick={() => setShowRequest(false)}
+                aria-label={tc("cancel")}
                 className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/50"
               >
                 <X className="h-4 w-4" />

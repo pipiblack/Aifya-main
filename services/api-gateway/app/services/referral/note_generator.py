@@ -63,7 +63,10 @@ async def generate_referral_note_pdf(
         raise ValueError("Referral not found")
 
     pat_q = await db.execute(
-        select(Patient).where(Patient.id == referral.patient_id)
+        select(Patient).where(
+            Patient.id == referral.patient_id,
+            Patient.facility_id == facility_id,
+        )
     )
     patient = pat_q.scalar_one_or_none()
 
@@ -75,7 +78,10 @@ async def generate_referral_note_pdf(
     doctor = None
     if referral.referring_doctor_id is not None:
         d = await db.execute(
-            select(Staff).where(Staff.id == referral.referring_doctor_id)
+            select(Staff).where(
+                Staff.id == referral.referring_doctor_id,
+                Staff.facility_id == facility_id,
+            )
         )
         doctor = d.scalar_one_or_none()
 
@@ -83,6 +89,7 @@ async def generate_referral_note_pdf(
         select(VitalSign)
         .where(
             VitalSign.patient_id == referral.patient_id,
+            VitalSign.facility_id == facility_id,
             VitalSign.is_deleted == False,  # noqa: E712
         )
         .order_by(VitalSign.created_at.desc())
@@ -94,6 +101,7 @@ async def generate_referral_note_pdf(
         select(Prescription)
         .where(
             Prescription.patient_id == referral.patient_id,
+            Prescription.facility_id == facility_id,
             Prescription.is_deleted == False,  # noqa: E712
         )
         .order_by(Prescription.created_at.desc())
@@ -105,6 +113,7 @@ async def generate_referral_note_pdf(
         select(Diagnosis)
         .where(
             Diagnosis.patient_id == referral.patient_id,
+            Diagnosis.facility_id == facility_id,
             Diagnosis.is_deleted == False,  # noqa: E712
         )
         .order_by(Diagnosis.created_at.desc())
@@ -116,6 +125,7 @@ async def generate_referral_note_pdf(
         select(LabResult)
         .where(
             LabResult.patient_id == referral.patient_id,
+            LabResult.facility_id == facility_id,
             LabResult.is_deleted == False,  # noqa: E712
         )
         .order_by(LabResult.created_at.desc())

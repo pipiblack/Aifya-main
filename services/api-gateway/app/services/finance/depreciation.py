@@ -97,7 +97,10 @@ async def post_monthly_depreciation(
     @returns Summary {asset_count, total_depreciation, transaction_ids}
     """
     period_result = await db.execute(
-        select(AccountingPeriod).where(AccountingPeriod.id == period_id)
+        select(AccountingPeriod).where(
+            AccountingPeriod.id == period_id,
+            AccountingPeriod.facility_id == facility_id,
+        )
     )
     period = period_result.scalar_one()
     if posting_date is None:

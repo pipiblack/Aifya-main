@@ -11,12 +11,14 @@ from app.services.finance.posting_engine import (
     PeriodLockedError,
     PostingRuleNotFoundError,
     UnbalancedTransactionError,
+    post_compound_transaction,
     post_transaction,
     reverse_transaction,
 )
 
 __all__ = [
     "post_transaction",
+    "post_compound_transaction",
     "reverse_transaction",
     "FinanceError",
     "NoOpenPeriodError",

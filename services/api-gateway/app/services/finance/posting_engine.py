@@ -307,6 +307,174 @@ async def post_transaction(
     return transaction
 
 
+async def post_compound_transaction(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    entries: list[dict],
+    metadata: dict,
+    idempotency_key: str | None = None,
+    user_id: uuid.UUID | None = None,
+) -> Transaction:
+    """
+    Post a multi-line journal directly (no posting rule lookup).
+
+    Used by callers that need to express compound journals (e.g. payroll —
+    DR Salaries Expense, CR PAYE/NSSF/SHIF/HL/Bank). The caller supplies the
+    entries explicitly; the engine still enforces SUM(debit) == SUM(credit),
+    period locks, idempotency, audit logging, and atomicity.
+
+    @param db: Async DB session
+    @param facility_id: Facility scope (multi-tenant guard)
+    @param entries: List of dicts {account_code: str, debit: Decimal,
+                    credit: Decimal, department_id?: UUID|str}
+    @param metadata: dict with date, reference_type, reference_id?,
+                    description, department_id?, event_type
+    @param idempotency_key: Optional retry-safety key
+    @param user_id: Posting user
+    @returns The created Transaction (or pre-existing one on idempotent replay)
+    @raises PeriodLockedError, UnbalancedTransactionError, FinanceError
+    """
+    # ── Idempotency short-circuit ─────────────────────────────────────────
+    existing = await _check_idempotency(db, facility_id, idempotency_key)
+    if existing is not None:
+        return existing
+
+    # ── Resolve posting date and period ───────────────────────────────────
+    raw_date = metadata.get("date")
+    if isinstance(raw_date, str):
+        posting_date = date_type.fromisoformat(raw_date)
+    elif isinstance(raw_date, date_type):
+        posting_date = raw_date
+    elif raw_date is None:
+        posting_date = date_type.today()
+    else:
+        raise ValueError("metadata['date'] must be a date or ISO date string")
+
+    period = await _get_period_for_date(db, facility_id, posting_date)
+
+    if not entries:
+        raise FinanceError("post_compound_transaction requires at least one entry")
+
+    # ── Resolve account codes → account ids (with FOR UPDATE) ─────────────
+    codes = {str(e["account_code"]) for e in entries}
+    accounts_result = await db.execute(
+        select(Account)
+        .where(
+            Account.facility_id == facility_id,
+            Account.code.in_(codes),
+            Account.is_deleted == False,  # noqa: E712
+        )
+        .with_for_update()
+    )
+    code_to_account: dict[str, Account] = {a.code: a for a in accounts_result.scalars().all()}
+    missing = codes - set(code_to_account.keys())
+    if missing:
+        raise FinanceError(
+            f"Account codes not found in facility {facility_id}: {sorted(missing)}"
+        )
+
+    # ── Validate balance and amount ───────────────────────────────────────
+    total_debit = Decimal("0")
+    total_credit = Decimal("0")
+    for entry in entries:
+        debit = _q(Decimal(str(entry.get("debit", 0))))
+        credit = _q(Decimal(str(entry.get("credit", 0))))
+        if debit < 0 or credit < 0:
+            raise FinanceError("Negative debit or credit not allowed")
+        if debit > 0 and credit > 0:
+            raise FinanceError("Each entry must have either debit OR credit, not both")
+        total_debit += debit
+        total_credit += credit
+
+    if _q(total_debit) != _q(total_credit):
+        raise UnbalancedTransactionError(
+            f"Compound journal unbalanced: debits={total_debit} credits={total_credit}"
+        )
+
+    if total_debit == 0:
+        raise FinanceError("Compound journal totals are zero")
+
+    # ── Create transaction header ─────────────────────────────────────────
+    department_id_raw = metadata.get("department_id")
+    department_id: uuid.UUID | None = (
+        uuid.UUID(str(department_id_raw)) if department_id_raw else None
+    )
+    reference_id_raw = metadata.get("reference_id")
+    reference_id: uuid.UUID | None = (
+        uuid.UUID(str(reference_id_raw)) if reference_id_raw else None
+    )
+    event_type = metadata.get("event_type", "compound_journal")
+
+    transaction = Transaction(
+        id=uuid.uuid4(),
+        facility_id=facility_id,
+        date=posting_date,
+        reference_type=metadata.get("reference_type"),
+        reference_id=reference_id,
+        event_type=event_type,
+        description=metadata.get("description"),
+        department_id=department_id,
+        period_id=period.id,
+        amount=total_debit,
+        is_reversal=False,
+        created_by=user_id,
+    )
+    db.add(transaction)
+    await db.flush()
+
+    # ── Create entries ────────────────────────────────────────────────────
+    for entry in entries:
+        debit = _q(Decimal(str(entry.get("debit", 0))))
+        credit = _q(Decimal(str(entry.get("credit", 0))))
+        if debit == 0 and credit == 0:
+            continue  # skip zero-amount lines
+        entry_dept_raw = entry.get("department_id", department_id_raw)
+        entry_dept = (
+            uuid.UUID(str(entry_dept_raw)) if entry_dept_raw else department_id
+        )
+        account = code_to_account[str(entry["account_code"])]
+        db.add(
+            TransactionEntry(
+                id=uuid.uuid4(),
+                facility_id=facility_id,
+                transaction_id=transaction.id,
+                account_id=account.id,
+                debit=debit,
+                credit=credit,
+                department_id=entry_dept,
+            )
+        )
+
+    # ── Audit + idempotency ───────────────────────────────────────────────
+    db.add(
+        FinanceAuditLog(
+            id=uuid.uuid4(),
+            facility_id=facility_id,
+            action="post_compound_transaction",
+            table_name="transactions",
+            record_id=transaction.id,
+            user_id=user_id,
+            payload={
+                "event_type": event_type,
+                "total": str(total_debit),
+                "entry_count": len(entries),
+                "period_id": str(period.id),
+            },
+        )
+    )
+    if idempotency_key is not None:
+        db.add(
+            IdempotencyKey(
+                key=idempotency_key,
+                facility_id=facility_id,
+                transaction_id=transaction.id,
+            )
+        )
+
+    await db.flush()
+    return transaction
+
+
 async def reverse_transaction(
     db: AsyncSession,
     facility_id: uuid.UUID,

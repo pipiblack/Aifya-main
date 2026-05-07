@@ -213,18 +213,31 @@ async def run_year_end_close(
             func.coalesce(func.sum(TransactionEntry.debit), 0),
             func.coalesce(func.sum(TransactionEntry.credit), 0),
         )
-        .join(TransactionEntry, TransactionEntry.account_id == Account.id, isouter=True)
-        .join(Transaction, TransactionEntry.transaction_id == Transaction.id, isouter=True)
+        .join(
+            TransactionEntry,
+            (TransactionEntry.account_id == Account.id)
+            & (TransactionEntry.facility_id == facility_id),
+            isouter=True,
+        )
+        .join(
+            Transaction,
+            (TransactionEntry.transaction_id == Transaction.id)
+            & (Transaction.facility_id == facility_id)
+            & (Transaction.date >= period.start_date)
+            & (Transaction.date <= period.end_date),
+            isouter=True,
+        )
         .where(
             Account.facility_id == facility_id,
             Account.is_deleted == False,  # noqa: E712
             Account.type.in_(["income", "expense"]),
-            Transaction.date >= period.start_date,
-            Transaction.date <= period.end_date,
         )
         .group_by(Account.id, Account.type)
     )
     rows = (await db.execute(stmt)).all()
+
+    # Filter out rows where Account.id is None (no entries) — outerjoin produces NULLs
+    rows = [r for r in rows if r[0] is not None]
 
     if not rows:
         await lock_period(db, facility_id, period_id, user_id)
