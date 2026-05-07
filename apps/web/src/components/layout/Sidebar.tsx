@@ -35,6 +35,8 @@ import {
   Activity,
   MessageSquare,
   Plug,
+  Wallet,
+  FileText,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
@@ -89,11 +91,17 @@ export function Sidebar() {
     { key: "dental", href: "/dental", icon: SmilePlus, module: "dental" },
     { key: "mch", href: "/mch", icon: Baby, module: "mch" },
     { key: "billing", href: "/billing", icon: Receipt, module: "billing", separator: true },
+    { key: "finance", href: "/finance", icon: Wallet, module: "finance" },
     { key: "insurance", href: "/insurance", icon: Shield, module: "insurance" },
     { key: "inventory", href: "/inventory", icon: Package, module: "inventory" },
     { key: "appointments", href: "/appointments", icon: CalendarClock, module: "appointments", separator: true },
     { key: "referrals", href: "/referrals", icon: ArrowUpRight, module: "referrals" },
     { key: "hr", href: "/hr", icon: PersonStanding, module: "hr" },
+    { key: "payroll", href: "/hr/payroll", icon: Wallet, module: "hr" },
+    { key: "employees", href: "/hr/employees", icon: Users, module: "hr" },
+    { key: "leave", href: "/hr/leave", icon: CalendarClock, module: "hr" },
+    { key: "payrollReports", href: "/hr/payroll/reports", icon: FileText, module: "hr" },
+    { key: "statutory", href: "/hr/payroll/statutory", icon: Shield, module: "hr" },
     { key: "reports", href: "/reports", icon: BarChart3, module: "reports" },
     { key: "analytics", href: "/analytics", icon: Activity, module: "analytics" },
     { key: "communications", href: "/communications", icon: MessageSquare, module: "communications" },

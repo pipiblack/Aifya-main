@@ -30,12 +30,42 @@ class Settings(BaseSettings):
     # AI Service
     ai_service_url: str = "http://localhost:8010"
     vllm_medgemma_url: str = "http://localhost:8004/v1"
+    vllm_qwen_72b_url: str = "http://localhost:8002/v1"
+
+    # M-Pesa Daraja
+    mpesa_consumer_key: str = ""
+    mpesa_consumer_secret: str = ""
+    mpesa_shortcode: str = ""
+    mpesa_passkey: str = ""
+    mpesa_callback_url: str = "https://api.aifya.co.ke/api/v1/mpesa/callback"
+    mpesa_environment: str = "sandbox"
+
+    # SHA (Social Health Authority)
+    sha_api_url: str = ""
+    sha_api_key: str = ""
+
+    # Africa's Talking Bulk SMS
+    at_username: str = ""
+    at_api_key: str = ""
+    at_sender_id: str = "AIFYA"
+    at_sandbox: bool = False
 
     # App
     debug: bool = False
     facility_timezone: str = "Africa/Nairobi"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+
+    @property
+    def mpesa_base_url(self) -> str:
+        """
+        Derive Daraja API base URL from environment.
+
+        @returns Production URL if mpesa_environment is "production", else sandbox
+        """
+        if self.mpesa_environment == "production":
+            return "https://api.safaricom.co.ke"
+        return "https://sandbox.safaricom.co.ke"
 
     @model_validator(mode="after")
     def _reject_insecure_defaults(self) -> "Settings":

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle, Clock, FileText, Send } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle, Clock, FileText, Printer, Send } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useReferralSummary, useReferralList } from "@/hooks/useReferrals";
 import { cn } from "@/lib/utils";
@@ -88,13 +88,14 @@ export default function ReferralsPage() {
               <th className="px-4 py-3">{t("urgency")}</th>
               <th className="px-4 py-3">{t("date")}</th>
               <th className="px-4 py-3">{t("statusLabel")}</th>
+              <th className="px-4 py-3 text-right">{t("actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground/70">{t("loading")}</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground/70">{t("loading")}</td></tr>
             ) : !referrals?.items.length ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground/70">{t("noReferrals")}</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground/70">{t("noReferrals")}</td></tr>
             ) : (
               referrals.items.map((r) => (
                 <tr key={r.id} className="bg-card hover:bg-muted/50">
@@ -114,6 +115,30 @@ export default function ReferralsPage() {
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[r.status])}>
                       {t(`status.${r.status}`)}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+                        const res = await fetch(
+                          `${apiBase}/api/v1/referrals/${r.id}/pdf-note`,
+                          { credentials: "include" },
+                        );
+                        if (!res.ok) {
+                          alert(t("pdfError"));
+                          return;
+                        }
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, "_blank", "noopener");
+                        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-xs font-medium transition-colors hover:bg-muted"
+                    >
+                      <Printer className="h-3 w-3" />
+                      {t("generateNote")}
+                    </button>
                   </td>
                 </tr>
               ))

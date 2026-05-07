@@ -1,11 +1,16 @@
 """
 Patient Communication Hub router.
-Endpoints for sending messages, managing templates, and patient preferences.
+Endpoints for sending messages, managing templates, patient preferences,
+and Africa's Talking-powered bulk SMS campaigns.
 """
 
 import uuid
+from datetime import date, datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
@@ -26,6 +31,12 @@ from app.services.comms.models import (
     SendMessageRequest,
 )
 from app.services.comms.service import CommunicationService
+from app.services.sms.bulk_sms import (
+    BulkSmsResult,
+    list_campaigns as list_sms_campaigns,
+    list_delivery_log as list_sms_delivery_log,
+    send_bulk_sms,
+)
 
 logger = get_logger(__name__)
 
@@ -310,3 +321,203 @@ async def create_template(
         facility_id=current_user.facility_id,
         data=data,
     )
+
+
+# ── Bulk SMS Campaigns ────────────────────────────────────────────────────────
+
+
+_RecipientFilter = Literal[
+    "all_patients", "all_staff", "appointments_today", "custom"
+]
+
+
+class BulkSmsApiRequest(BaseModel):
+    """
+    Request to send a bulk SMS campaign.
+
+    @param name: Human-readable campaign name
+    @param message: SMS body (max 480 chars = 3 SMS segments)
+    @param recipient_filter: Audience selector
+    @param recipients: Phone numbers when recipient_filter is "custom"
+    @param sender_id: Alphanumeric sender ID (must be registered with provider)
+    """
+
+    name: str = Field(..., min_length=1, max_length=200)
+    message: str = Field(..., min_length=1, max_length=480)
+    recipient_filter: _RecipientFilter = "custom"
+    recipients: list[str] = []
+    sender_id: str = Field(default="AIFYA", max_length=11)
+
+
+class SmsCampaignResponse(BaseModel):
+    """Single SMS campaign in list responses."""
+
+    id: uuid.UUID
+    name: str
+    message: str
+    recipient_count: int
+    sent_count: int
+    failed_count: int
+    status: str
+    created_at: datetime
+    completed_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class SmsDeliveryLogItem(BaseModel):
+    """Single delivery log row."""
+
+    id: uuid.UUID
+    campaign_id: uuid.UUID | None
+    phone_number: str
+    status: str
+    provider_message_id: str | None
+    cost: float
+    sent_at: datetime | None
+    error_msg: str | None
+
+    model_config = {"from_attributes": True}
+
+
+async def _resolve_recipients(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    request: BulkSmsApiRequest,
+) -> list[str]:
+    """
+    Resolve the recipient list from the campaign filter.
+
+    @param db: Async database session
+    @param facility_id: Tenant facility UUID
+    @param request: Bulk SMS request
+    @returns List of phone numbers (deduplication happens in send_bulk_sms)
+    """
+    if request.recipient_filter == "custom":
+        return [p for p in request.recipients if p]
+
+    if request.recipient_filter == "all_patients":
+        from app.models.patient import Patient
+
+        result = await db.execute(
+            select(Patient.phone_number).where(
+                Patient.facility_id == facility_id,
+                Patient.is_deleted == False,  # noqa: E712
+                Patient.phone_number.is_not(None),
+            )
+        )
+        return [row[0] for row in result.all() if row[0]]
+
+    if request.recipient_filter == "all_staff":
+        from app.models.staff import Staff
+
+        result = await db.execute(
+            select(Staff.phone).where(
+                Staff.facility_id == facility_id,
+                Staff.is_deleted == False,  # noqa: E712
+                Staff.phone.is_not(None),
+            )
+        )
+        return [row[0] for row in result.all() if row[0]]
+
+    if request.recipient_filter == "appointments_today":
+        from app.models.appointment import Appointment
+        from app.models.patient import Patient
+
+        today = datetime.now(timezone.utc).date()
+        result = await db.execute(
+            select(Patient.phone_number)
+            .join(Appointment, Appointment.patient_id == Patient.id)
+            .where(
+                Appointment.facility_id == facility_id,
+                Appointment.appointment_date == today,
+                Appointment.is_deleted == False,  # noqa: E712
+                Patient.is_deleted == False,  # noqa: E712
+                Patient.phone_number.is_not(None),
+            )
+            .distinct()
+        )
+        return [row[0] for row in result.all() if row[0]]
+
+    return []
+
+
+@router.post(
+    "/bulk-sms",
+    response_model=BulkSmsResult,
+    status_code=status.HTTP_201_CREATED,
+)
+async def send_bulk_sms_campaign(
+    data: BulkSmsApiRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(
+        require_roles("admin", "facility_admin")
+    ),
+) -> BulkSmsResult:
+    """
+    Send a bulk SMS campaign. Admin only.
+
+    @param data: Campaign request
+    @param db: Database session
+    @param current_user: Authenticated admin from JWT
+    @returns Campaign result with sent/failed counts
+    @raises HTTPException 400: If recipient resolution returns nothing
+    """
+    recipients = await _resolve_recipients(db, current_user.facility_id, data)
+    if not recipients:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No recipients matched the selected filter",
+        )
+
+    return await send_bulk_sms(
+        db,
+        facility_id=current_user.facility_id,
+        name=data.name,
+        recipients=recipients,
+        message=data.message,
+        sender_id=data.sender_id,
+        created_by=current_user.user_id,
+    )
+
+
+@router.get(
+    "/sms-campaigns",
+    response_model=list[SmsCampaignResponse],
+)
+async def list_bulk_sms_campaigns(
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> list[SmsCampaignResponse]:
+    """
+    List recent bulk SMS campaigns for the facility.
+
+    @param db: Database session
+    @param current_user: Authenticated user from JWT
+    @returns List of campaigns
+    """
+    rows = await list_sms_campaigns(db, current_user.facility_id)
+    return [SmsCampaignResponse.model_validate(r) for r in rows]
+
+
+@router.get(
+    "/sms-delivery-log",
+    response_model=list[SmsDeliveryLogItem],
+)
+async def get_sms_delivery_log(
+    campaign_id: uuid.UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> list[SmsDeliveryLogItem]:
+    """
+    Get the SMS delivery log, optionally filtered by campaign.
+
+    @param campaign_id: Optional campaign filter
+    @param db: Database session
+    @param current_user: Authenticated user from JWT
+    @returns List of delivery records
+    """
+    rows = await list_sms_delivery_log(
+        db, current_user.facility_id, campaign_id=campaign_id
+    )
+    return [SmsDeliveryLogItem.model_validate(r) for r in rows]

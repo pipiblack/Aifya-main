@@ -9,6 +9,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { SyncProvider } from "@/components/providers/SyncProvider";
 import { OfflineIndicator } from "@/components/ui/OfflineIndicator";
 import { AppShell } from "@/components/layout/AppShell";
+import { HelpBot } from "@/components/HelpBot";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default async function RootLayout({
                 <SyncProvider>
                   <AppShell>{children}</AppShell>
                   <OfflineIndicator />
+                  <HelpBot />
                 </SyncProvider>
               </AuthProvider>
             </QueryProvider>

@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import CurrentUser, get_current_user, require_roles
@@ -13,6 +14,7 @@ from app.schemas.referral import (
     ReferralSummary,
     ReferralUpdateStatus,
 )
+from app.services.referral.note_generator import generate_referral_note_pdf
 from app.services.referral_service import ReferralService
 
 router = APIRouter(dependencies=[Depends(require_module("referrals"))])
@@ -103,6 +105,44 @@ async def get_referral(
     if not referral:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Referral not found")
     return ReferralResponse.model_validate(referral)
+
+
+@router.get("/{referral_id}/pdf-note")
+async def get_referral_pdf(
+    referral_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Response:
+    """
+    Generate a standardized referral note PDF.
+
+    @param referral_id: Referral UUID
+    @param db: Database session
+    @param current_user: Authenticated user from JWT
+    @returns PDF binary response
+    @raises HTTPException 404: If referral is not found
+    """
+    try:
+        pdf_bytes = await generate_referral_note_pdf(
+            db,
+            referral_id=referral_id,
+            facility_id=current_user.facility_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'inline; filename="referral-{referral_id}.pdf"'
+            ),
+        },
+    )
 
 
 @router.post("/{referral_id}/status", response_model=ReferralResponse)

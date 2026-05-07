@@ -17,6 +17,7 @@ from app.schemas.insurance import (
     InsuranceSummary,
 )
 from app.services.insurance_service import InsuranceService
+from app.services.sha.validation import ShaMember, validate_member as validate_sha_member
 
 router = APIRouter(dependencies=[Depends(require_module("insurance"))])
 
@@ -135,6 +136,32 @@ async def get_claim(
     if not claim:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Claim not found")
     return ClaimResponse.model_validate(claim)
+
+
+@router.get("/sha/validate", response_model=ShaMember)
+async def validate_sha_membership(
+    sha_number: str = Query(..., min_length=3, max_length=50),
+    id_number: str = Query(..., min_length=3, max_length=20),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ShaMember:
+    """
+    Validate a SHA (Social Health Authority) member.
+    Caches results for 24h. Returns mock data when SHA API is not configured
+    so dev environments can keep working.
+
+    @param sha_number: SHA membership number
+    @param id_number: National ID or passport number
+    @param current_user: Authenticated user from JWT
+    @returns SHA member details (status, scheme, dependents)
+    @raises HTTPException 404: If member is not found
+    """
+    member = await validate_sha_member(sha_number=sha_number, id_number=id_number)
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SHA member not found",
+        )
+    return member
 
 
 @router.post("/claims/{claim_id}/status", response_model=ClaimResponse)

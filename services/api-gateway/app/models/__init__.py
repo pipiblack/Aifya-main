@@ -19,6 +19,9 @@ from app.models.emergency import EmergencyVisit
 from app.models.inventory import InventoryItem, InventoryTransaction, PurchaseOrder, PurchaseOrderItem, Supplier
 from app.models.theatre import OperatingTheatre, SurgicalCase
 from app.models.referral import Referral
+from app.models.referral_template import ReferralTemplate
+from app.models.mpesa import MpesaStkRequest
+from app.models.sms import SmsCampaign, SmsDeliveryLog
 from app.models.insurance import InsuranceClaim, InsuranceScheme, PatientInsurance, PreAuthorization
 from app.models.dental import DentalChart, DentalTreatmentPlan, DentalVisit
 from app.models.licensing import AppUpdate, FacilityLicense, FacilityUpdateStatus, UsageTelemetry
@@ -86,6 +89,10 @@ __all__ = [
     "OperatingTheatre",
     "SurgicalCase",
     "Referral",
+    "ReferralTemplate",
+    "MpesaStkRequest",
+    "SmsCampaign",
+    "SmsDeliveryLog",
     "InsuranceScheme",
     "PatientInsurance",
     "InsuranceClaim",

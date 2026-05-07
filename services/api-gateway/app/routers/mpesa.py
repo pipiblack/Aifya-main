@@ -6,7 +6,7 @@ Callbacks are public endpoints (no auth) — Safaricom sends them directly.
 
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,7 @@ from structlog import get_logger
 
 from app.auth import CurrentUser, get_current_user
 from app.database import get_db
+from app.services.mpesa.callback import handle_stk_callback
 from app.services.mpesa.daraja import (
     DarajaClient,
     STKCallbackData,
@@ -22,6 +23,7 @@ from app.services.mpesa.daraja import (
     TransactionStatus,
     get_daraja_config,
 )
+from app.services.mpesa.stk_push import StkPushService
 
 logger = get_logger(__name__)
 
@@ -37,12 +39,16 @@ class STKPushApiRequest(BaseModel):
 
     @param phone_number: Customer phone (07XX or +254XX)
     @param amount_kes: Amount in KES (whole number)
-    @param invoice_id: Invoice UUID to pay
+    @param invoice_id: Invoice UUID to pay (optional)
+    @param patient_id: Patient UUID linked to payment (optional)
+    @param reference: Account reference shown on M-Pesa (typically invoice number)
     @param description: Optional transaction description
     """
     phone_number: str
     amount_kes: int
-    invoice_id: str
+    invoice_id: str | None = None
+    patient_id: str | None = None
+    reference: str | None = None
     description: str = "Hospital Payment"
 
 
@@ -70,36 +76,55 @@ async def initiate_stk_push(
 ) -> STKPushResponse:
     """
     Initiate M-Pesa STK Push (Lipa Na M-Pesa Online) to collect payment.
-    Sends a USSD prompt to the patient's phone.
+    Sends a USSD prompt to the patient's phone and persists the request
+    in mpesa_stk_requests for callback reconciliation.
 
-    @param request: STK Push request with phone, amount, invoice ID
+    @param request: STK Push request with phone, amount, optional invoice ID
     @param db: Database session
     @param current_user: Authenticated user from JWT
     @returns STK Push response with checkout request ID for tracking
     """
-    config = get_daraja_config()
-    if not config:
-        return STKPushResponse(error="M-Pesa not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE.")
+    invoice_uuid: uuid.UUID | None = None
+    if request.invoice_id:
+        try:
+            invoice_uuid = uuid.UUID(request.invoice_id)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="invoice_id must be a valid UUID",
+            ) from exc
+    patient_uuid: uuid.UUID | None = None
+    if request.patient_id:
+        try:
+            patient_uuid = uuid.UUID(request.patient_id)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="patient_id must be a valid UUID",
+            ) from exc
 
-    client = DarajaClient(config)
-    result = await client.stk_push(
-        STKPushRequest(
-            phone_number=request.phone_number,
-            amount=request.amount_kes,
-            account_reference=request.invoice_id[:12],
-            description=request.description,
-        )
+    reference = request.reference or (request.invoice_id or str(uuid.uuid4()))
+
+    service = StkPushService(db)
+    api_response, _row = await service.initiate_stk_push(
+        facility_id=current_user.facility_id,
+        phone_number=request.phone_number,
+        amount=request.amount_kes,
+        reference=reference,
+        description=request.description,
+        invoice_id=invoice_uuid,
+        patient_id=patient_uuid,
+        created_by=current_user.user_id,
     )
 
-    if result.success:
+    if api_response.success:
         logger.info(
             "stk_push_initiated",
-            checkout_id=result.checkout_request_id,
+            checkout_id=api_response.checkout_request_id,
             invoice_id=request.invoice_id,
             facility_id=str(current_user.facility_id),
         )
-
-    return result
+    return api_response
 
 
 # ── STK Push Status Query ────────────────────────────────────────────────────
@@ -129,6 +154,7 @@ async def query_stk_status(
 
 
 @router.post("/callback/stk")
+@router.post("/callback")
 async def stk_callback(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -138,29 +164,20 @@ async def stk_callback(
     Called by M-Pesa servers after customer completes payment.
     No auth required — Safaricom calls this directly.
 
+    Updates the mpesa_stk_requests row and posts a Payment if the
+    transaction was tied to an invoice.
+
     @param request: Raw HTTP request from Safaricom
     @param db: Database session
     @returns JSON acknowledgement
     """
     try:
         body = await request.json()
-        callback_data = DarajaClient.parse_stk_callback(body)
-
-        logger.info(
-            "stk_callback_received",
-            checkout_id=callback_data.checkout_request_id,
-            result_code=callback_data.result_code,
-            receipt=callback_data.mpesa_receipt,
-        )
-
-        if callback_data.result_code == 0 and callback_data.mpesa_receipt:
-            # Payment successful — record in billing
-            await _record_mpesa_payment(db, callback_data)
-
-        return JSONResponse(content={"ResultCode": 0, "ResultDesc": "Accepted"})
-
+        ack = await handle_stk_callback(db, body)
+        return JSONResponse(content=ack)
     except Exception as exc:
         logger.error("stk_callback_error", error=str(exc))
+        # Always ack to Safaricom so they don't retry endlessly
         return JSONResponse(content={"ResultCode": 0, "ResultDesc": "Accepted"})
 
 

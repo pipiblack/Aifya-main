@@ -7,9 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import (
     agents, analytics, appointments, billing, cds, clinical_trials, communications, dental,
-    dhis2, emergency, encounters, federated, fhir, hr, imaging, insurance, inventory, ipd,
-    laboratory, licensing, mch, mpesa, patients, pharmacy, radiology, referral, reports,
-    theatre,
+    dhis2, emergency, encounters, federated, fhir, finance, help_bot, hr, imaging, insurance, inventory,
+    ipd, laboratory, licensing, mch, mpesa, patients, payroll, performance, pharmacy, radiology,
+    referral, reports, theatre,
 )
 from app.middleware.license_guard import LicenseGuardMiddleware
 
@@ -61,12 +61,14 @@ app.include_router(encounters.router, prefix="/api/v1/encounters", tags=["encoun
 app.include_router(pharmacy.router, prefix="/api/v1/pharmacy", tags=["pharmacy"])
 app.include_router(laboratory.router, prefix="/api/v1/laboratory", tags=["laboratory"])
 app.include_router(billing.router, prefix="/api/v1/billing", tags=["billing"])
+app.include_router(finance.router, prefix="/api/v1/finance", tags=["finance"])
 app.include_router(ipd.router, prefix="/api/v1/ipd", tags=["ipd"])
 app.include_router(radiology.router, prefix="/api/v1/radiology", tags=["radiology"])
 app.include_router(mch.router, prefix="/api/v1/mch", tags=["mch"])
 app.include_router(appointments.router, prefix="/api/v1/appointments", tags=["appointments"])
 app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
 app.include_router(hr.router, prefix="/api/v1/hr", tags=["hr"])
+app.include_router(payroll.router, prefix="/api/v1/payroll", tags=["payroll"])
 app.include_router(emergency.router, prefix="/api/v1/emergency", tags=["emergency"])
 app.include_router(inventory.router, prefix="/api/v1/inventory", tags=["inventory"])
 app.include_router(theatre.router, prefix="/api/v1/theatre", tags=["theatre"])
@@ -83,6 +85,8 @@ app.include_router(imaging.router, prefix="/api/v1/imaging", tags=["imaging"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["agents"])
 app.include_router(clinical_trials.router, prefix="/api/v1/trials", tags=["clinical-trials"])
 app.include_router(federated.router, prefix="/api/v1/federated", tags=["federated"])
+app.include_router(performance.router, prefix="/api/v1/performance", tags=["performance"])
+app.include_router(help_bot.router, prefix="/api/v1/help", tags=["help-bot"])
 
 
 @app.get("/api/health")
