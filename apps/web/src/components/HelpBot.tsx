@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, Send, Sparkles, X } from "lucide-react";
+import { Compass, ExternalLink, Send, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useTour } from "@/components/help/TourProvider";
 
 /** Suggested in-app navigation link returned by the help bot. */
 interface SuggestedLink {
@@ -46,6 +47,7 @@ const QUICK_PROMPTS: string[] = [
 export function HelpBot() {
   const router = useRouter();
   const t = useTranslations("helpBot");
+  const { startRecommended } = useTour();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -110,6 +112,7 @@ export function HelpBot() {
       {/* FAB */}
       <button
         type="button"
+        data-tour="help-bot"
         onClick={() => setOpen((v) => !v)}
         aria-label={t("fabLabel")}
         className={cn(
@@ -154,6 +157,17 @@ export function HelpBot() {
             {history.length === 0 ? (
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">{t("intro")}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    startRecommended();
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                >
+                  <Compass className="h-4 w-4" />
+                  {t("takeTheTour")}
+                </button>
                 <div className="flex flex-col gap-2">
                   {QUICK_PROMPTS.map((p) => (
                     <button

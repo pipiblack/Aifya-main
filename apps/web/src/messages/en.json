@@ -125,7 +125,11 @@
     "medicalInfo": "Medical Information",
     "timeline": "Timeline",
     "encounters": "Encounters",
-    "noEncounters": "No encounters yet"
+    "noEncounters": "No encounters yet",
+    "help": {
+      "nationalId": "Optional. The patient's Kenyan National ID (8 digits). Useful for SHA verification but not required.",
+      "phoneNumber": "Required. Format: 07XX XXX XXX or +2547XX XXX XXX. Used for appointment reminders and M-Pesa."
+    }
   },
   "opd": {
     "queue": "OPD Queue",
@@ -641,27 +645,22 @@
     "noOrders": "No imaging orders",
     "orderNotFound": "Imaging order not found",
     "backToWorklist": "Back to Worklist",
-
     "ordersToday": "Orders Today",
     "pendingOrders": "Pending Orders",
     "inProgress": "In Progress",
     "completedToday": "Completed Today",
     "pendingReports": "Pending Reports",
     "criticalFindings": "Critical Findings",
-
     "filterAllStatuses": "All Statuses",
     "filterAllModalities": "All Modalities",
-
     "statusOrdered": "Ordered",
     "statusScheduled": "Scheduled",
     "statusInProgress": "In Progress",
     "statusCompleted": "Completed",
     "statusCancelled": "Cancelled",
-
     "stat": "STAT",
     "urgent": "Urgent",
     "routine": "Routine",
-
     "patient": "Patient",
     "modality": "Modality",
     "bodyPart": "Body Part",
@@ -674,36 +673,29 @@
     "left": "Left",
     "right": "Right",
     "bilateral": "Bilateral",
-
     "pregnancy_not_pregnant": "Not Pregnant",
     "pregnancy_pregnant": "Pregnant — Radiation Caution",
     "pregnancy_unknown": "Pregnancy Unknown",
-
     "ordered": "Ordered",
     "scheduled": "Scheduled",
     "performed": "Performed",
-
     "scheduleStudy": "Schedule Study",
     "scheduledDateTime": "Scheduled Date & Time",
     "room": "Room",
     "roomPlaceholder": "e.g. Room 3, X-Ray Suite",
     "schedule": "Schedule",
-
     "performStudy": "Perform Study",
     "accessionNumber": "Accession Number",
     "accessionPlaceholder": "e.g. ACC-20260405-001",
     "markPerformed": "Mark as Performed",
-
     "radiologyReport": "Radiology Report",
     "reportDraft": "Draft",
     "reportPreliminary": "Preliminary",
     "reportFinal": "Final",
     "reportAddendum": "Addendum",
-
     "enterReport": "Enter Report",
     "updateReport": "Update Report",
     "saveReport": "Save Report",
-
     "technique": "Technique",
     "techniquePlaceholder": "Describe technique used...",
     "comparison": "Comparison",
@@ -714,20 +706,16 @@
     "impressionPlaceholder": "Summary impression / conclusion...",
     "recommendations": "Recommendations",
     "recommendationsPlaceholder": "Follow-up recommendations...",
-
     "urgency": "Urgency",
     "normal": "Normal",
     "abnormal": "Abnormal",
     "incidental": "Incidental",
     "markCritical": "Mark as Critical Finding",
-
     "reportedAt": "Reported",
     "verifiedAt": "Verified",
-
     "verifyReport": "Verify Report",
     "verificationNotes": "Verification Notes",
     "verifyAndFinalise": "Verify & Finalise",
-
     "criticalFindingAlert": "Critical Finding — Immediate Notification Required",
     "criticalFindingDescription": "Critical imaging findings MUST be communicated to the ordering clinician immediately.",
     "notifiedClinician": "Notified Clinician (Staff ID)",
@@ -744,29 +732,24 @@
     "noANCProfiles": "No ANC profiles",
     "noChildren": "No child health records",
     "profileNotFound": "ANC profile not found",
-
     "activeANC": "Active ANC",
     "highRisk": "High Risk",
     "deliveriesMonth": "Deliveries (Month)",
     "liveBirths": "Live Births",
     "activeChildren": "Active Children",
     "overdueImmunizations": "Overdue Immunizations",
-
     "statusActive": "Active",
     "statusDelivered": "Delivered",
     "statusPostnatal": "Postnatal",
     "statusClosed": "Closed",
-
     "status_active": "Active",
     "status_delivered": "Delivered",
     "status_postnatal": "Postnatal",
     "status_closed": "Closed",
     "status_transferred": "Transferred",
-
     "risk_low": "Low Risk",
     "risk_moderate": "Moderate Risk",
     "risk_high": "High Risk",
-
     "patient": "Patient",
     "weeks": "weeks",
     "visits": "visits",
@@ -775,7 +758,6 @@
     "edd": "EDD",
     "lmp": "LMP",
     "dob": "DOB",
-
     "obstetricHistory": "Obstetric History",
     "bloodGroup": "Blood Group",
     "hivStatus": "HIV Status",
@@ -785,14 +767,12 @@
     "onART": "On ART",
     "rhesus": "Rhesus",
     "hivExposed": "HIV Exposed",
-
     "addVisit": "Add ANC Visit",
     "newANCVisit": "New ANC Visit",
     "saveVisit": "Save Visit",
     "ancVisits": "ANC Visits",
     "noVisits": "No ANC visits recorded",
     "visit": "Visit",
-
     "visitDate": "Visit Date",
     "gestationWeeks": "Gestation (Weeks)",
     "weight": "Weight",
@@ -808,7 +788,6 @@
     "oblique": "Oblique",
     "haemoglobin": "Haemoglobin",
     "urineProtein": "Urine Protein",
-
     "ironFolate": "Iron/Folate",
     "tetanus": "Tetanus Toxoid",
     "iptMalaria": "IPT Malaria",
@@ -818,7 +797,6 @@
     "dangerSigns": "Danger Signs",
     "nextVisitDate": "Next Visit Date",
     "nextVisit": "Next visit",
-
     "recordDelivery": "Record Delivery",
     "saveDelivery": "Save Delivery",
     "deliveryRecord": "Delivery Record",
@@ -829,7 +807,6 @@
     "delivery_elective_cs": "Elective C/S",
     "delivery_emergency_cs": "Emergency C/S",
     "delivery_breech": "Breech Delivery",
-
     "babyOutcome": "Baby Outcome",
     "outcome_live_birth": "Live Birth",
     "outcome_fresh_stillbirth": "Fresh Stillbirth",
@@ -838,7 +815,6 @@
     "male": "Male",
     "female": "Female",
     "birthWeight": "Birth Weight",
-
     "skinToSkin": "Skin-to-Skin",
     "breastfed1hr": "Breastfed <1hr",
     "vitaminK": "Vitamin K"
@@ -1294,16 +1270,41 @@
     "priority": "Priority",
     "statusLabel": "Status",
     "floor": "Floor",
-    "tab": { "schedule": "Schedule", "theatres": "Theatres" },
-    "priorityType": { "emergency": "Emergency", "urgent": "Urgent", "elective": "Elective" },
-    "status": {
-      "scheduled": "Scheduled", "preop": "Pre-Op", "in_progress": "In Progress",
-      "in_recovery": "Recovery", "completed": "Completed", "cancelled": "Cancelled", "postponed": "Postponed"
+    "tab": {
+      "schedule": "Schedule",
+      "theatres": "Theatres"
     },
-    "theatreStatus": { "available": "Available", "in_use": "In Use", "cleaning": "Cleaning", "maintenance": "Maintenance", "closed": "Closed" },
+    "priorityType": {
+      "emergency": "Emergency",
+      "urgent": "Urgent",
+      "elective": "Elective"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "preop": "Pre-Op",
+      "in_progress": "In Progress",
+      "in_recovery": "Recovery",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "postponed": "Postponed"
+    },
+    "theatreStatus": {
+      "available": "Available",
+      "in_use": "In Use",
+      "cleaning": "Cleaning",
+      "maintenance": "Maintenance",
+      "closed": "Closed"
+    },
     "theatreType": {
-      "general": "General", "orthopaedic": "Orthopaedic", "cardiac": "Cardiac", "neuro": "Neuro",
-      "ophthalmic": "Ophthalmic", "obstetric": "Obstetric", "ent": "ENT", "dental": "Dental", "minor": "Minor"
+      "general": "General",
+      "orthopaedic": "Orthopaedic",
+      "cardiac": "Cardiac",
+      "neuro": "Neuro",
+      "ophthalmic": "Ophthalmic",
+      "obstetric": "Obstetric",
+      "ent": "ENT",
+      "dental": "Dental",
+      "minor": "Minor"
     }
   },
   "referrals": {
@@ -1331,13 +1332,28 @@
     "department": "Department",
     "clinicalNotes": "Clinical Notes",
     "feedback": "Feedback",
-    "tab": { "outgoing": "Outgoing", "incoming": "Incoming" },
-    "urgencyType": { "emergency": "Emergency", "urgent": "Urgent", "routine": "Routine" },
-    "status": {
-      "draft": "Draft", "sent": "Sent", "received": "Received", "accepted": "Accepted",
-      "declined": "Declined", "completed": "Completed", "cancelled": "Cancelled"
+    "tab": {
+      "outgoing": "Outgoing",
+      "incoming": "Incoming"
     },
-    "referralType": { "internal": "Internal", "external": "External" },
+    "urgencyType": {
+      "emergency": "Emergency",
+      "urgent": "Urgent",
+      "routine": "Routine"
+    },
+    "status": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "received": "Received",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "referralType": {
+      "internal": "Internal",
+      "external": "External"
+    },
     "actions": "Actions",
     "generateNote": "Generate Note",
     "pdfError": "Could not generate referral note PDF"
@@ -1373,7 +1389,8 @@
     "thinking": "Thinking...",
     "inputPlaceholder": "Ask a question...",
     "send": "Send",
-    "errorFallback": "I'm offline right now. Try again in a moment, or use Cmd+K to search the system."
+    "errorFallback": "I'm offline right now. Try again in a moment, or use Cmd+K to search the system.",
+    "takeTheTour": "Take a quick tour"
   },
   "insurance": {
     "title": "Insurance & Claims",
@@ -1397,12 +1414,26 @@
     "amount": "Amount",
     "statusLabel": "Status",
     "date": "Date",
-    "tab": { "claims": "Claims", "schemes": "Schemes", "preauth": "Pre-Authorization" },
-    "claimStatus": {
-      "draft": "Draft", "submitted": "Submitted", "processing": "Processing",
-      "approved": "Approved", "partially_approved": "Partial", "rejected": "Rejected", "paid": "Paid"
+    "tab": {
+      "claims": "Claims",
+      "schemes": "Schemes",
+      "preauth": "Pre-Authorization"
     },
-    "schemeType": { "sha": "SHA (Social Health Authority)", "private": "Private", "corporate": "Corporate", "nhif_legacy": "NHIF Legacy" }
+    "claimStatus": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "processing": "Processing",
+      "approved": "Approved",
+      "partially_approved": "Partial",
+      "rejected": "Rejected",
+      "paid": "Paid"
+    },
+    "schemeType": {
+      "sha": "SHA (Social Health Authority)",
+      "private": "Private",
+      "corporate": "Corporate",
+      "nhif_legacy": "NHIF Legacy"
+    }
   },
   "licensing": {
     "upgradeRequired": "Upgrade Required",
@@ -1417,9 +1448,29 @@
     "updateAvailable": "Update available",
     "viewChangelog": "View changes",
     "required": "Required",
-    "tier": { "community": "Community", "professional": "Professional", "enterprise": "Enterprise", "government": "Government" },
-    "feature": { "ai_features": "AI Features", "custom_reports": "Custom Reports", "api_access": "API Access", "data_export": "Data Export", "white_label": "White Label", "priority_support": "Priority Support" },
-    "billing": { "title": "Billing & Subscription", "currentTier": "Current Tier", "expiresOn": "Expires On", "patientsUsed": "Patients Used", "usersUsed": "Users Active", "monthlyPrice": "Monthly Price", "annualPrice": "Annual Price" }
+    "tier": {
+      "community": "Community",
+      "professional": "Professional",
+      "enterprise": "Enterprise",
+      "government": "Government"
+    },
+    "feature": {
+      "ai_features": "AI Features",
+      "custom_reports": "Custom Reports",
+      "api_access": "API Access",
+      "data_export": "Data Export",
+      "white_label": "White Label",
+      "priority_support": "Priority Support"
+    },
+    "billing": {
+      "title": "Billing & Subscription",
+      "currentTier": "Current Tier",
+      "expiresOn": "Expires On",
+      "patientsUsed": "Patients Used",
+      "usersUsed": "Users Active",
+      "monthlyPrice": "Monthly Price",
+      "annualPrice": "Annual Price"
+    }
   },
   "dental": {
     "title": "Dental",
@@ -1440,15 +1491,31 @@
     "dentalChart": "Dental Chart",
     "treatmentPlan": "Treatment Plan",
     "notes": "Notes",
-    "tab": { "visits": "Visits", "treatments": "Treatment Plans" },
+    "tab": {
+      "visits": "Visits",
+      "treatments": "Treatment Plans"
+    },
     "status": {
-      "scheduled": "Scheduled", "in_progress": "In Progress", "completed": "Completed", "cancelled": "Cancelled",
-      "draft": "Draft", "approved": "Approved"
+      "scheduled": "Scheduled",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "draft": "Draft",
+      "approved": "Approved"
     },
     "procedureType": {
-      "examination": "Examination", "cleaning": "Cleaning", "filling": "Filling", "extraction": "Extraction",
-      "root_canal": "Root Canal", "crown": "Crown", "bridge": "Bridge", "denture": "Denture",
-      "implant": "Implant", "orthodontic": "Orthodontic", "whitening": "Whitening", "other": "Other"
+      "examination": "Examination",
+      "cleaning": "Cleaning",
+      "filling": "Filling",
+      "extraction": "Extraction",
+      "root_canal": "Root Canal",
+      "crown": "Crown",
+      "bridge": "Bridge",
+      "denture": "Denture",
+      "implant": "Implant",
+      "orthodontic": "Orthodontic",
+      "whitening": "Whitening",
+      "other": "Other"
     }
   },
   "cds": {
@@ -1785,7 +1852,14 @@
     "allStatuses": "All Statuses",
     "trialCode": "Trial Code",
     "trialTitle": "Title",
-    "phase": "Phase",
+    "phase": {
+      "I": "Phase I",
+      "II": "Phase II",
+      "III": "Phase III",
+      "IV": "Phase IV",
+      "observational": "Observational",
+      "registry": "Registry"
+    },
     "sponsor": "Sponsor",
     "therapeuticArea": "Therapeutic Area",
     "enrollment": "Enrollment",
@@ -1805,14 +1879,6 @@
       "suspended": "Suspended",
       "terminated": "Terminated",
       "withdrawn": "Withdrawn"
-    },
-    "phase": {
-      "I": "Phase I",
-      "II": "Phase II",
-      "III": "Phase III",
-      "IV": "Phase IV",
-      "observational": "Observational",
-      "registry": "Registry"
     },
     "participantStatus": {
       "pre_screened": "Pre-screened",
@@ -2014,7 +2080,12 @@
     "period": "Period",
     "noBudgets": "No budgets configured.",
     "varianceFor": "Variance for",
-    "total": "Total"
+    "total": "Total",
+    "help": {
+      "accountCode": "Numeric code, e.g. 1001 (Cash), 4001 (Consultation Income). 1xxx=Assets, 2xxx=Liabilities, 3xxx=Equity, 4xxx=Income, 5xxx=Expenses.",
+      "accountType": "Asset = what you own. Liability = what you owe. Equity = capital and retained earnings. Income = revenue. Expense = costs.",
+      "cashflowCategory": "Operating = day-to-day. Investing = equipment / fixed assets. Financing = loans, capital. None = equity."
+    }
   },
   "payroll": {
     "hrTitle": "Human Resources",
@@ -2230,6 +2301,120 @@
     "lowerLimit": "Lower Limit",
     "upperLimit": "Upper Limit",
     "current": "Current",
-    "ratesReadonlyNotice": "Statutory rates are append-only. New entries create a new effective_from record; history is never edited."
+    "ratesReadonlyNotice": "Statutory rates are append-only. New entries create a new effective_from record; history is never edited.",
+    "help": {
+      "kraPin": "Format: A123456789B (1 letter + 9 digits + 1 letter, 11 chars total). Required by KRA for PAYE filing.",
+      "nssfNumber": "The employee's NSSF member number. Required for monthly Tier I and II contributions (max KSh 6,480/mo).",
+      "shifNumber": "Social Health Insurance Fund number (replaced NHIF Oct 2024). Format example: CR1620021837701-1.",
+      "disabilityExemption": "Tick if employee has registered disability. They get KSh 150,000/month tax exemption."
+    }
+  },
+  "tour": {
+    "controls": {
+      "next": "Next",
+      "previous": "Back",
+      "done": "Done",
+      "progress": "Step {{current}} of {{total}}"
+    },
+    "tours": {
+      "welcome": {
+        "label": "Welcome tour"
+      },
+      "finance": {
+        "label": "Finance tour"
+      },
+      "payroll": {
+        "label": "Payroll tour"
+      },
+      "clinical": {
+        "label": "Clinical tour"
+      }
+    },
+    "steps": {
+      "welcome": {
+        "sidebar": {
+          "title": "Welcome to Aifya",
+          "description": "This is your main navigation. All hospital modules are listed here. Click any item to jump to that area."
+        },
+        "helpBot": {
+          "title": "Need help anytime?",
+          "description": "Click this button to ask the AI assistant any 'how do I' question. It can also point you to the right page."
+        },
+        "themeToggle": {
+          "title": "Light or dark mode",
+          "description": "Switch between light and dark themes here. Aifya remembers your choice."
+        },
+        "userMenu": {
+          "title": "Your account",
+          "description": "Sign out, change your password, and access account settings from here."
+        }
+      },
+      "finance": {
+        "dashboard": {
+          "title": "Finance Dashboard",
+          "description": "See total cash, net profit, AR balance and AP at a glance. Reports update automatically as transactions post."
+        },
+        "billing": {
+          "title": "Billing and Invoices",
+          "description": "Create invoices and record payments. Each invoice automatically posts a balanced double-entry journal to the General Ledger."
+        },
+        "reports": {
+          "title": "Financial Reports",
+          "description": "P&L, Balance Sheet, Cash Flow, Trial Balance, AR Aging, Budget vs Actual all derived live from transactions."
+        },
+        "helpBot": {
+          "title": "Stuck on accounting?",
+          "description": "Aifya handles all double-entry posting automatically. Ask the AI helper if anything looks unfamiliar."
+        }
+      },
+      "payroll": {
+        "dashboard": {
+          "title": "Payroll Dashboard",
+          "description": "See monthly headcount, gross pay, PAYE, and net pay. Current month status is shown at the top."
+        },
+        "employees": {
+          "title": "Employee Records",
+          "description": "Add and edit staff. Every employee needs a KRA PIN, NSSF number, SHIF number and bank account before payroll can run."
+        },
+        "leave": {
+          "title": "Leave Management",
+          "description": "Approve annual, sick, maternity and other leave types. Unpaid leave automatically reduces net pay."
+        },
+        "reports": {
+          "title": "Payroll Reports",
+          "description": "Monthly summaries, P9 returns, KRA P10 schedules, NSSF and SHIF reports."
+        },
+        "statutory": {
+          "title": "Statutory Rates",
+          "description": "PAYE bands, NSSF tiers, SHIF and Housing Levy all configurable here. No code changes when KRA updates rates."
+        }
+      },
+      "clinical": {
+        "patients": {
+          "title": "Patient Records",
+          "description": "Search and register patients. Aifya works fully offline and syncs when reconnected."
+        },
+        "opd": {
+          "title": "Outpatient Department",
+          "description": "View today's queue, start consultations, record vitals and diagnoses, prescribe drugs, order labs."
+        },
+        "ipd": {
+          "title": "Inpatient Department",
+          "description": "Admissions, ward and bed management, nursing notes, discharge summaries."
+        },
+        "emergency": {
+          "title": "Emergency",
+          "description": "Triage (ESI/KTAS), rapid assessment and disposition. Critical patients can skip the queue."
+        },
+        "laboratory": {
+          "title": "Laboratory",
+          "description": "Lab orders, specimen tracking, result entry. Critical values trigger immediate alerts."
+        },
+        "pharmacy": {
+          "title": "Pharmacy",
+          "description": "Dispense prescriptions and manage stock. Drug interactions are checked before dispensing."
+        }
+      }
+    }
   }
 }

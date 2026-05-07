@@ -11,6 +11,7 @@ import { OfflineIndicator } from "@/components/ui/OfflineIndicator";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
 import { HelpBot } from "@/components/HelpBot";
+import { TourProvider } from "@/components/help/TourProvider";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
@@ -48,9 +49,11 @@ export default async function RootLayout({
               <AuthProvider>
                 <SyncProvider>
                   <ToastProvider>
-                    <AppShell>{children}</AppShell>
-                    <OfflineIndicator />
-                    <HelpBot />
+                    <TourProvider>
+                      <AppShell>{children}</AppShell>
+                      <OfflineIndicator />
+                      <HelpBot />
+                    </TourProvider>
                   </ToastProvider>
                 </SyncProvider>
               </AuthProvider>

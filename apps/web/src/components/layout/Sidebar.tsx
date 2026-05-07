@@ -124,6 +124,7 @@ export function Sidebar() {
 
   return (
     <aside
+      data-tour="sidebar"
       className={cn(
         "flex h-screen flex-col bg-sidebar transition-all duration-300 ease-in-out",
         collapsed ? "w-[68px]" : "w-64",
@@ -201,6 +202,7 @@ export function Sidebar() {
                   <Link
                     href={item.href}
                     onClick={() => item.module && recordModuleVisit(item.module)}
+                    data-tour={`${item.key}-link`}
                     className={cn(
                       "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                       active
@@ -226,6 +228,7 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border px-3 py-3 space-y-1">
         {/* Dark mode toggle */}
         <button
+          data-tour="theme-toggle"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-colors hover:bg-sidebar-muted hover:text-sidebar-foreground"
         >
@@ -240,7 +243,10 @@ export function Sidebar() {
         </button>
 
         {/* Logout */}
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-colors hover:bg-sidebar-muted hover:text-sidebar-foreground">
+        <button
+          data-tour="user-menu"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 transition-colors hover:bg-sidebar-muted hover:text-sidebar-foreground"
+        >
           <LogOut className="h-[18px] w-[18px]" />
           {!collapsed && <span>{ta("logout")}</span>}
         </button>

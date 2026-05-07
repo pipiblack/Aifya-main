@@ -14,6 +14,7 @@ import {
 } from "@/hooks/usePayroll";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { HelpTooltip } from "@/components/help/HelpTooltip";
 
 const EMPLOYMENT_TYPES: EmploymentType[] = [
   "full_time",
@@ -335,16 +336,22 @@ export default function EmployeesListPage() {
                   <Field
                     label={t("kraPin")}
                     error={errors.kra_pin?.message}
+                    help={t("help.kraPin")}
+                    placeholder="A009658233G"
                     {...register("kra_pin")}
                   />
                   <Field
                     label={t("nssfNumber")}
                     error={errors.nssf_number?.message}
+                    help={t("help.nssfNumber")}
+                    placeholder="2017197738"
                     {...register("nssf_number")}
                   />
                   <Field
                     label={t("shifNumber")}
                     error={errors.shif_number?.message}
+                    help={t("help.shifNumber")}
+                    placeholder="CR1620021837701-1"
                     {...register("shif_number")}
                   />
                 </div>
@@ -354,8 +361,9 @@ export default function EmployeesListPage() {
                     {...register("disability_exemption")}
                     className="rounded border-border"
                   />
-                  <span className="text-foreground">
+                  <span className="text-foreground inline-flex items-center">
                     {t("disabilityExemption")}
+                    <HelpTooltip content={t("help.disabilityExemption")} />
                   </span>
                 </label>
               </section>
@@ -479,11 +487,18 @@ export default function EmployeesListPage() {
 interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
+  /** Optional contextual help shown via a `?` tooltip next to the label. */
+  help?: React.ReactNode;
 }
 
-const Field = ({ label, error, ...rest }: FieldProps) => (
+const Field = ({ label, error, help, ...rest }: FieldProps) => (
   <label className="block text-sm">
-    <span className="mb-1 block text-muted-foreground">{label}</span>
+    <span className="mb-1 block text-muted-foreground">
+      <span className="inline-flex items-center">
+        {label}
+        {help && <HelpTooltip content={help} />}
+      </span>
+    </span>
     <input
       {...rest}
       className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"

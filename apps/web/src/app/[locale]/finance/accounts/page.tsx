@@ -28,6 +28,7 @@ import { TabGroup } from "@/components/ui/TabGroup";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable } from "@/components/ui/DataTable";
 import { MoneyDisplay } from "@/components/finance/MoneyDisplay";
+import { HelpTooltip } from "@/components/help/HelpTooltip";
 
 const accountSchema = z.object({
   code: z.string().min(1).max(20),
@@ -297,14 +298,16 @@ export default function ChartOfAccountsPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               <div>
-                <label htmlFor="account-code" className="mb-1 block text-sm font-medium text-foreground">
+                <label htmlFor="account-code" className="mb-1 block text-sm font-medium text-foreground inline-flex items-center">
                   {t("code")} *
+                  <HelpTooltip content={t("help.accountCode")} />
                 </label>
                 <input
                   id="account-code"
                   {...register("code")}
                   disabled={!!editingAccount}
                   aria-invalid={!!formErrors.code}
+                  placeholder="1001"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50 dark:border-border"
                 />
                 {formErrors.code && (
@@ -327,8 +330,9 @@ export default function ChartOfAccountsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="account-type" className="mb-1 block text-sm font-medium text-foreground">
+                  <label htmlFor="account-type" className="mb-1 block text-sm font-medium text-foreground inline-flex items-center">
                     {t("accountType")} *
+                    <HelpTooltip content={t("help.accountType")} />
                   </label>
                   <select
                     id="account-type"
@@ -346,8 +350,9 @@ export default function ChartOfAccountsPage() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="account-cashflow" className="mb-1 block text-sm font-medium text-foreground">
+                  <label htmlFor="account-cashflow" className="mb-1 block text-sm font-medium text-foreground inline-flex items-center">
                     {t("cashflowCategory")} *
+                    <HelpTooltip content={t("help.cashflowCategory")} />
                   </label>
                   <select
                     id="account-cashflow"

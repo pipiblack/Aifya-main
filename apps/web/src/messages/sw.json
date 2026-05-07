@@ -125,7 +125,11 @@
     "medicalInfo": "Taarifa za Kimatibabu",
     "timeline": "Ratiba",
     "encounters": "Mahudhurio",
-    "noEncounters": "Hakuna mahudhurio bado"
+    "noEncounters": "Hakuna mahudhurio bado",
+    "help": {
+      "nationalId": "Si lazima. Kitambulisho cha Kenya (tarakimu 8). Inasaidia uthibitisho wa SHA.",
+      "phoneNumber": "Lazima. Muundo: 07XX XXX XXX au +2547XX XXX XXX. Inatumika kwa ukumbusho wa miadi na M-Pesa."
+    }
   },
   "opd": {
     "queue": "Foleni ya Kliniki ya Nje",
@@ -641,27 +645,22 @@
     "noOrders": "Hakuna maagizo ya picha",
     "orderNotFound": "Agizo la picha halipatikani",
     "backToWorklist": "Rudi kwenye Orodha",
-
     "ordersToday": "Maagizo Leo",
     "pendingOrders": "Maagizo Yanayosubiri",
     "inProgress": "Yanayoendelea",
     "completedToday": "Yaliyokamilika Leo",
     "pendingReports": "Ripoti Zinazosubiri",
     "criticalFindings": "Matokeo Hatari",
-
     "filterAllStatuses": "Hali Zote",
     "filterAllModalities": "Aina Zote",
-
     "statusOrdered": "Imeagizwa",
     "statusScheduled": "Imepangwa",
     "statusInProgress": "Inaendelea",
     "statusCompleted": "Imekamilika",
     "statusCancelled": "Imesitishwa",
-
     "stat": "HARAKA",
     "urgent": "Ya Dharura",
     "routine": "Ya Kawaida",
-
     "patient": "Mgonjwa",
     "modality": "Aina ya Picha",
     "bodyPart": "Sehemu ya Mwili",
@@ -674,36 +673,29 @@
     "left": "Kushoto",
     "right": "Kulia",
     "bilateral": "Pande Zote",
-
     "pregnancy_not_pregnant": "Si Mjamzito",
     "pregnancy_pregnant": "Mjamzito — Tahadhari ya Mionzi",
     "pregnancy_unknown": "Mimba Haijulikani",
-
     "ordered": "Imeagizwa",
     "scheduled": "Imepangwa",
     "performed": "Imefanywa",
-
     "scheduleStudy": "Panga Uchunguzi",
     "scheduledDateTime": "Tarehe na Saa Iliyopangwa",
     "room": "Chumba",
     "roomPlaceholder": "mf. Chumba 3, Sehemu ya X-Ray",
     "schedule": "Panga",
-
     "performStudy": "Fanya Uchunguzi",
     "accessionNumber": "Nambari ya Ufikiaji",
     "accessionPlaceholder": "mf. ACC-20260405-001",
     "markPerformed": "Weka kama Imefanywa",
-
     "radiologyReport": "Ripoti ya Radiolojia",
     "reportDraft": "Rasimu",
     "reportPreliminary": "Ya Awali",
     "reportFinal": "Ya Mwisho",
     "reportAddendum": "Nyongeza",
-
     "enterReport": "Ingiza Ripoti",
     "updateReport": "Sasisha Ripoti",
     "saveReport": "Hifadhi Ripoti",
-
     "technique": "Mbinu",
     "techniquePlaceholder": "Eleza mbinu iliyotumika...",
     "comparison": "Ulinganisho",
@@ -714,20 +706,16 @@
     "impressionPlaceholder": "Muhtasari wa matokeo / hitimisho...",
     "recommendations": "Mapendekezo",
     "recommendationsPlaceholder": "Mapendekezo ya ufuatiliaji...",
-
     "urgency": "Uharaka",
     "normal": "Kawaida",
     "abnormal": "Si Kawaida",
     "incidental": "Ya Bahati",
     "markCritical": "Weka kama Tokeo Hatari",
-
     "reportedAt": "Iliripotiwa",
     "verifiedAt": "Ilithibitishwa",
-
     "verifyReport": "Thibitisha Ripoti",
     "verificationNotes": "Maelezo ya Uthibitisho",
     "verifyAndFinalise": "Thibitisha na Kamilisha",
-
     "criticalFindingAlert": "Tokeo Hatari — Arifa ya Haraka Inahitajika",
     "criticalFindingDescription": "Matokeo hatari ya picha LAZIMA yawasilishwe kwa daktari aliyeagiza mara moja.",
     "notifiedClinician": "Daktari Aliyearifiwa (Kitambulisho)",
@@ -744,29 +732,24 @@
     "noANCProfiles": "Hakuna wasifu wa ANC",
     "noChildren": "Hakuna rekodi za afya ya mtoto",
     "profileNotFound": "Wasifu wa ANC haupatikani",
-
     "activeANC": "ANC Hai",
     "highRisk": "Hatari Kubwa",
     "deliveriesMonth": "Kujifungua (Mwezi)",
     "liveBirths": "Watoto Hai",
     "activeChildren": "Watoto Hai",
     "overdueImmunizations": "Chanjo Zilizochelewa",
-
     "statusActive": "Hai",
     "statusDelivered": "Amejifungua",
     "statusPostnatal": "Baada ya Kujifungua",
     "statusClosed": "Imefungwa",
-
     "status_active": "Hai",
     "status_delivered": "Amejifungua",
     "status_postnatal": "Baada ya Kujifungua",
     "status_closed": "Imefungwa",
     "status_transferred": "Amehamishwa",
-
     "risk_low": "Hatari Ndogo",
     "risk_moderate": "Hatari ya Wastani",
     "risk_high": "Hatari Kubwa",
-
     "patient": "Mgonjwa",
     "weeks": "wiki",
     "visits": "ziara",
@@ -775,7 +758,6 @@
     "edd": "Tarehe ya Kujifungua",
     "lmp": "Hedhi ya Mwisho",
     "dob": "Tarehe ya Kuzaliwa",
-
     "obstetricHistory": "Historia ya Uzazi",
     "bloodGroup": "Kundi la Damu",
     "hivStatus": "Hali ya VVU",
@@ -785,14 +767,12 @@
     "onART": "Kwenye ART",
     "rhesus": "Rhesus",
     "hivExposed": "Amekabiliwa na VVU",
-
     "addVisit": "Ongeza Ziara ya ANC",
     "newANCVisit": "Ziara Mpya ya ANC",
     "saveVisit": "Hifadhi Ziara",
     "ancVisits": "Ziara za ANC",
     "noVisits": "Hakuna ziara za ANC zilizorekodwa",
     "visit": "Ziara",
-
     "visitDate": "Tarehe ya Ziara",
     "gestationWeeks": "Ujauzito (Wiki)",
     "weight": "Uzito",
@@ -808,7 +788,6 @@
     "oblique": "Upande",
     "haemoglobin": "Himoglobini",
     "urineProtein": "Protini ya Mkojo",
-
     "ironFolate": "Chuma/Foliki",
     "tetanus": "Pepopunda",
     "iptMalaria": "IPT Malaria",
@@ -818,7 +797,6 @@
     "dangerSigns": "Ishara za Hatari",
     "nextVisitDate": "Tarehe ya Ziara Ijayo",
     "nextVisit": "Ziara ijayo",
-
     "recordDelivery": "Rekodi Kujifungua",
     "saveDelivery": "Hifadhi Kujifungua",
     "deliveryRecord": "Rekodi ya Kujifungua",
@@ -829,7 +807,6 @@
     "delivery_elective_cs": "Upasuaji wa Kuamua",
     "delivery_emergency_cs": "Upasuaji wa Dharura",
     "delivery_breech": "Kuzaa kwa Makalio",
-
     "babyOutcome": "Matokeo ya Mtoto",
     "outcome_live_birth": "Mtoto Hai",
     "outcome_fresh_stillbirth": "Kuzaliwa Bila Uhai (Safi)",
@@ -838,7 +815,6 @@
     "male": "Kiume",
     "female": "Kike",
     "birthWeight": "Uzito wa Kuzaliwa",
-
     "skinToSkin": "Ngozi-kwa-Ngozi",
     "breastfed1hr": "Kunyonya <Saa 1",
     "vitaminK": "Vitamini K"
@@ -1294,16 +1270,41 @@
     "priority": "Kipaumbele",
     "statusLabel": "Hali",
     "floor": "Ghorofa",
-    "tab": { "schedule": "Ratiba", "theatres": "Vyumba" },
-    "priorityType": { "emergency": "Dharura", "urgent": "Haraka", "elective": "Hiari" },
-    "status": {
-      "scheduled": "Imeratibiwa", "preop": "Kabla ya Upasuaji", "in_progress": "Inaendelea",
-      "in_recovery": "Kupona", "completed": "Imekamilika", "cancelled": "Imeghairiwa", "postponed": "Imeahirishwa"
+    "tab": {
+      "schedule": "Ratiba",
+      "theatres": "Vyumba"
     },
-    "theatreStatus": { "available": "Inapatikana", "in_use": "Inatumika", "cleaning": "Inasafishwa", "maintenance": "Matengenezo", "closed": "Imefungwa" },
+    "priorityType": {
+      "emergency": "Dharura",
+      "urgent": "Haraka",
+      "elective": "Hiari"
+    },
+    "status": {
+      "scheduled": "Imeratibiwa",
+      "preop": "Kabla ya Upasuaji",
+      "in_progress": "Inaendelea",
+      "in_recovery": "Kupona",
+      "completed": "Imekamilika",
+      "cancelled": "Imeghairiwa",
+      "postponed": "Imeahirishwa"
+    },
+    "theatreStatus": {
+      "available": "Inapatikana",
+      "in_use": "Inatumika",
+      "cleaning": "Inasafishwa",
+      "maintenance": "Matengenezo",
+      "closed": "Imefungwa"
+    },
     "theatreType": {
-      "general": "Kawaida", "orthopaedic": "Mifupa", "cardiac": "Moyo", "neuro": "Ubongo",
-      "ophthalmic": "Macho", "obstetric": "Uzazi", "ent": "Sikio, Pua na Koo", "dental": "Meno", "minor": "Ndogo"
+      "general": "Kawaida",
+      "orthopaedic": "Mifupa",
+      "cardiac": "Moyo",
+      "neuro": "Ubongo",
+      "ophthalmic": "Macho",
+      "obstetric": "Uzazi",
+      "ent": "Sikio, Pua na Koo",
+      "dental": "Meno",
+      "minor": "Ndogo"
     }
   },
   "referrals": {
@@ -1331,13 +1332,28 @@
     "department": "Idara",
     "clinicalNotes": "Maelezo ya Kliniki",
     "feedback": "Maoni",
-    "tab": { "outgoing": "Zinazotoka", "incoming": "Zinazoingia" },
-    "urgencyType": { "emergency": "Dharura", "urgent": "Haraka", "routine": "Kawaida" },
-    "status": {
-      "draft": "Rasimu", "sent": "Imetumwa", "received": "Imepokelewa", "accepted": "Imekubaliwa",
-      "declined": "Imekataliwa", "completed": "Imekamilika", "cancelled": "Imeghairiwa"
+    "tab": {
+      "outgoing": "Zinazotoka",
+      "incoming": "Zinazoingia"
     },
-    "referralType": { "internal": "Ndani", "external": "Nje" },
+    "urgencyType": {
+      "emergency": "Dharura",
+      "urgent": "Haraka",
+      "routine": "Kawaida"
+    },
+    "status": {
+      "draft": "Rasimu",
+      "sent": "Imetumwa",
+      "received": "Imepokelewa",
+      "accepted": "Imekubaliwa",
+      "declined": "Imekataliwa",
+      "completed": "Imekamilika",
+      "cancelled": "Imeghairiwa"
+    },
+    "referralType": {
+      "internal": "Ndani",
+      "external": "Nje"
+    },
     "actions": "Vitendo",
     "generateNote": "Tengeneza Barua",
     "pdfError": "Imeshindwa kutengeneza PDF ya rufaa"
@@ -1373,7 +1389,8 @@
     "thinking": "Inafikiria...",
     "inputPlaceholder": "Uliza swali...",
     "send": "Tuma",
-    "errorFallback": "Mtandao haupatikani sasa. Jaribu tena baadaye au tumia Cmd+K kutafuta."
+    "errorFallback": "Mtandao haupatikani sasa. Jaribu tena baadaye au tumia Cmd+K kutafuta.",
+    "takeTheTour": "Pata utangulizi mfupi"
   },
   "insurance": {
     "title": "Bima na Madai",
@@ -1397,12 +1414,26 @@
     "amount": "Kiasi",
     "statusLabel": "Hali",
     "date": "Tarehe",
-    "tab": { "claims": "Madai", "schemes": "Mipango", "preauth": "Idhini ya Awali" },
-    "claimStatus": {
-      "draft": "Rasimu", "submitted": "Imewasilishwa", "processing": "Inashughulikiwa",
-      "approved": "Imeidhinishwa", "partially_approved": "Sehemu", "rejected": "Imekataliwa", "paid": "Imelipwa"
+    "tab": {
+      "claims": "Madai",
+      "schemes": "Mipango",
+      "preauth": "Idhini ya Awali"
     },
-    "schemeType": { "sha": "SHA (Mamlaka ya Afya ya Jamii)", "private": "Binafsi", "corporate": "Kampuni", "nhif_legacy": "NHIF Zamani" }
+    "claimStatus": {
+      "draft": "Rasimu",
+      "submitted": "Imewasilishwa",
+      "processing": "Inashughulikiwa",
+      "approved": "Imeidhinishwa",
+      "partially_approved": "Sehemu",
+      "rejected": "Imekataliwa",
+      "paid": "Imelipwa"
+    },
+    "schemeType": {
+      "sha": "SHA (Mamlaka ya Afya ya Jamii)",
+      "private": "Binafsi",
+      "corporate": "Kampuni",
+      "nhif_legacy": "NHIF Zamani"
+    }
   },
   "licensing": {
     "upgradeRequired": "Uboreshaji Unahitajika",
@@ -1417,9 +1448,29 @@
     "updateAvailable": "Sasisho linapatikana",
     "viewChangelog": "Tazama mabadiliko",
     "required": "Inahitajika",
-    "tier": { "community": "Jumuiya", "professional": "Kitaalamu", "enterprise": "Biashara", "government": "Serikali" },
-    "feature": { "ai_features": "Vipengele vya AI", "custom_reports": "Ripoti Maalum", "api_access": "Ufikiaji wa API", "data_export": "Usafirishaji Data", "white_label": "Chapa Binafsi", "priority_support": "Msaada wa Kipaumbele" },
-    "billing": { "title": "Malipo na Usajili", "currentTier": "Ngazi ya Sasa", "expiresOn": "Inaisha", "patientsUsed": "Wagonjwa Waliotumika", "usersUsed": "Watumiaji Hai", "monthlyPrice": "Bei ya Kila Mwezi", "annualPrice": "Bei ya Mwaka" }
+    "tier": {
+      "community": "Jumuiya",
+      "professional": "Kitaalamu",
+      "enterprise": "Biashara",
+      "government": "Serikali"
+    },
+    "feature": {
+      "ai_features": "Vipengele vya AI",
+      "custom_reports": "Ripoti Maalum",
+      "api_access": "Ufikiaji wa API",
+      "data_export": "Usafirishaji Data",
+      "white_label": "Chapa Binafsi",
+      "priority_support": "Msaada wa Kipaumbele"
+    },
+    "billing": {
+      "title": "Malipo na Usajili",
+      "currentTier": "Ngazi ya Sasa",
+      "expiresOn": "Inaisha",
+      "patientsUsed": "Wagonjwa Waliotumika",
+      "usersUsed": "Watumiaji Hai",
+      "monthlyPrice": "Bei ya Kila Mwezi",
+      "annualPrice": "Bei ya Mwaka"
+    }
   },
   "dental": {
     "title": "Meno",
@@ -1440,15 +1491,31 @@
     "dentalChart": "Chati ya Meno",
     "treatmentPlan": "Mpango wa Matibabu",
     "notes": "Maelezo",
-    "tab": { "visits": "Ziara", "treatments": "Mipango ya Matibabu" },
+    "tab": {
+      "visits": "Ziara",
+      "treatments": "Mipango ya Matibabu"
+    },
     "status": {
-      "scheduled": "Imeratibiwa", "in_progress": "Inaendelea", "completed": "Imekamilika", "cancelled": "Imeghairiwa",
-      "draft": "Rasimu", "approved": "Imeidhinishwa"
+      "scheduled": "Imeratibiwa",
+      "in_progress": "Inaendelea",
+      "completed": "Imekamilika",
+      "cancelled": "Imeghairiwa",
+      "draft": "Rasimu",
+      "approved": "Imeidhinishwa"
     },
     "procedureType": {
-      "examination": "Uchunguzi", "cleaning": "Usafishaji", "filling": "Kujaza", "extraction": "Kung'oa",
-      "root_canal": "Mzizi wa Mfereji", "crown": "Taji", "bridge": "Daraja", "denture": "Meno Bandia",
-      "implant": "Kupandikiza", "orthodontic": "Mpangilio", "whitening": "Kuparuza", "other": "Nyingine"
+      "examination": "Uchunguzi",
+      "cleaning": "Usafishaji",
+      "filling": "Kujaza",
+      "extraction": "Kung'oa",
+      "root_canal": "Mzizi wa Mfereji",
+      "crown": "Taji",
+      "bridge": "Daraja",
+      "denture": "Meno Bandia",
+      "implant": "Kupandikiza",
+      "orthodontic": "Mpangilio",
+      "whitening": "Kuparuza",
+      "other": "Nyingine"
     }
   },
   "cds": {
@@ -1785,7 +1852,14 @@
     "allStatuses": "Hali Zote",
     "trialCode": "Msimbo",
     "trialTitle": "Kichwa",
-    "phase": "Hatua",
+    "phase": {
+      "I": "Hatua ya I",
+      "II": "Hatua ya II",
+      "III": "Hatua ya III",
+      "IV": "Hatua ya IV",
+      "observational": "Uchunguzi",
+      "registry": "Sajili"
+    },
     "sponsor": "Mdhamini",
     "therapeuticArea": "Eneo la Matibabu",
     "enrollment": "Usajili",
@@ -1805,14 +1879,6 @@
       "suspended": "Imesimamishwa",
       "terminated": "Imesitishwa",
       "withdrawn": "Imeondolewa"
-    },
-    "phase": {
-      "I": "Hatua ya I",
-      "II": "Hatua ya II",
-      "III": "Hatua ya III",
-      "IV": "Hatua ya IV",
-      "observational": "Uchunguzi",
-      "registry": "Sajili"
     },
     "participantStatus": {
       "pre_screened": "Kabla ya Uchunguzi",
@@ -2014,7 +2080,12 @@
     "period": "Kipindi",
     "noBudgets": "Hakuna bajeti zilizowekwa.",
     "varianceFor": "Tofauti kwa",
-    "total": "Jumla"
+    "total": "Jumla",
+    "help": {
+      "accountCode": "Msimbo wa nambari, mfano 1001 (Pesa), 4001 (Mapato). 1xxx=Mali, 2xxx=Madeni, 3xxx=Mtaji, 4xxx=Mapato, 5xxx=Matumizi.",
+      "accountType": "Mali = unayomiliki. Madeni = unayodaiwa. Mtaji = mtaji na faida. Mapato = mapato. Matumizi = gharama.",
+      "cashflowCategory": "Uendeshaji = kila siku. Uwekezaji = vifaa. Ufadhili = mikopo. Hakuna = mtaji."
+    }
   },
   "payroll": {
     "hrTitle": "Rasilimali Watu",
@@ -2230,6 +2301,120 @@
     "lowerLimit": "Kikomo cha Chini",
     "upperLimit": "Kikomo cha Juu",
     "current": "Sasa",
-    "ratesReadonlyNotice": "Viwango vya kisheria ni vya kuongeza tu. Viingilio vipya hutengeneza rekodi mpya ya effective_from; historia haibadilishwi."
+    "ratesReadonlyNotice": "Viwango vya kisheria ni vya kuongeza tu. Viingilio vipya hutengeneza rekodi mpya ya effective_from; historia haibadilishwi.",
+    "help": {
+      "kraPin": "Muundo: A123456789B (herufi 1 + tarakimu 9 + herufi 1). Inahitajika na KRA kwa PAYE.",
+      "nssfNumber": "Nambari ya mwanachama wa NSSF. Inahitajika kwa michango ya kila mwezi (kiwango cha juu KSh 6,480/mwezi).",
+      "shifNumber": "Nambari ya Mfuko wa Bima ya Afya ya Jamii (ilibadilisha NHIF Oktoba 2024). Mfano: CR1620021837701-1.",
+      "disabilityExemption": "Weka tiki kama mfanyakazi ana ulemavu uliosajiliwa. Anapata msamaha wa kodi wa KSh 150,000/mwezi."
+    }
+  },
+  "tour": {
+    "controls": {
+      "next": "Endelea",
+      "previous": "Rudi",
+      "done": "Mwisho",
+      "progress": "Hatua {{current}} kati ya {{total}}"
+    },
+    "tours": {
+      "welcome": {
+        "label": "Utangulizi"
+      },
+      "finance": {
+        "label": "Utangulizi wa Fedha"
+      },
+      "payroll": {
+        "label": "Utangulizi wa Mishahara"
+      },
+      "clinical": {
+        "label": "Utangulizi wa Kliniki"
+      }
+    },
+    "steps": {
+      "welcome": {
+        "sidebar": {
+          "title": "Karibu Aifya",
+          "description": "Hii ndiyo orodha kuu ya urambazaji. Vifaa vyote vya hospitali viko hapa. Bonyeza kufungua sehemu yoyote."
+        },
+        "helpBot": {
+          "title": "Unahitaji msaada?",
+          "description": "Bonyeza kitufe hiki kuuliza msaidizi wa AI swali lolote. Anaweza pia kukuelekeza ukurasa sahihi."
+        },
+        "themeToggle": {
+          "title": "Mwangaza au giza",
+          "description": "Badilisha kati ya mwangaza na giza hapa. Aifya itakumbuka chaguo lako."
+        },
+        "userMenu": {
+          "title": "Akaunti yako",
+          "description": "Toka, badilisha nenosiri, na fikia mipangilio ya akaunti hapa."
+        }
+      },
+      "finance": {
+        "dashboard": {
+          "title": "Dashibodi ya Fedha",
+          "description": "Ona pesa zote, faida halisi, AR na AP kwa muhtasari. Ripoti zinasasishwa moja kwa moja."
+        },
+        "billing": {
+          "title": "Bili na Risiti",
+          "description": "Tengeneza bili, rekodi malipo. Kila bili huingiza moja kwa moja jarida la kuingia mara mbili kwenye Leja Kuu."
+        },
+        "reports": {
+          "title": "Ripoti za Kifedha",
+          "description": "P&L, Mizani, Mtiririko wa Pesa na zaidi vyote vinatengenezwa moja kwa moja kutoka kwa miamala."
+        },
+        "helpBot": {
+          "title": "Umekwama na uhasibu?",
+          "description": "Aifya inashughulikia uingizaji wote wa kuingia mara mbili moja kwa moja. Uliza msaidizi wa AI ikiwa kitu hakikielewi."
+        }
+      },
+      "payroll": {
+        "dashboard": {
+          "title": "Dashibodi ya Mishahara",
+          "description": "Ona idadi ya wafanyakazi, jumla ya mshahara, PAYE na mshahara halisi."
+        },
+        "employees": {
+          "title": "Kumbukumbu za Wafanyakazi",
+          "description": "Ongeza na hariri wafanyakazi. Kila mfanyakazi anahitaji KRA PIN, NSSF na SHIF kabla ya mshahara."
+        },
+        "leave": {
+          "title": "Usimamizi wa Likizo",
+          "description": "Idhinisha likizo. Likizo isiyolipwa hupunguza mshahara halisi moja kwa moja."
+        },
+        "reports": {
+          "title": "Ripoti za Mishahara",
+          "description": "Muhtasari wa kila mwezi, P9, ratiba za KRA P10, ripoti za NSSF na SHIF."
+        },
+        "statutory": {
+          "title": "Viwango vya Kisheria",
+          "description": "Vipande vya PAYE, NSSF, SHIF na Tozo la Nyumba vyote vinaweza kubadilishwa hapa."
+        }
+      },
+      "clinical": {
+        "patients": {
+          "title": "Kumbukumbu za Wagonjwa",
+          "description": "Tafuta na sajili wagonjwa. Aifya hufanya kazi bila mtandao na husawazisha unapounganisha tena."
+        },
+        "opd": {
+          "title": "Idara ya Wagonjwa wa Nje",
+          "description": "Angalia foleni ya leo, anza ushauri, rekodi vital signs, agiza dawa, agiza maabara."
+        },
+        "ipd": {
+          "title": "Idara ya Wagonjwa wa Ndani",
+          "description": "Kulazwa, usimamizi wa wadi na vitanda, maelezo ya wauguzi, muhtasari wa kuachiliwa."
+        },
+        "emergency": {
+          "title": "Dharura",
+          "description": "Triaji (ESI/KTAS), tathmini ya haraka na uamuzi. Wagonjwa wa hatari wanaweza kuruka foleni."
+        },
+        "laboratory": {
+          "title": "Maabara",
+          "description": "Maagizo ya maabara, ufuatiliaji wa sampuli, kuingiza matokeo. Maadili muhimu hutuma tahadhari."
+        },
+        "pharmacy": {
+          "title": "Famasia",
+          "description": "Toa dawa, simamia stoo. Mwingiliano wa dawa unakaguliwa kabla ya kutoa."
+        }
+      }
+    }
   }
 }

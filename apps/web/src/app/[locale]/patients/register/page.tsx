@@ -9,6 +9,7 @@ import {
   type PatientCreateFormData,
 } from "@/lib/validations/patient";
 import { useRegisterPatient } from "@/hooks/usePatients";
+import { HelpTooltip } from "@/components/help/HelpTooltip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -113,9 +114,11 @@ export default function PatientRegistrationPage() {
             <FormField
               label={t("nationalId")}
               error={errors.national_id?.message}
+              help={t("help.nationalId")}
             >
               <input
                 {...register("national_id")}
+                placeholder="12345678"
                 className={inputClass(false)}
               />
             </FormField>
@@ -132,6 +135,7 @@ export default function PatientRegistrationPage() {
               label={t("phoneNumber")}
               error={errors.phone_number?.message}
               required
+              help={t("help.phoneNumber")}
             >
               <input
                 type="tel"
@@ -339,18 +343,22 @@ function FormField({
   label,
   error,
   required,
+  help,
   children,
 }: {
   label: string;
   error?: string;
   required?: boolean;
+  /** Optional contextual help shown via a `?` tooltip next to the label. */
+  help?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium text-foreground">
+      <label className="text-sm font-medium text-foreground inline-flex items-center">
         {label}
         {required && <span className="ml-1 text-destructive">*</span>}
+        {help && <HelpTooltip content={help} />}
       </label>
       {children}
       {error && (

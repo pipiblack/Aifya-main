@@ -315,3 +315,92 @@
     margin: 18mm 14mm;
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   driver.js onboarding tour — dark mode + Aifya brand alignment
+   ──────────────────────────────────────────────────────────────────────── */
+.aifya-tour-popover.driver-popover {
+  background-color: hsl(0 0% 100%);
+  color: hsl(222.2 84% 4.9%);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  max-width: 360px;
+}
+
+.aifya-tour-popover .driver-popover-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: hsl(222.2 84% 4.9%);
+}
+
+.aifya-tour-popover .driver-popover-description {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: hsl(215.4 16.3% 46.9%);
+}
+
+.aifya-tour-popover .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: hsl(215.4 16.3% 46.9%);
+}
+
+.aifya-tour-popover .driver-popover-next-btn,
+.aifya-tour-popover .driver-popover-prev-btn {
+  background-color: hsl(152 60% 36%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-shadow: none;
+}
+
+.aifya-tour-popover .driver-popover-next-btn:hover,
+.aifya-tour-popover .driver-popover-prev-btn:hover {
+  background-color: hsl(152 60% 30%);
+}
+
+.aifya-tour-popover .driver-popover-prev-btn {
+  background-color: transparent;
+  color: hsl(152 60% 36%);
+  border: 1px solid hsl(152 60% 36%);
+}
+
+.aifya-tour-popover .driver-popover-prev-btn:hover {
+  background-color: hsl(152 60% 96%);
+}
+
+.aifya-tour-popover .driver-popover-close-btn {
+  color: hsl(215.4 16.3% 46.9%);
+}
+
+/* Dark mode */
+.dark .aifya-tour-popover.driver-popover {
+  background-color: hsl(222.2 84% 8%);
+  color: hsl(210 20% 98%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dark .aifya-tour-popover .driver-popover-title {
+  color: hsl(210 20% 98%);
+}
+
+.dark .aifya-tour-popover .driver-popover-description,
+.dark .aifya-tour-popover .driver-popover-progress-text {
+  color: hsl(217.9 10.6% 64.9%);
+}
+
+.dark .aifya-tour-popover .driver-popover-prev-btn:hover {
+  background-color: hsl(222.2 84% 12%);
+}
+
+/* Hide the tour during print */
+@media print {
+  .driver-overlay,
+  .driver-popover {
+    display: none !important;
+  }
+}
