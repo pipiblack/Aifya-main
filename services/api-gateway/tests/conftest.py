@@ -1,23 +1,51 @@
+import os
 import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.pool import StaticPool
 
-from app.auth.dependencies import CurrentUser, get_current_user
-from app.database import Base, get_db
-from app.main import app
 
-# Use SQLite for tests (in-memory)
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+# ── SQLite compatibility shims ───────────────────────────────────────────────
+# Production runs on Postgres; tests fall back to SQLite when no real DB is
+# available. Map JSONB → JSON and UUID → CHAR(36) at DDL-compile time so the
+# test schema can be materialised without rewriting every model.
+@compiles(JSONB, "sqlite")  # type: ignore[misc, no-untyped-call]
+def _compile_jsonb_sqlite(_type: object, _compiler: object, **_kw: object) -> str:
+    return "JSON"
 
-engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+
+@compiles(UUID, "sqlite")  # type: ignore[misc, no-untyped-call]
+def _compile_uuid_sqlite(_type: object, _compiler: object, **_kw: object) -> str:
+    return "CHAR(36)"
+
+
+from app.auth.dependencies import CurrentUser, get_current_user  # noqa: E402
+from app.database import Base, get_db  # noqa: E402
+from app.main import app  # noqa: E402
+
+# Test DB URL: Postgres in CI (compile shims above let SQLite work locally too).
+TEST_DATABASE_URL = (
+    os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL") or "sqlite+aiosqlite:///:memory:"
+)
+
+# StaticPool keeps a single shared connection for in-memory SQLite so the
+# schema seeded in setup_database is visible to test sessions.
+_engine_kwargs: dict = {"echo": False}
+if TEST_DATABASE_URL.startswith("sqlite"):
+    _engine_kwargs["poolclass"] = StaticPool
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+
+engine = create_async_engine(TEST_DATABASE_URL, **_engine_kwargs)
 test_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 FACILITY_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")

@@ -7,7 +7,6 @@ from app.models.base import EventBase
 from app.models.vital import VitalSign
 from app.schemas.vital import VitalSignCreate
 
-
 # Critical value thresholds
 CRITICAL_THRESHOLDS = {
     "systolic_bp_high": 180,
@@ -92,9 +91,7 @@ class VitalsService:
 
         return vital
 
-    async def get_encounter_vitals(
-        self, encounter_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> list[VitalSign]:
+    async def get_encounter_vitals(self, encounter_id: uuid.UUID, facility_id: uuid.UUID) -> list[VitalSign]:
         """
         Get all vital signs for an encounter.
 
@@ -147,9 +144,11 @@ class VitalsService:
             elif data.temperature <= CRITICAL_THRESHOLDS["temperature_low"]:
                 alerts.append(f"Critical low temperature: {data.temperature}°C")
 
-        if data.oxygen_saturation is not None:
-            if data.oxygen_saturation <= CRITICAL_THRESHOLDS["oxygen_saturation_low"]:
-                alerts.append(f"Critical low SpO2: {data.oxygen_saturation}%")
+        if (
+            data.oxygen_saturation is not None
+            and data.oxygen_saturation <= CRITICAL_THRESHOLDS["oxygen_saturation_low"]
+        ):
+            alerts.append(f"Critical low SpO2: {data.oxygen_saturation}%")
 
         if data.respiratory_rate is not None:
             if data.respiratory_rate >= CRITICAL_THRESHOLDS["respiratory_rate_high"]:

@@ -12,8 +12,11 @@ All tables are multi-tenant (facility_id) and inherit ``AuditMixin``
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
@@ -33,7 +36,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.models.base import AuditMixin
-
 
 # ── Chart of Accounts ────────────────────────────────────────────────────────
 
@@ -55,12 +57,8 @@ class Account(AuditMixin, Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     type: Mapped[str] = mapped_column(String(20), nullable=False)
     # cashflow categorisation: operating | investing | financing | none
-    cashflow_category: Mapped[str] = mapped_column(
-        String(20), default="none", nullable=False
-    )
-    parent_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id")
-    )
+    cashflow_category: Mapped[str] = mapped_column(String(20), default="none", nullable=False)
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"))
     is_system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
@@ -108,12 +106,8 @@ class Transaction(Base):
         Index("ix_transactions_facility_ref", "facility_id", "reference_type", "reference_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), index=True, nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     reference_type: Mapped[str | None] = mapped_column(String(50))
     reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -125,13 +119,9 @@ class Transaction(Base):
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     is_reversal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    reverses_transaction_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transactions.id")
-    )
+    reverses_transaction_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"))
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 # ── Transaction Entries (Ledger) ─────────────────────────────────────────────
@@ -155,32 +145,16 @@ class TransactionEntry(Base):
         Index("ix_entries_facility_dept", "facility_id", "department_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), index=True, nullable=False
-    )
-    transaction_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False
-    )
-    account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
-    debit: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    credit: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True, nullable=False)
+    transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False)
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    debit: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    credit: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
     department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     currency: Mapped[str] = mapped_column(String(3), default="KES", nullable=False)
-    exchange_rate: Mapped[Decimal] = mapped_column(
-        Numeric(10, 6), default=Decimal("1.0"), nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    exchange_rate: Mapped[Decimal] = mapped_column(Numeric(10, 6), default=Decimal("1.0"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 # ── Posting Rules ────────────────────────────────────────────────────────────
@@ -193,21 +167,13 @@ class PostingRule(AuditMixin, Base):
     """
 
     __tablename__ = "posting_rules"
-    __table_args__ = (
-        Index("ix_posting_rules_facility_event", "facility_id", "event_type"),
-    )
+    __table_args__ = (Index("ix_posting_rules_facility_event", "facility_id", "event_type"),)
 
     event_type: Mapped[str] = mapped_column(String(50), nullable=False)
     rule_order: Mapped[int] = mapped_column(default=1, nullable=False)
-    debit_account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
-    credit_account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
-    tax_account_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id")
-    )
+    debit_account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    credit_account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    tax_account_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"))
     amount_expression: Mapped[str | None] = mapped_column(String(100))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -227,19 +193,13 @@ class FinanceAuditLog(Base):
         Index("ix_finance_audit_record", "table_name", "record_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), index=True, nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True, nullable=False)
     action: Mapped[str] = mapped_column(String(50), nullable=False)
     table_name: Mapped[str] = mapped_column(String(50), nullable=False)
     record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     payload: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
 
 
@@ -252,15 +212,9 @@ class IdempotencyKey(Base):
     __tablename__ = "idempotency_keys"
 
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), index=True, nullable=False
-    )
-    transaction_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True, nullable=False)
+    transaction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 # ── Opening Balances ─────────────────────────────────────────────────────────
@@ -272,29 +226,23 @@ class OpeningBalance(AuditMixin, Base):
     __tablename__ = "opening_balances"
     __table_args__ = (
         UniqueConstraint(
-            "facility_id", "account_id", "period_id",
+            "facility_id",
+            "account_id",
+            "period_id",
             name="uq_opening_account_period",
         ),
         Index("ix_opening_facility_period", "facility_id", "period_id"),
     )
 
-    account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     period_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounting_periods.id"), nullable=False
     )
-    debit_balance: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    credit_balance: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
+    debit_balance: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    credit_balance: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
     entered_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    entered_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    entered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 # ── Bank Statements ──────────────────────────────────────────────────────────
@@ -310,18 +258,14 @@ class BankStatement(AuditMixin, Base):
         Index("ix_bank_facility_date", "facility_id", "transaction_date"),
     )
 
-    account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     statement_date: Mapped[date] = mapped_column(Date, nullable=False)
     transaction_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     reference: Mapped[str | None] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(20), default="unmatched", nullable=False)
-    matched_entry_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transaction_entries.id")
-    )
+    matched_entry_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("transaction_entries.id"))
     matched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     matched_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
@@ -341,22 +285,14 @@ class InsuranceClaimFinance(AuditMixin, Base):
         Index("ix_insclaim_finance_facility_due", "facility_id", "due_date"),
     )
 
-    transaction_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transactions.id")
-    )
+    transaction_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("transactions.id"))
     patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     insurer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     amount_claimed: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
-    amount_approved: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    amount_paid: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
+    amount_approved: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    amount_paid: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="submitted", nullable=False)
-    submitted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     due_date: Mapped[date | None] = mapped_column(Date)
     rejection_reason: Mapped[str | None] = mapped_column(Text)
 
@@ -368,15 +304,11 @@ class FixedAsset(AuditMixin, Base):
     """Fixed asset register with depreciation parameters."""
 
     __tablename__ = "fixed_assets"
-    __table_args__ = (
-        Index("ix_fixed_assets_facility_active", "facility_id", "is_active"),
-    )
+    __table_args__ = (Index("ix_fixed_assets_facility_active", "facility_id", "is_active"),)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     asset_tag: Mapped[str | None] = mapped_column(String(50))
-    account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     accumulated_depreciation_account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounts.id")
     )
@@ -386,15 +318,9 @@ class FixedAsset(AuditMixin, Base):
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False)
     purchase_cost: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     useful_life_months: Mapped[int] = mapped_column(nullable=False)
-    salvage_value: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    depreciation_method: Mapped[str] = mapped_column(
-        String(30), default="straight_line", nullable=False
-    )
-    accumulated_depreciation: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
+    salvage_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    depreciation_method: Mapped[str] = mapped_column(String(30), default="straight_line", nullable=False)
+    accumulated_depreciation: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
     last_depreciated_at: Mapped[date | None] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -406,16 +332,12 @@ class TaxRate(AuditMixin, Base):
     """Tax rates (VAT, withholding) tied to a posting account."""
 
     __tablename__ = "tax_rates"
-    __table_args__ = (
-        Index("ix_tax_rates_facility_type", "facility_id", "tax_type"),
-    )
+    __table_args__ = (Index("ix_tax_rates_facility_type", "facility_id", "tax_type"),)
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     rate: Mapped[Decimal] = mapped_column(Numeric(7, 4), nullable=False)
     tax_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
@@ -435,12 +357,8 @@ class InventoryLot(AuditMixin, Base):
     quantity: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     unit_cost: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
     received_date: Mapped[date] = mapped_column(Date, nullable=False)
-    remaining_quantity: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), nullable=False
-    )
-    period_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounting_periods.id")
-    )
+    remaining_quantity: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    period_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("accounting_periods.id"))
     supplier_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     lot_number: Mapped[str | None] = mapped_column(String(50))
 
@@ -452,13 +370,9 @@ class Budget(AuditMixin, Base):
     """Budgeted amounts per account/department/period."""
 
     __tablename__ = "budgets"
-    __table_args__ = (
-        Index("ix_budgets_facility_period", "facility_id", "period_id"),
-    )
+    __table_args__ = (Index("ix_budgets_facility_period", "facility_id", "period_id"),)
 
-    account_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
+    account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     period_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("accounting_periods.id"), nullable=False
@@ -483,17 +397,11 @@ class RecurringTemplate(AuditMixin, Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     event_type: Mapped[str] = mapped_column(String(50), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
-    account_debit_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
-    account_credit_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
-    )
+    account_debit_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    account_credit_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
     department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     frequency: Mapped[str] = mapped_column(String(20), nullable=False)
     next_post_date: Mapped[date] = mapped_column(Date, nullable=False)
     last_posted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    requires_approval: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
-    )
+    requires_approval: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

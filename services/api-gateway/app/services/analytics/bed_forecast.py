@@ -10,13 +10,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.encounter import Encounter
 from app.services.analytics.models import BedDemandForecast
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -94,7 +97,7 @@ async def forecast_bed_demand(
     daily_counts: dict[date, int] = {}
     for row in daily_rows:
         if row.admission_day is not None:
-            day = row.admission_day if isinstance(row.admission_day, date) else row.admission_day
+            day = row.admission_day
             daily_counts[day] = int(row.cnt)
 
     # Fill missing dates with 0
@@ -179,7 +182,7 @@ async def forecast_bed_demand(
         dow = forecast_date.weekday()
 
         # Projected admissions = avg + trend contribution + day-of-week adjustment
-        day_index = total_days + offset
+        total_days + offset
         projected_admissions = max(0.0, avg_daily + slope * offset) * dow_multiplier.get(dow, 1.0)
 
         # Predicted occupancy as percentage of capacity

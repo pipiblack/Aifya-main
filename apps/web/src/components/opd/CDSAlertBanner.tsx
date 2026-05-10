@@ -215,10 +215,6 @@ export function CDSAlertBanner({
     [sortedAlerts]
   );
 
-  if (sortedAlerts.length === 0) {
-    return null;
-  }
-
   /** Group consecutive alerts by severity band for visual grouping. */
   const groups = useMemo(() => {
     const result: { severity: AlertSeverity; alerts: CDSAlert[] }[] = [];
@@ -237,6 +233,10 @@ export function CDSAlertBanner({
 
     return result;
   }, [sortedAlerts]);
+
+  if (sortedAlerts.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-2" role="alert" aria-live="assertive">

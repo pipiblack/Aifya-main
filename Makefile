@@ -1,4 +1,4 @@
-.PHONY: dev dev-down test lint typecheck db-migrate db-revision clean
+.PHONY: dev dev-down test lint typecheck db-migrate db-revision clean ci-local
 
 # --- Development ---
 dev:
@@ -53,6 +53,13 @@ db-revision:
 
 db-downgrade:
 	cd services/api-gateway && alembic downgrade -1
+
+# --- CI mirror ---
+# Run the same checks CI runs, locally. Catches issues before pushing.
+ci-local: lint typecheck test
+	@echo "=================================================="
+	@echo "All CI checks passed locally — ready to push."
+	@echo "=================================================="
 
 # --- Clean ---
 clean:

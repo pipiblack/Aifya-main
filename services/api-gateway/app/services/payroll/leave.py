@@ -8,16 +8,19 @@
 from __future__ import annotations
 
 import calendar
-import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.payroll import EmployeeSalary
 from app.models.payroll_extra import LeaveType, PayrollLeaveRequest
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _TWO_PLACES = Decimal("0.01")
 
@@ -118,13 +121,17 @@ async def get_leave_balance(
     @returns Remaining days for the year (>= 0)
     """
     lt = (
-        await db.execute(
-            select(LeaveType).where(
-                LeaveType.id == leave_type_id,
-                LeaveType.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(LeaveType).where(
+                    LeaveType.id == leave_type_id,
+                    LeaveType.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if lt is None:
         return 0
     entitlement = int(lt.days_entitlement or 0)
@@ -132,18 +139,22 @@ async def get_leave_balance(
     year_start = date(year, 1, 1)
     year_end = date(year, 12, 31)
     rows = (
-        await db.execute(
-            select(PayrollLeaveRequest).where(
-                PayrollLeaveRequest.facility_id == facility_id,
-                PayrollLeaveRequest.employee_id == employee_id,
-                PayrollLeaveRequest.leave_type_id == leave_type_id,
-                PayrollLeaveRequest.status == "approved",
-                PayrollLeaveRequest.is_deleted.is_(False),
-                PayrollLeaveRequest.start_date >= year_start,
-                PayrollLeaveRequest.start_date <= year_end,
+        (
+            await db.execute(
+                select(PayrollLeaveRequest).where(
+                    PayrollLeaveRequest.facility_id == facility_id,
+                    PayrollLeaveRequest.employee_id == employee_id,
+                    PayrollLeaveRequest.leave_type_id == leave_type_id,
+                    PayrollLeaveRequest.status == "approved",
+                    PayrollLeaveRequest.is_deleted.is_(False),
+                    PayrollLeaveRequest.start_date >= year_start,
+                    PayrollLeaveRequest.start_date <= year_end,
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     taken = sum(int(r.days_requested or 0) for r in rows)
     return max(0, entitlement - taken)
 
@@ -167,30 +178,34 @@ async def submit_leave_request(
     """
     if end_date < start_date:
         raise ValueError("end_date must be >= start_date")
-    if start_date > date.today():
-        # Allow future leave but reject obviously bad input (>5 years out)
-        if (start_date - date.today()).days > 365 * 5:
-            raise ValueError("start_date is unreasonably far in the future")
+    # Allow future leave but reject obviously bad input (>5 years out)
+    if start_date > date.today() and (start_date - date.today()).days > 365 * 5:
+        raise ValueError("start_date is unreasonably far in the future")
     if days_requested <= 0:
         raise ValueError("days_requested must be > 0")
 
     lt = (
-        await db.execute(
-            select(LeaveType).where(
-                LeaveType.id == leave_type_id,
-                LeaveType.is_deleted.is_(False),
-                or_(
-                    LeaveType.facility_id == facility_id,
-                    LeaveType.facility_id.is_(None),
-                ),
+        (
+            await db.execute(
+                select(LeaveType).where(
+                    LeaveType.id == leave_type_id,
+                    LeaveType.is_deleted.is_(False),
+                    or_(
+                        LeaveType.facility_id == facility_id,
+                        LeaveType.facility_id.is_(None),
+                    ),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if lt is None:
         raise ValueError("Invalid leave_type_id for this facility")
 
     # Verify the employee belongs to this facility (defence-in-depth)
     from app.models.payroll import Employee
+
     emp_check = (
         await db.execute(
             select(Employee.id).where(
@@ -241,19 +256,23 @@ async def approve_leave_request(
 ) -> PayrollLeaveRequest | None:
     """Approve a pending leave request."""
     req = (
-        await db.execute(
-            select(PayrollLeaveRequest).where(
-                PayrollLeaveRequest.id == leave_id,
-                PayrollLeaveRequest.facility_id == facility_id,
-                PayrollLeaveRequest.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollLeaveRequest).where(
+                    PayrollLeaveRequest.id == leave_id,
+                    PayrollLeaveRequest.facility_id == facility_id,
+                    PayrollLeaveRequest.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if req is None:
         return None
     req.status = "approved"
     req.approved_by = approver_id
-    req.approved_at = datetime.now(timezone.utc)
+    req.approved_at = datetime.now(UTC)
     req.updated_by = approver_id
     await db.flush()
     await db.refresh(req)
@@ -269,14 +288,18 @@ async def reject_leave_request(
 ) -> PayrollLeaveRequest | None:
     """Reject a pending leave request."""
     req = (
-        await db.execute(
-            select(PayrollLeaveRequest).where(
-                PayrollLeaveRequest.id == leave_id,
-                PayrollLeaveRequest.facility_id == facility_id,
-                PayrollLeaveRequest.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollLeaveRequest).where(
+                    PayrollLeaveRequest.id == leave_id,
+                    PayrollLeaveRequest.facility_id == facility_id,
+                    PayrollLeaveRequest.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if req is None:
         return None
     req.status = "rejected"

@@ -1,11 +1,17 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import EventBase
-from app.models.mch import ANCProfile, ANCVisit, ChildRecord, DeliveryRecord, Immunization
+from app.models.mch import (
+    ANCProfile,
+    ANCVisit,
+    ChildRecord,
+    DeliveryRecord,
+    Immunization,
+)
 from app.models.patient import Patient
 from app.schemas.mch import (
     ANCProfileCreate,
@@ -48,7 +54,7 @@ class MCHService:
         @param created_by: Staff UUID
         @returns Created ANC profile
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
 
         # Auto-generate ANC number
@@ -67,6 +73,7 @@ class MCHService:
         if data.lmp_date:
             if not edd:
                 from datetime import timedelta
+
                 edd = data.lmp_date + timedelta(days=280)
             # Calculate gestation at first visit
             days_since_lmp = (now.date() - data.lmp_date).days
@@ -233,10 +240,7 @@ class MCHService:
             )
             .order_by(ANCVisit.visit_number.asc())
         )
-        visits = [
-            ANCVisitResponse.model_validate(v)
-            for v in visits_result.scalars().all()
-        ]
+        visits = [ANCVisitResponse.model_validate(v) for v in visits_result.scalars().all()]
 
         # Get delivery record
         delivery_result = await self.db.execute(
@@ -342,7 +346,7 @@ class MCHService:
         if data.bp_systolic and data.bp_systolic >= 160:
             profile.risk_level = "high"
         if data.oedema and data.oedema in ("moderate", "severe"):
-            profile.risk_level = "high" if profile.risk_level != "high" else "high"
+            profile.risk_level = "high"
 
         event = EventBase(
             facility_id=facility_id,
@@ -472,7 +476,7 @@ class MCHService:
         @param created_by: Staff UUID
         @returns Created child record
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
 
         count_result = await self.db.execute(
@@ -572,9 +576,7 @@ class MCHService:
             age_months: int | None = None
             if child.date_of_birth:
                 today = date.today()
-                age_months = (today.year - child.date_of_birth.year) * 12 + (
-                    today.month - child.date_of_birth.month
-                )
+                age_months = (today.year - child.date_of_birth.year) * 12 + (today.month - child.date_of_birth.month)
 
             patient_name = f"{first_name or ''} {last_name or ''}".strip() or None
             items.append(
@@ -689,9 +691,7 @@ class MCHService:
 
     # ── Summary ───────────────────────────────────────────────────────────
 
-    async def get_summary(
-        self, facility_id: uuid.UUID
-    ) -> MCHSummary:
+    async def get_summary(self, facility_id: uuid.UUID) -> MCHSummary:
         """
         Get MCH department dashboard summary.
 
