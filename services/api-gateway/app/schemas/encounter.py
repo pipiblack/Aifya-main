@@ -8,14 +8,10 @@ class EncounterCreate(BaseModel):
     """Schema for creating a new encounter."""
 
     patient_id: uuid.UUID
-    encounter_type: str = Field(
-        ..., pattern=r"^(opd|ipd|emergency|mch|dental|surgical|follow_up)$"
-    )
+    encounter_type: str = Field(..., pattern=r"^(opd|ipd|emergency|mch|dental|surgical|follow_up)$")
     department_id: uuid.UUID | None = None
     chief_complaint: str | None = Field(None, max_length=2000)
-    triage_category: str | None = Field(
-        None, pattern=r"^(emergency|urgent|standard|non_urgent|dead)$"
-    )
+    triage_category: str | None = Field(None, pattern=r"^(emergency|urgent|standard|non_urgent|dead)$")
     priority: int = 0
 
 
@@ -29,9 +25,7 @@ class EncounterUpdate(BaseModel):
     attending_doctor_id: uuid.UUID | None = None
     nurse_id: uuid.UUID | None = None
     chief_complaint: str | None = Field(None, max_length=2000)
-    triage_category: str | None = Field(
-        None, pattern=r"^(emergency|urgent|standard|non_urgent|dead)$"
-    )
+    triage_category: str | None = Field(None, pattern=r"^(emergency|urgent|standard|non_urgent|dead)$")
     priority: int | None = None
     disposition: str | None = Field(
         None,

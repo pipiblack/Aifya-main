@@ -150,10 +150,13 @@ async def test_update_trial(client: AsyncClient, sample_trial_data: dict) -> Non
     create_resp = await client.post("/api/v1/trials", json=sample_trial_data)
     trial_id = create_resp.json()["id"]
 
-    response = await client.patch(f"/api/v1/trials/{trial_id}", json={
-        "target_enrollment": 750,
-        "protocol_version": "3.1",
-    })
+    response = await client.patch(
+        f"/api/v1/trials/{trial_id}",
+        json={
+            "target_enrollment": 750,
+            "protocol_version": "3.1",
+        },
+    )
     assert response.status_code == 200
     assert response.json()["target_enrollment"] == 750
     assert response.json()["protocol_version"] == "3.1"
@@ -169,16 +172,22 @@ async def test_update_trial_status(client: AsyncClient, sample_trial_data: dict)
     assert create_resp.json()["status"] == "setup"
 
     # Transition to recruiting
-    response = await client.post(f"/api/v1/trials/{trial_id}/status", json={
-        "status": "recruiting",
-    })
+    response = await client.post(
+        f"/api/v1/trials/{trial_id}/status",
+        json={
+            "status": "recruiting",
+        },
+    )
     assert response.status_code == 200
     assert response.json()["status"] == "recruiting"
 
     # Transition to active
-    response = await client.post(f"/api/v1/trials/{trial_id}/status", json={
-        "status": "active",
-    })
+    response = await client.post(
+        f"/api/v1/trials/{trial_id}/status",
+        json={
+            "status": "active",
+        },
+    )
     assert response.status_code == 200
     assert response.json()["status"] == "active"
 
@@ -209,22 +218,28 @@ async def test_enroll_participant(client: AsyncClient, sample_trial_data: dict) 
     trial_id = trial_resp.json()["id"]
 
     # Create patient
-    patient_resp = await client.post("/api/v1/patients", json={
-        "first_name": "Grace",
-        "last_name": "Achieng",
-        "date_of_birth": "1992-08-20",
-        "gender": "female",
-        "phone_number": "0733333333",
-    })
+    patient_resp = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "Grace",
+            "last_name": "Achieng",
+            "date_of_birth": "1992-08-20",
+            "gender": "female",
+            "phone_number": "0733333333",
+        },
+    )
     patient_id = patient_resp.json()["id"]
 
     # Enroll
-    response = await client.post(f"/api/v1/trials/{trial_id}/participants", json={
-        "patient_id": patient_id,
-        "randomization_arm": "Treatment A",
-        "consent_version": "3.0",
-        "consent_witness": "Dr. Wambua",
-    })
+    response = await client.post(
+        f"/api/v1/trials/{trial_id}/participants",
+        json={
+            "patient_id": patient_id,
+            "randomization_arm": "Treatment A",
+            "consent_version": "3.0",
+            "consent_witness": "Dr. Wambua",
+        },
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -247,25 +262,29 @@ async def test_list_participants(client: AsyncClient, sample_trial_data: dict) -
 
 
 @pytest.mark.asyncio
-async def test_update_participant_status_enrolled(
-    client: AsyncClient, sample_trial_data: dict
-) -> None:
+async def test_update_participant_status_enrolled(client: AsyncClient, sample_trial_data: dict) -> None:
     """Test transitioning participant to enrolled sets enrollment_date."""
     trial_resp = await client.post("/api/v1/trials", json=sample_trial_data)
     trial_id = trial_resp.json()["id"]
 
-    patient_resp = await client.post("/api/v1/patients", json={
-        "first_name": "Peter",
-        "last_name": "Oloo",
-        "date_of_birth": "1985-11-05",
-        "gender": "male",
-        "phone_number": "0744444444",
-    })
+    patient_resp = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "Peter",
+            "last_name": "Oloo",
+            "date_of_birth": "1985-11-05",
+            "gender": "male",
+            "phone_number": "0744444444",
+        },
+    )
     patient_id = patient_resp.json()["id"]
 
-    enroll_resp = await client.post(f"/api/v1/trials/{trial_id}/participants", json={
-        "patient_id": patient_id,
-    })
+    enroll_resp = await client.post(
+        f"/api/v1/trials/{trial_id}/participants",
+        json={
+            "patient_id": patient_id,
+        },
+    )
     participant_id = enroll_resp.json()["id"]
 
     # Enroll the participant
@@ -289,30 +308,39 @@ async def test_report_adverse_event(client: AsyncClient, sample_trial_data: dict
     trial_resp = await client.post("/api/v1/trials", json=sample_trial_data)
     trial_id = trial_resp.json()["id"]
 
-    patient_resp = await client.post("/api/v1/patients", json={
-        "first_name": "Mary",
-        "last_name": "Njoroge",
-        "date_of_birth": "1990-04-15",
-        "gender": "female",
-        "phone_number": "0755555555",
-    })
+    patient_resp = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "Mary",
+            "last_name": "Njoroge",
+            "date_of_birth": "1990-04-15",
+            "gender": "female",
+            "phone_number": "0755555555",
+        },
+    )
     patient_id = patient_resp.json()["id"]
 
-    enroll_resp = await client.post(f"/api/v1/trials/{trial_id}/participants", json={
-        "patient_id": patient_id,
-    })
+    enroll_resp = await client.post(
+        f"/api/v1/trials/{trial_id}/participants",
+        json={
+            "patient_id": patient_id,
+        },
+    )
     participant_id = enroll_resp.json()["id"]
 
     # Report AE
-    response = await client.post(f"/api/v1/trials/{trial_id}/adverse-events", json={
-        "participant_id": participant_id,
-        "ae_term": "Headache and mild nausea",
-        "severity": "mild",
-        "is_serious": False,
-        "relatedness": "possible",
-        "onset_date": "2026-03-15",
-        "ctcae_grade": 1,
-    })
+    response = await client.post(
+        f"/api/v1/trials/{trial_id}/adverse-events",
+        json={
+            "participant_id": participant_id,
+            "ae_term": "Headache and mild nausea",
+            "severity": "mild",
+            "is_serious": False,
+            "relatedness": "possible",
+            "onset_date": "2026-03-15",
+            "ctcae_grade": 1,
+        },
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -325,42 +353,49 @@ async def test_report_adverse_event(client: AsyncClient, sample_trial_data: dict
 
 
 @pytest.mark.asyncio
-async def test_report_serious_adverse_event(
-    client: AsyncClient, sample_trial_data: dict
-) -> None:
+async def test_report_serious_adverse_event(client: AsyncClient, sample_trial_data: dict) -> None:
     """Test SAE reporting sets sae_aware_date automatically."""
     trial_resp = await client.post("/api/v1/trials", json=sample_trial_data)
     trial_id = trial_resp.json()["id"]
 
-    patient_resp = await client.post("/api/v1/patients", json={
-        "first_name": "David",
-        "last_name": "Kibet",
-        "date_of_birth": "1978-09-22",
-        "gender": "male",
-        "phone_number": "0766666666",
-    })
+    patient_resp = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "David",
+            "last_name": "Kibet",
+            "date_of_birth": "1978-09-22",
+            "gender": "male",
+            "phone_number": "0766666666",
+        },
+    )
 
-    enroll_resp = await client.post(f"/api/v1/trials/{trial_id}/participants", json={
-        "patient_id": patient_resp.json()["id"],
-    })
+    enroll_resp = await client.post(
+        f"/api/v1/trials/{trial_id}/participants",
+        json={
+            "patient_id": patient_resp.json()["id"],
+        },
+    )
     participant_id = enroll_resp.json()["id"]
 
     # Report SAE
-    response = await client.post(f"/api/v1/trials/{trial_id}/adverse-events", json={
-        "participant_id": participant_id,
-        "ae_term": "Severe hepatotoxicity requiring hospitalization",
-        "severity": "severe",
-        "is_serious": True,
-        "seriousness_criteria": {
-            "hospitalization": True,
-            "life_threatening": False,
-            "disability": False,
-            "death": False,
+    response = await client.post(
+        f"/api/v1/trials/{trial_id}/adverse-events",
+        json={
+            "participant_id": participant_id,
+            "ae_term": "Severe hepatotoxicity requiring hospitalization",
+            "severity": "severe",
+            "is_serious": True,
+            "seriousness_criteria": {
+                "hospitalization": True,
+                "life_threatening": False,
+                "disability": False,
+                "death": False,
+            },
+            "relatedness": "probable",
+            "onset_date": "2026-04-01",
+            "ctcae_grade": 4,
         },
-        "relatedness": "probable",
-        "onset_date": "2026-04-01",
-        "ctcae_grade": 4,
-    })
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -384,26 +419,27 @@ async def test_list_adverse_events(client: AsyncClient, sample_trial_data: dict)
 
 
 @pytest.mark.asyncio
-async def test_create_visit_schedule(
-    client: AsyncClient, sample_trial_data: dict
-) -> None:
+async def test_create_visit_schedule(client: AsyncClient, sample_trial_data: dict) -> None:
     """Test creating a visit schedule entry."""
     trial_resp = await client.post("/api/v1/trials", json=sample_trial_data)
     trial_id = trial_resp.json()["id"]
 
-    response = await client.post(f"/api/v1/trials/{trial_id}/visit-schedule", json={
-        "visit_code": "V1",
-        "visit_name": "Screening Visit",
-        "day_from_enrollment": 0,
-        "window_before_days": 0,
-        "window_after_days": 3,
-        "required_assessments": [
-            {"type": "vitals", "name": "Blood Pressure"},
-            {"type": "lab", "name": "CBC"},
-        ],
-        "is_mandatory": True,
-        "sort_order": 1,
-    })
+    response = await client.post(
+        f"/api/v1/trials/{trial_id}/visit-schedule",
+        json={
+            "visit_code": "V1",
+            "visit_name": "Screening Visit",
+            "day_from_enrollment": 0,
+            "window_before_days": 0,
+            "window_after_days": 3,
+            "required_assessments": [
+                {"type": "vitals", "name": "Blood Pressure"},
+                {"type": "lab", "name": "CBC"},
+            ],
+            "is_mandatory": True,
+            "sort_order": 1,
+        },
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -414,26 +450,29 @@ async def test_create_visit_schedule(
 
 
 @pytest.mark.asyncio
-async def test_get_visit_schedule(
-    client: AsyncClient, sample_trial_data: dict
-) -> None:
+async def test_get_visit_schedule(client: AsyncClient, sample_trial_data: dict) -> None:
     """Test retrieving visit schedule for a trial."""
     trial_resp = await client.post("/api/v1/trials", json=sample_trial_data)
     trial_id = trial_resp.json()["id"]
 
     # Create multiple visits
-    for i, (code, name, day) in enumerate([
-        ("SCR", "Screening", -7),
-        ("BL", "Baseline", 0),
-        ("W4", "Week 4", 28),
-        ("W12", "Week 12", 84),
-    ]):
-        await client.post(f"/api/v1/trials/{trial_id}/visit-schedule", json={
-            "visit_code": code,
-            "visit_name": name,
-            "day_from_enrollment": day,
-            "sort_order": i,
-        })
+    for i, (code, name, day) in enumerate(
+        [
+            ("SCR", "Screening", -7),
+            ("BL", "Baseline", 0),
+            ("W4", "Week 4", 28),
+            ("W12", "Week 12", 84),
+        ]
+    ):
+        await client.post(
+            f"/api/v1/trials/{trial_id}/visit-schedule",
+            json={
+                "visit_code": code,
+                "visit_name": name,
+                "day_from_enrollment": day,
+                "sort_order": i,
+            },
+        )
 
     response = await client.get(f"/api/v1/trials/{trial_id}/visit-schedule")
     assert response.status_code == 200
@@ -446,9 +485,7 @@ async def test_get_visit_schedule(
 
 
 @pytest.mark.asyncio
-async def test_summary_reflects_data(
-    client: AsyncClient, sample_trial_data: dict
-) -> None:
+async def test_summary_reflects_data(client: AsyncClient, sample_trial_data: dict) -> None:
     """Test that summary counts reflect created data."""
     # Create trial
     await client.post("/api/v1/trials", json=sample_trial_data)

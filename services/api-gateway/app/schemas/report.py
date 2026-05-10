@@ -3,7 +3,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Report Template ─────────────────────────────────────────────────────────
 
 
@@ -21,18 +20,14 @@ class ReportTemplateCreate(BaseModel):
         None,
         pattern=r"^(opd|ipd|lab|pharmacy|radiology|mch|billing|appointments|all)$",
     )
-    report_type: str = Field(
-        default="tabular", pattern=r"^(tabular|chart|summary|register)$"
-    )
+    report_type: str = Field(default="tabular", pattern=r"^(tabular|chart|summary|register)$")
     parameters_schema: dict | None = None
     query_config: dict | None = None
     columns_config: dict | None = None
     is_scheduled: bool = False
     schedule_cron: str | None = Field(None, max_length=50)
     moh_form_number: str | None = Field(None, max_length=20)
-    reporting_period: str | None = Field(
-        None, pattern=r"^(daily|weekly|monthly|quarterly|annual)$"
-    )
+    reporting_period: str | None = Field(None, pattern=r"^(daily|weekly|monthly|quarterly|annual)$")
 
 
 class ReportTemplateResponse(BaseModel):
@@ -84,9 +79,7 @@ class ReportGenerateRequest(BaseModel):
     date_from: date
     date_to: date
     parameters: dict | None = None
-    format: str = Field(
-        default="json", pattern=r"^(json|pdf|csv|xlsx)$"
-    )
+    format: str = Field(default="json", pattern=r"^(json|pdf|csv|xlsx)$")
 
 
 class GeneratedReportResponse(BaseModel):

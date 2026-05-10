@@ -2,7 +2,6 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import (
-    Boolean,
     Date,
     DateTime,
     Float,
@@ -30,9 +29,7 @@ class ClinicalTrial(AuditMixin, Base):
     """
 
     __tablename__ = "clinical_trials"
-    __table_args__ = (
-        Index("ix_trials_facility_status", "facility_id", "status"),
-    )
+    __table_args__ = (Index("ix_trials_facility_status", "facility_id", "status"),)
 
     # Trial identification
     trial_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
@@ -42,9 +39,7 @@ class ClinicalTrial(AuditMixin, Base):
     short_title: Mapped[str | None] = mapped_column(String(200))
 
     # Classification
-    phase: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # I, II, III, IV, observational, registry
+    phase: Mapped[str | None] = mapped_column(String(20))  # I, II, III, IV, observational, registry
     study_type: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # interventional, observational, registry, diagnostic, pragmatic, adaptive
@@ -52,9 +47,7 @@ class ClinicalTrial(AuditMixin, Base):
 
     # Sponsor & oversight
     sponsor: Mapped[str] = mapped_column(String(200), nullable=False)
-    principal_investigator_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    principal_investigator_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     co_investigators: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
     irb_approval_number: Mapped[str | None] = mapped_column(String(50))
     irb_approval_date: Mapped[date | None] = mapped_column(Date)
@@ -104,19 +97,13 @@ class TrialParticipant(AuditMixin, Base):
     __tablename__ = "trial_participants"
     __table_args__ = (
         UniqueConstraint("trial_id", "patient_id", name="uq_trial_patient"),
-        UniqueConstraint(
-            "trial_id", "participant_number", name="uq_trial_participant_number"
-        ),
+        UniqueConstraint("trial_id", "participant_number", name="uq_trial_participant_number"),
         Index("ix_trial_participants_patient", "facility_id", "patient_id"),
         Index("ix_trial_participants_trial", "trial_id", "status"),
     )
 
-    trial_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
+    trial_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
 
     # Identifiers
     participant_number: Mapped[str] = mapped_column(String(30), nullable=False)
@@ -131,9 +118,7 @@ class TrialParticipant(AuditMixin, Base):
 
     # Screening
     screening_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    screened_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    screened_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     screen_fail_reason: Mapped[str | None] = mapped_column(Text)
     eligibility_check: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
     ai_eligibility_score: Mapped[float | None] = mapped_column(Float)
@@ -149,9 +134,7 @@ class TrialParticipant(AuditMixin, Base):
 
     # Enrollment
     enrollment_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    enrolled_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    enrolled_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
 
     # Completion
     completion_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -171,32 +154,24 @@ class TrialVisitSchedule(Base):
 
     __tablename__ = "trial_visit_schedule"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    trial_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    trial_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False)
     visit_code: Mapped[str] = mapped_column(String(20), nullable=False)
     visit_name: Mapped[str] = mapped_column(String(100), nullable=False)
     day_from_enrollment: Mapped[int] = mapped_column(Integer, nullable=False)
     window_before_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     window_after_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    required_assessments: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))  # type: ignore[type-arg]
+    required_assessments: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default=text("'[]'"))  # type: ignore[type-arg]
     is_mandatory: Mapped[bool] = mapped_column(default=True, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class TrialParticipantVisit(AuditMixin, Base):
     """Actual visit record for a trial participant."""
 
     __tablename__ = "trial_participant_visits"
-    __table_args__ = (
-        Index("ix_tpv_participant", "participant_id", "status"),
-    )
+    __table_args__ = (Index("ix_tpv_participant", "participant_id", "status"),)
 
     participant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("trial_participants.id"), nullable=False
@@ -204,9 +179,7 @@ class TrialParticipantVisit(AuditMixin, Base):
     schedule_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("trial_visit_schedule.id"), nullable=False
     )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
 
     # Timing
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -243,9 +216,7 @@ class TrialAdverseEvent(AuditMixin, Base):
     participant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("trial_participants.id"), nullable=False
     )
-    trial_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False
-    )
+    trial_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False)
 
     # Classification
     ae_term: Mapped[str] = mapped_column(Text, nullable=False)
@@ -255,16 +226,12 @@ class TrialAdverseEvent(AuditMixin, Base):
     ctcae_grade: Mapped[int | None] = mapped_column(SmallInteger)  # 1-5
 
     # Severity & seriousness
-    severity: Mapped[str] = mapped_column(
-        String(10), nullable=False
-    )  # mild, moderate, severe
+    severity: Mapped[str] = mapped_column(String(10), nullable=False)  # mild, moderate, severe
     is_serious: Mapped[bool] = mapped_column(default=False, nullable=False)
     seriousness_criteria: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
 
     # Causality
-    relatedness: Mapped[str | None] = mapped_column(
-        String(30)
-    )  # unrelated, unlikely, possible, probable, definite
+    relatedness: Mapped[str | None] = mapped_column(String(30))  # unrelated, unlikely, possible, probable, definite
 
     # Dates
     onset_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -275,18 +242,12 @@ class TrialAdverseEvent(AuditMixin, Base):
     action_taken: Mapped[str | None] = mapped_column(String(30))
 
     # Reporting
-    reported_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    reported_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    reported_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    reported_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # SAE reporting (time-critical: 24-hour window)
     sae_aware_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    sae_reported_to_sponsor: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
+    sae_reported_to_sponsor: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     sae_reported_to_irb: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     sae_report_document_url: Mapped[str | None] = mapped_column(String(500))
 
@@ -306,21 +267,11 @@ class TrialAIScreening(Base):
         Index("ix_screening_facility", "facility_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    trial_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    trial_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("clinical_trials.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
 
     # AI assessment
     eligibility_score: Mapped[float] = mapped_column(Float, nullable=False)
@@ -332,14 +283,10 @@ class TrialAIScreening(Base):
 
     # Investigator action
     investigator_reviewed: Mapped[bool] = mapped_column(default=False, nullable=False)
-    investigator_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    investigator_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     investigator_decision: Mapped[str | None] = mapped_column(
         String(20)
     )  # proceed_to_screen, not_eligible, defer, already_screened
     review_notes: Mapped[str | None] = mapped_column(Text)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

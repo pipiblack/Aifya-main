@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import base64
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 from pydantic import BaseModel
@@ -32,6 +32,7 @@ class DarajaConfig(BaseModel):
     @param environment: "sandbox" or "production"
     @param callback_base_url: Public URL for M-Pesa callbacks
     """
+
     consumer_key: str
     consumer_secret: str
     shortcode: str
@@ -75,6 +76,7 @@ class STKPushRequest(BaseModel):
     @param account_reference: Invoice number or patient ID
     @param description: Transaction description
     """
+
     phone_number: str
     amount: int
     account_reference: str
@@ -91,6 +93,7 @@ class STKPushResponse(BaseModel):
     @param response_description: Human-readable status
     @param customer_message: Message shown to customer
     """
+
     merchant_request_id: str = ""
     checkout_request_id: str = ""
     response_code: str = ""
@@ -113,6 +116,7 @@ class STKCallbackData(BaseModel):
     @param phone_number: Paying phone number
     @param transaction_date: Transaction timestamp
     """
+
     merchant_request_id: str
     checkout_request_id: str
     result_code: int
@@ -131,6 +135,7 @@ class TransactionStatus(BaseModel):
     @param result_desc: Status description
     @param receipt_number: M-Pesa receipt (if completed)
     """
+
     result_code: int
     result_desc: str
     receipt_number: str | None = None
@@ -155,11 +160,7 @@ class DarajaClient:
         @param config: Daraja API configuration
         """
         self.config = config
-        self.base_url = (
-            self.PRODUCTION_URL
-            if config.environment == "production"
-            else self.SANDBOX_URL
-        )
+        self.base_url = self.PRODUCTION_URL if config.environment == "production" else self.SANDBOX_URL
         self._token: str | None = None
         self._token_expiry: datetime | None = None
 
@@ -169,13 +170,11 @@ class DarajaClient:
 
         @returns OAuth access token string
         """
-        if self._token and self._token_expiry and datetime.now(timezone.utc) < self._token_expiry:
+        if self._token and self._token_expiry and datetime.now(UTC) < self._token_expiry:
             return self._token
 
         url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
-        credentials = base64.b64encode(
-            f"{self.config.consumer_key}:{self.config.consumer_secret}".encode()
-        ).decode()
+        credentials = base64.b64encode(f"{self.config.consumer_key}:{self.config.consumer_secret}".encode()).decode()
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(
@@ -188,7 +187,8 @@ class DarajaClient:
         self._token = data["access_token"]
         # Token valid for ~3600s, refresh at 3000s
         from datetime import timedelta
-        self._token_expiry = datetime.now(timezone.utc) + timedelta(seconds=3000)
+
+        self._token_expiry = datetime.now(UTC) + timedelta(seconds=3000)
         return self._token  # type: ignore[return-value]
 
     def _generate_password(self) -> tuple[str, str]:
@@ -197,7 +197,7 @@ class DarajaClient:
 
         @returns Tuple of (password, timestamp)
         """
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         raw = f"{self.config.shortcode}{self.config.passkey}{timestamp}"
         password = base64.b64encode(raw.encode()).decode()
         return password, timestamp

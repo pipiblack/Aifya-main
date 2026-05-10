@@ -16,7 +16,6 @@ from httpx import AsyncClient
 from app.auth.license_check import require_module
 from app.main import app
 
-
 # ── Override require_module("laboratory") so tests bypass license tier gating ─
 
 
@@ -102,9 +101,7 @@ async def encounter_id(client: AsyncClient, patient_id: str) -> str:
 
 
 @pytest_asyncio.fixture
-async def lab_order(
-    client: AsyncClient, patient_id: str, encounter_id: str
-) -> dict:
+async def lab_order(client: AsyncClient, patient_id: str, encounter_id: str) -> dict:
     """
     Create a lab order via the encounters endpoint and return the full response.
 
@@ -187,9 +184,7 @@ async def test_collect_specimen(client: AsyncClient, lab_order: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_collect_specimen_without_specimen_id(
-    client: AsyncClient, lab_order: dict
-) -> None:
+async def test_collect_specimen_without_specimen_id(client: AsyncClient, lab_order: dict) -> None:
     """Test specimen collection works without an explicit specimen ID."""
     order_id: str = lab_order["id"]
 
@@ -234,9 +229,7 @@ async def test_worklist_with_orders(client: AsyncClient, lab_order: dict) -> Non
 
 
 @pytest.mark.asyncio
-async def test_worklist_filter_by_status(
-    client: AsyncClient, lab_order: dict
-) -> None:
+async def test_worklist_filter_by_status(client: AsyncClient, lab_order: dict) -> None:
     """Test filtering the worklist by order status."""
     order_id: str = lab_order["id"]
 
@@ -248,9 +241,7 @@ async def test_worklist_filter_by_status(
     assert collect_resp.status_code == 200
 
     # Filter for collected orders
-    response = await client.get(
-        "/api/v1/laboratory/worklist", params={"status": "collected"}
-    )
+    response = await client.get("/api/v1/laboratory/worklist", params={"status": "collected"})
 
     assert response.status_code == 200
     data: dict = response.json()
@@ -260,14 +251,10 @@ async def test_worklist_filter_by_status(
 
 
 @pytest.mark.asyncio
-async def test_worklist_filter_no_match(
-    client: AsyncClient, lab_order: dict
-) -> None:
+async def test_worklist_filter_no_match(client: AsyncClient, lab_order: dict) -> None:
     """Test that filtering by a status with no matches returns empty."""
     # The order is in 'ordered' status, filter for 'completed'
-    response = await client.get(
-        "/api/v1/laboratory/worklist", params={"status": "completed"}
-    )
+    response = await client.get("/api/v1/laboratory/worklist", params={"status": "completed"})
 
     assert response.status_code == 200
     data: dict = response.json()
@@ -400,9 +387,7 @@ async def test_verify_result(client: AsyncClient, lab_order: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_verify_result_without_notes(
-    client: AsyncClient, lab_order: dict
-) -> None:
+async def test_verify_result_without_notes(client: AsyncClient, lab_order: dict) -> None:
     """Test that verification works without optional notes."""
     order_id: str = lab_order["id"]
 
@@ -523,9 +508,7 @@ async def test_notify_critical_missing_clinician(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_full_lab_workflow(
-    client: AsyncClient, patient_id: str, encounter_id: str
-) -> None:
+async def test_full_lab_workflow(client: AsyncClient, patient_id: str, encounter_id: str) -> None:
     """
     Test the complete lab workflow from order creation through verification.
 

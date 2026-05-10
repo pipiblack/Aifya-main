@@ -4,8 +4,6 @@ Endpoints for AI-assisted chest X-ray TB screening, retinal scans, and general r
 Per CLAUDE.md: AI NEVER auto-commits to patient records — clinician sign-off required.
 """
 
-import uuid
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger

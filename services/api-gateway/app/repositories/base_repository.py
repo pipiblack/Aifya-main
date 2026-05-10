@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime, timezone
-from typing import TypeVar, Generic
+from datetime import UTC, datetime
+from typing import TypeVar
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,7 @@ from app.database import Base
 T = TypeVar("T", bound=Base)
 
 
-class BaseRepository(Generic[T]):
+class BaseRepository[T: Base]:
     """
     Base repository with facility-scoped queries.
     All data access is filtered by facility_id — no cross-facility leaks.
@@ -55,9 +55,7 @@ class BaseRepository(Generic[T]):
         await self.db.refresh(entity)
         return entity
 
-    async def soft_delete(
-        self, entity_id: uuid.UUID, deleted_by: uuid.UUID
-    ) -> bool:
+    async def soft_delete(self, entity_id: uuid.UUID, deleted_by: uuid.UUID) -> bool:
         """
         Soft-delete an entity. Never hard-delete clinical data.
 
@@ -70,7 +68,7 @@ class BaseRepository(Generic[T]):
             return False
 
         entity.is_deleted = True  # type: ignore[attr-defined]
-        entity.deleted_at = datetime.now(timezone.utc)  # type: ignore[attr-defined]
+        entity.deleted_at = datetime.now(UTC)  # type: ignore[attr-defined]
         entity.updated_by = deleted_by  # type: ignore[attr-defined]
         await self.db.flush()
         return True

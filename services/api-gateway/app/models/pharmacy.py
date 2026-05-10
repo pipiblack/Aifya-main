@@ -1,7 +1,16 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -73,15 +82,9 @@ class Dispensing(AuditMixin, Base):
     prescription_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("prescriptions.id"), nullable=False
     )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    pharmacy_item_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("pharmacy_items.id")
-    )
-    dispensed_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    pharmacy_item_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("pharmacy_items.id"))
+    dispensed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Dispensing details
     drug_name: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -110,14 +113,10 @@ class Dispensing(AuditMixin, Base):
     payment_status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False
     )  # pending, paid, insurance, exempted, waived
-    payment_method: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # cash, mpesa, insurance, exemption
+    payment_method: Mapped[str | None] = mapped_column(String(20))  # cash, mpesa, insurance, exemption
 
     # Timestamps
-    dispensed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    dispensed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class StockTransaction(AuditMixin, Base):
@@ -135,17 +134,13 @@ class StockTransaction(AuditMixin, Base):
     pharmacy_item_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("pharmacy_items.id"), nullable=False
     )
-    dispensing_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("dispensings.id")
-    )
+    dispensing_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("dispensings.id"))
 
     # Transaction
     transaction_type: Mapped[str] = mapped_column(
         String(20), nullable=False
     )  # receipt, dispensing, adjustment, expiry_writeoff, return, transfer
-    quantity_change: Mapped[int] = mapped_column(
-        Integer, nullable=False
-    )  # positive for in, negative for out
+    quantity_change: Mapped[int] = mapped_column(Integer, nullable=False)  # positive for in, negative for out
     quantity_before: Mapped[int] = mapped_column(Integer, nullable=False)
     quantity_after: Mapped[int] = mapped_column(Integer, nullable=False)
 

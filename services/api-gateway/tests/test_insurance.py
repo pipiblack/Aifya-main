@@ -71,14 +71,20 @@ async def test_create_scheme_validates_type(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_list_schemes_after_creation(client: AsyncClient) -> None:
     """Test listing schemes returns created schemes."""
-    await client.post("/api/v1/insurance/schemes", json={
-        "name": "Private Insurer A",
-        "scheme_type": "private",
-    })
-    await client.post("/api/v1/insurance/schemes", json={
-        "name": "Corporate Plan B",
-        "scheme_type": "corporate",
-    })
+    await client.post(
+        "/api/v1/insurance/schemes",
+        json={
+            "name": "Private Insurer A",
+            "scheme_type": "private",
+        },
+    )
+    await client.post(
+        "/api/v1/insurance/schemes",
+        json={
+            "name": "Corporate Plan B",
+            "scheme_type": "corporate",
+        },
+    )
 
     response = await client.get("/api/v1/insurance/schemes")
     assert response.status_code == 200
@@ -90,20 +96,26 @@ async def test_list_schemes_after_creation(client: AsyncClient) -> None:
 async def test_create_claim(client: AsyncClient) -> None:
     """Test creating an insurance claim requires patient and scheme."""
     # Create a scheme first
-    scheme_resp = await client.post("/api/v1/insurance/schemes", json={
-        "name": "Test SHA",
-        "scheme_type": "sha",
-    })
+    scheme_resp = await client.post(
+        "/api/v1/insurance/schemes",
+        json={
+            "name": "Test SHA",
+            "scheme_type": "sha",
+        },
+    )
     scheme_id = scheme_resp.json()["id"]
 
     # Create a patient
-    patient_resp = await client.post("/api/v1/patients", json={
-        "first_name": "Jane",
-        "last_name": "Doe",
-        "date_of_birth": "1988-06-20",
-        "gender": "female",
-        "phone_number": "0711111111",
-    })
+    patient_resp = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "date_of_birth": "1988-06-20",
+            "gender": "female",
+            "phone_number": "0711111111",
+        },
+    )
     patient_id = patient_resp.json()["id"]
 
     # Create claim
@@ -150,23 +162,32 @@ async def test_get_claim_not_found(client: AsyncClient) -> None:
 async def test_update_claim_status(client: AsyncClient) -> None:
     """Test updating claim status through the workflow."""
     # Setup: create scheme + patient + claim
-    scheme_resp = await client.post("/api/v1/insurance/schemes", json={
-        "name": "Corp Insurance",
-        "scheme_type": "corporate",
-    })
-    patient_resp = await client.post("/api/v1/patients", json={
-        "first_name": "John",
-        "last_name": "Mutua",
-        "date_of_birth": "1975-03-12",
-        "gender": "male",
-        "phone_number": "0722222222",
-    })
-    claim_resp = await client.post("/api/v1/insurance/claims", json={
-        "patient_id": patient_resp.json()["id"],
-        "scheme_id": scheme_resp.json()["id"],
-        "member_number": "CORP-5678",
-        "claim_amount": 500000,
-    })
+    scheme_resp = await client.post(
+        "/api/v1/insurance/schemes",
+        json={
+            "name": "Corp Insurance",
+            "scheme_type": "corporate",
+        },
+    )
+    patient_resp = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "John",
+            "last_name": "Mutua",
+            "date_of_birth": "1975-03-12",
+            "gender": "male",
+            "phone_number": "0722222222",
+        },
+    )
+    claim_resp = await client.post(
+        "/api/v1/insurance/claims",
+        json={
+            "patient_id": patient_resp.json()["id"],
+            "scheme_id": scheme_resp.json()["id"],
+            "member_number": "CORP-5678",
+            "claim_amount": 500000,
+        },
+    )
     claim_id = claim_resp.json()["id"]
 
     # Submit the claim

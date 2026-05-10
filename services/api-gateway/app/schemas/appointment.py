@@ -3,7 +3,6 @@ from datetime import date, datetime, time
 
 from pydantic import BaseModel, Field
 
-
 # ── Doctor Schedule ──────────────────────────────────────────────────────────
 
 
@@ -91,9 +90,7 @@ class AppointmentCreate(BaseModel):
         pattern=r"^(consultation|follow_up|procedure|lab|radiology|anc|dental|vaccination)$",
     )
     visit_reason: str | None = Field(None, max_length=1000)
-    priority: str = Field(
-        default="routine", pattern=r"^(routine|urgent|emergency)$"
-    )
+    priority: str = Field(default="routine", pattern=r"^(routine|urgent|emergency)$")
     room: str | None = Field(None, max_length=50)
     notes: str | None = Field(None, max_length=2000)
     is_recurring: bool = False

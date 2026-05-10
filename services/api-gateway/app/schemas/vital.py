@@ -19,9 +19,7 @@ class VitalSignCreate(BaseModel):
 
     # Temperature
     temperature: float | None = Field(None, ge=25.0, le=45.0)
-    temperature_site: str | None = Field(
-        None, pattern=r"^(oral|axillary|rectal|tympanic|temporal)$"
-    )
+    temperature_site: str | None = Field(None, pattern=r"^(oral|axillary|rectal|tympanic|temporal)$")
 
     # Respiratory
     respiratory_rate: int | None = Field(None, ge=4, le=80)
@@ -40,9 +38,7 @@ class VitalSignCreate(BaseModel):
 
     # Blood glucose
     blood_glucose: float | None = Field(None, ge=0, le=50)
-    glucose_timing: str | None = Field(
-        None, pattern=r"^(fasting|random|post_prandial)$"
-    )
+    glucose_timing: str | None = Field(None, pattern=r"^(fasting|random|post_prandial)$")
 
     # GCS
     gcs_eye: int | None = Field(None, ge=1, le=4)

@@ -3,7 +3,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Trial ────────────────────────────────────────────────────────────────────
 
 
@@ -12,9 +11,7 @@ class TrialCreate(BaseModel):
 
     title: str = Field(..., max_length=5000)
     short_title: str | None = Field(None, max_length=200)
-    phase: str | None = Field(
-        None, pattern=r"^(I|II|III|IV|observational|registry)$"
-    )
+    phase: str | None = Field(None, pattern=r"^(I|II|III|IV|observational|registry)$")
     study_type: str = Field(
         ...,
         pattern=r"^(interventional|observational|registry|diagnostic|pragmatic|adaptive)$",
@@ -54,9 +51,7 @@ class TrialUpdate(BaseModel):
 
     title: str | None = Field(None, max_length=5000)
     short_title: str | None = Field(None, max_length=200)
-    phase: str | None = Field(
-        None, pattern=r"^(I|II|III|IV|observational|registry)$"
-    )
+    phase: str | None = Field(None, pattern=r"^(I|II|III|IV|observational|registry)$")
     therapeutic_area: str | None = Field(None, max_length=100)
     principal_investigator_id: uuid.UUID | None = None
     co_investigators: dict | None = None
@@ -79,9 +74,7 @@ class TrialUpdate(BaseModel):
     redcap_api_token_vault_key: str | None = Field(None, max_length=100)
     redcap_field_mapping: dict | None = None
     redcap_sync_enabled: bool | None = None
-    redcap_sync_mode: str | None = Field(
-        None, pattern=r"^(push_only|pull_only|bidirectional)$"
-    )
+    redcap_sync_mode: str | None = Field(None, pattern=r"^(push_only|pull_only|bidirectional)$")
     start_date: date | None = None
     end_date: date | None = None
 
@@ -351,9 +344,7 @@ class AdverseEventCreate(BaseModel):
     meddra_pt: str | None = Field(None, max_length=200)
     meddra_soc: str | None = Field(None, max_length=200)
     ctcae_grade: int | None = Field(None, ge=1, le=5)
-    severity: str = Field(
-        ..., pattern=r"^(mild|moderate|severe)$"
-    )
+    severity: str = Field(..., pattern=r"^(mild|moderate|severe)$")
     is_serious: bool = False
     seriousness_criteria: dict | None = None
     relatedness: str | None = Field(

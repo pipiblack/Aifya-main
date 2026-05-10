@@ -15,8 +15,8 @@ import pytest_asyncio
 from app.models.finance import (
     AccountingPeriod,
     FixedAsset,
-    InventoryLot,
     InsuranceClaimFinance,
+    InventoryLot,
 )
 from app.services.finance import post_transaction
 from app.services.finance.depreciation import calc_depreciation
@@ -112,9 +112,7 @@ async def test_profit_loss_computes_net(seeded: AccountingPeriod) -> None:
         await db.commit()
 
     async with test_session() as db:
-        pl = await get_profit_loss(
-            db, FACILITY_ID, date(2026, 5, 1), date(2026, 5, 31)
-        )
+        pl = await get_profit_loss(db, FACILITY_ID, date(2026, 5, 1), date(2026, 5, 31))
     assert pl.total_income == Decimal("1000.00")
     assert pl.total_expenses == Decimal("300.00")
     assert pl.net_profit == Decimal("700.00")
@@ -132,28 +130,50 @@ async def test_ar_aging_buckets() -> None:
 
     async with test_session() as db:
         # current
-        db.add(InsuranceClaimFinance(
-            facility_id=FACILITY_ID, patient_id=patient_id, insurer_id=insurer_id,
-            amount_claimed=Decimal("100"), amount_approved=Decimal("0"),
-            amount_paid=Decimal("0"), status="submitted", due_date=today,
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
+        db.add(
+            InsuranceClaimFinance(
+                facility_id=FACILITY_ID,
+                patient_id=patient_id,
+                insurer_id=insurer_id,
+                amount_claimed=Decimal("100"),
+                amount_approved=Decimal("0"),
+                amount_paid=Decimal("0"),
+                status="submitted",
+                due_date=today,
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
         # 60-day bucket
-        db.add(InsuranceClaimFinance(
-            facility_id=FACILITY_ID, patient_id=patient_id, insurer_id=insurer_id,
-            amount_claimed=Decimal("200"), amount_approved=Decimal("0"),
-            amount_paid=Decimal("0"), status="submitted",
-            due_date=date(2026, 4, 1),  # 60 days outstanding
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
+        db.add(
+            InsuranceClaimFinance(
+                facility_id=FACILITY_ID,
+                patient_id=patient_id,
+                insurer_id=insurer_id,
+                amount_claimed=Decimal("200"),
+                amount_approved=Decimal("0"),
+                amount_paid=Decimal("0"),
+                status="submitted",
+                due_date=date(2026, 4, 1),  # 60 days outstanding
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
         # 120+ bucket
-        db.add(InsuranceClaimFinance(
-            facility_id=FACILITY_ID, patient_id=patient_id, insurer_id=insurer_id,
-            amount_claimed=Decimal("500"), amount_approved=Decimal("0"),
-            amount_paid=Decimal("0"), status="submitted",
-            due_date=date(2025, 11, 1),
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
+        db.add(
+            InsuranceClaimFinance(
+                facility_id=FACILITY_ID,
+                patient_id=patient_id,
+                insurer_id=insurer_id,
+                amount_claimed=Decimal("500"),
+                amount_approved=Decimal("0"),
+                amount_paid=Decimal("0"),
+                status="submitted",
+                due_date=date(2025, 11, 1),
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
         await db.commit()
 
     async with test_session() as db:
@@ -173,26 +193,34 @@ async def test_fifo_inventory_consumes_oldest_first() -> None:
     """FIFO consumes the oldest lot first."""
     item_id = uuid.uuid4()
     async with test_session() as db:
-        db.add(InventoryLot(
-            facility_id=FACILITY_ID, item_id=item_id,
-            quantity=Decimal("10"), unit_cost=Decimal("5.0000"),
-            received_date=date(2026, 1, 1),
-            remaining_quantity=Decimal("10"),
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
-        db.add(InventoryLot(
-            facility_id=FACILITY_ID, item_id=item_id,
-            quantity=Decimal("10"), unit_cost=Decimal("8.0000"),
-            received_date=date(2026, 2, 1),
-            remaining_quantity=Decimal("10"),
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
+        db.add(
+            InventoryLot(
+                facility_id=FACILITY_ID,
+                item_id=item_id,
+                quantity=Decimal("10"),
+                unit_cost=Decimal("5.0000"),
+                received_date=date(2026, 1, 1),
+                remaining_quantity=Decimal("10"),
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
+        db.add(
+            InventoryLot(
+                facility_id=FACILITY_ID,
+                item_id=item_id,
+                quantity=Decimal("10"),
+                unit_cost=Decimal("8.0000"),
+                received_date=date(2026, 2, 1),
+                remaining_quantity=Decimal("10"),
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
         await db.commit()
 
     async with test_session() as db:
-        cost = await post_inventory_usage(
-            db, FACILITY_ID, item_id, Decimal("12")
-        )
+        cost = await post_inventory_usage(db, FACILITY_ID, item_id, Decimal("12"))
         await db.commit()
     # 10 @ 5 + 2 @ 8 = 50 + 16 = 66
     assert cost == Decimal("66.00")
@@ -203,20 +231,30 @@ async def test_weighted_average_cost() -> None:
     """Weighted average = sum(qty*cost)/sum(qty)."""
     item_id = uuid.uuid4()
     async with test_session() as db:
-        db.add(InventoryLot(
-            facility_id=FACILITY_ID, item_id=item_id,
-            quantity=Decimal("10"), unit_cost=Decimal("4.0000"),
-            received_date=date(2026, 1, 1),
-            remaining_quantity=Decimal("10"),
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
-        db.add(InventoryLot(
-            facility_id=FACILITY_ID, item_id=item_id,
-            quantity=Decimal("30"), unit_cost=Decimal("6.0000"),
-            received_date=date(2026, 2, 1),
-            remaining_quantity=Decimal("30"),
-            created_by=USER_ID, updated_by=USER_ID,
-        ))
+        db.add(
+            InventoryLot(
+                facility_id=FACILITY_ID,
+                item_id=item_id,
+                quantity=Decimal("10"),
+                unit_cost=Decimal("4.0000"),
+                received_date=date(2026, 1, 1),
+                remaining_quantity=Decimal("10"),
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
+        db.add(
+            InventoryLot(
+                facility_id=FACILITY_ID,
+                item_id=item_id,
+                quantity=Decimal("30"),
+                unit_cost=Decimal("6.0000"),
+                received_date=date(2026, 2, 1),
+                remaining_quantity=Decimal("30"),
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
         await db.commit()
 
     async with test_session() as db:

@@ -9,19 +9,32 @@ NOTE: payslips MUST NOT be generated for runs in `draft` status.
 from __future__ import annotations
 
 import io
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.payroll import Employee, PayrollLineItem, PayrollRun
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ]
 
 
@@ -37,43 +50,53 @@ async def _load_payslip_data(
 ) -> tuple[PayrollRun, PayrollLineItem, Employee]:
     """Fetch run + line + employee. Raises if missing or run is draft."""
     run = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.id == payroll_run_id,
-                PayrollRun.facility_id == facility_id,
-                PayrollRun.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollRun).where(
+                    PayrollRun.id == payroll_run_id,
+                    PayrollRun.facility_id == facility_id,
+                    PayrollRun.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if run is None:
         raise PayslipNotAvailableError("Payroll run not found")
     if run.status == "draft":
-        raise PayslipNotAvailableError(
-            "Cannot generate payslip for a draft payroll run"
-        )
+        raise PayslipNotAvailableError("Cannot generate payslip for a draft payroll run")
 
     line = (
-        await db.execute(
-            select(PayrollLineItem).where(
-                PayrollLineItem.payroll_run_id == payroll_run_id,
-                PayrollLineItem.employee_id == employee_id,
-                PayrollLineItem.facility_id == facility_id,
-                PayrollLineItem.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollLineItem).where(
+                    PayrollLineItem.payroll_run_id == payroll_run_id,
+                    PayrollLineItem.employee_id == employee_id,
+                    PayrollLineItem.facility_id == facility_id,
+                    PayrollLineItem.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if line is None:
         raise PayslipNotAvailableError("No payslip line for this employee")
 
     emp = (
-        await db.execute(
-            select(Employee).where(
-                Employee.id == employee_id,
-                Employee.facility_id == facility_id,
-                Employee.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == facility_id,
+                    Employee.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if emp is None:
         raise PayslipNotAvailableError("Employee not found")
 
@@ -95,22 +118,18 @@ def _build_text_fallback(
 ) -> bytes:
     """Plain-text fallback when ReportLab is unavailable."""
     period = f"{_MONTHS[run.month - 1]} {run.year}"
-    other_alw = "\n".join(
-        f"  - {k}: {v}" for k, v in (line.other_allowances or {}).items()
-    ) or "  (none)"
-    other_ded = "\n".join(
-        f"  - {k}: {v}" for k, v in (line.other_deductions or {}).items()
-    ) or "  (none)"
+    other_alw = "\n".join(f"  - {k}: {v}" for k, v in (line.other_allowances or {}).items()) or "  (none)"
+    other_ded = "\n".join(f"  - {k}: {v}" for k, v in (line.other_deductions or {}).items()) or "  (none)"
     body = f"""
 {facility_name}
 PAYSLIP — {period}
 
 Employee: {emp.full_name}
 Staff ID: {emp.staff_id}
-KRA PIN:  {emp.kra_pin or '-'}
-NSSF #:   {emp.nssf_number or '-'}
-SHIF #:   {emp.shif_number or '-'}
-Bank:     {emp.bank_name or '-'} / {emp.bank_branch or '-'}
+KRA PIN:  {emp.kra_pin or "-"}
+NSSF #:   {emp.nssf_number or "-"}
+SHIF #:   {emp.shif_number or "-"}
+Bank:     {emp.bank_name or "-"} / {emp.bank_branch or "-"}
 
 EARNINGS
   Basic Salary:        {_format_money(line.basic_salary)}
@@ -135,7 +154,7 @@ OTHER DEDUCTIONS
   *** NET SALARY:      {_format_money(line.net_salary)} ***
   *** NET SALARY:      {_format_money(line.net_salary)} ***
 
-Generated: {datetime.now(timezone.utc).isoformat(timespec='seconds')}
+Generated: {datetime.now(UTC).isoformat(timespec="seconds")}
 Powered by Aifya
 """.strip()
     return body.encode("utf-8")
@@ -308,7 +327,7 @@ def _build_pdf(
 
     story.append(
         Paragraph(
-            f"<font size=8>Generated {datetime.now(timezone.utc).isoformat(timespec='seconds')} "
+            f"<font size=8>Generated {datetime.now(UTC).isoformat(timespec='seconds')} "
             "&nbsp;&nbsp;|&nbsp;&nbsp; Powered by Aifya</font>",
             styles["Normal"],
         )

@@ -3,7 +3,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Invoice schemas ───────────────────────────────────────────────────────────
 
 
@@ -19,9 +18,7 @@ class InvoiceItemCreate(BaseModel):
     unit_price_cents: int = Field(default=0, ge=0)
     discount_cents: int = Field(default=0, ge=0)
     reference_id: uuid.UUID | None = None
-    reference_type: str | None = Field(
-        None, pattern=r"^(dispensing|lab_order|encounter)$"
-    )
+    reference_type: str | None = Field(None, pattern=r"^(dispensing|lab_order|encounter)$")
 
 
 class InvoiceCreate(BaseModel):
@@ -29,9 +26,7 @@ class InvoiceCreate(BaseModel):
 
     encounter_id: uuid.UUID
     patient_id: uuid.UUID
-    payment_method: str | None = Field(
-        None, pattern=r"^(cash|mpesa|insurance|exemption)$"
-    )
+    payment_method: str | None = Field(None, pattern=r"^(cash|mpesa|insurance|exemption)$")
     insurance_provider: str | None = Field(None, max_length=100)
     insurance_member_no: str | None = Field(None, max_length=50)
     notes: str | None = Field(None, max_length=2000)
@@ -125,9 +120,7 @@ class PaymentCreate(BaseModel):
     """Schema for recording a payment against an invoice."""
 
     amount_cents: int = Field(..., gt=0)
-    payment_method: str = Field(
-        ..., pattern=r"^(cash|mpesa|insurance|exemption)$"
-    )
+    payment_method: str = Field(..., pattern=r"^(cash|mpesa|insurance|exemption)$")
     reference_number: str | None = Field(None, max_length=100)
     mpesa_transaction_id: str | None = Field(None, max_length=50)
     notes: str | None = Field(None, max_length=2000)

@@ -17,7 +17,6 @@ from app.schemas.licensing import (
     AppUpdateCreate,
     AppUpdateResponse,
     DataExportRequest,
-    DataExportResponse,
     HeartbeatRequest,
     LicenseCreate,
     LicenseResponse,
@@ -33,6 +32,7 @@ router = APIRouter()
 
 
 # ─── Public Endpoints (no auth — called by facility instances) ────────────────
+
 
 @router.post("/heartbeat", response_model=LicenseValidation)
 async def heartbeat(
@@ -75,6 +75,7 @@ async def check_for_updates(
 
 
 # ─── Authenticated Endpoints ──────────────────────────────────────────────────
+
 
 @router.get("/license", response_model=LicenseValidation)
 async def get_my_license(
@@ -150,9 +151,7 @@ async def submit_telemetry(
 async def validate_export(
     data: DataExportRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> dict:
     """
     Validate if data export is allowed for this facility's tier.
@@ -163,9 +162,7 @@ async def validate_export(
     @returns Validation result
     """
     service = LicensingService(db)
-    allowed, reason = await service.validate_export_access(
-        current_user.facility_id, data
-    )
+    allowed, reason = await service.validate_export_access(current_user.facility_id, data)
     if not allowed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -175,6 +172,7 @@ async def validate_export(
 
 
 # ─── Admin Endpoints (Aifya HQ only) ─────────────────────────────────────────
+
 
 @router.post("/admin/licenses", response_model=LicenseResponse, status_code=status.HTTP_201_CREATED)
 async def create_license(
@@ -230,9 +228,7 @@ async def upgrade_license(
     @returns New upgraded license
     """
     service = LicensingService(db)
-    license_obj = await service.upgrade_license(
-        facility_id, data, current_user.name
-    )
+    license_obj = await service.upgrade_license(facility_id, data, current_user.name)
     return LicenseResponse.from_license(
         license_key=license_obj.license_key,
         id=str(license_obj.id),

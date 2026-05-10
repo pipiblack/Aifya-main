@@ -10,7 +10,6 @@ from typing import Any
 import pytest
 from httpx import AsyncClient
 
-
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 
@@ -32,9 +31,7 @@ async def create_female_patient(client: AsyncClient) -> dict[str, Any]:
     return response.json()
 
 
-async def create_anc_profile(
-    client: AsyncClient, patient_id: str
-) -> dict[str, Any]:
+async def create_anc_profile(client: AsyncClient, patient_id: str) -> dict[str, Any]:
     """Create an ANC profile for the given patient and return response data.
 
     @param client: Async HTTP test client
@@ -55,9 +52,7 @@ async def create_anc_profile(
     return response.json()
 
 
-async def create_anc_visit(
-    client: AsyncClient, anc_profile_id: str
-) -> dict[str, Any]:
+async def create_anc_visit(client: AsyncClient, anc_profile_id: str) -> dict[str, Any]:
     """Add an ANC visit to an existing profile and return response data.
 
     @param client: Async HTTP test client
@@ -81,9 +76,7 @@ async def create_anc_visit(
     return response.json()
 
 
-async def record_delivery(
-    client: AsyncClient, anc_profile_id: str
-) -> dict[str, Any]:
+async def record_delivery(client: AsyncClient, anc_profile_id: str) -> dict[str, Any]:
     """Record a delivery for an ANC profile and return response data.
 
     @param client: Async HTTP test client
@@ -105,9 +98,7 @@ async def record_delivery(
     return response.json()
 
 
-async def create_child_record(
-    client: AsyncClient, patient_id: str, mother_id: str
-) -> dict[str, Any]:
+async def create_child_record(client: AsyncClient, patient_id: str, mother_id: str) -> dict[str, Any]:
     """Create a child health record and return response data.
 
     @param client: Async HTTP test client
@@ -376,9 +367,7 @@ async def test_add_multiple_anc_visits(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_add_anc_visit_missing_required_fields(client: AsyncClient) -> None:
     """Test that adding an ANC visit without required fields returns 422."""
-    response = await client.post(
-        "/api/v1/mch/anc/visits", json={"visit_number": 1}
-    )
+    response = await client.post("/api/v1/mch/anc/visits", json={"visit_number": 1})
     assert response.status_code == 422
 
 
@@ -436,9 +425,7 @@ async def test_record_delivery_invalid_profile(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_record_delivery_missing_required_fields(client: AsyncClient) -> None:
     """Test that recording delivery without required fields returns 422."""
-    response = await client.post(
-        "/api/v1/mch/delivery", json={"delivery_type": "normal_vaginal"}
-    )
+    response = await client.post("/api/v1/mch/delivery", json={"delivery_type": "normal_vaginal"})
     assert response.status_code == 422
 
 
@@ -536,9 +523,7 @@ async def test_create_child_record_appears_in_list(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_create_child_record_missing_required_fields(client: AsyncClient) -> None:
     """Test that creating a child record without required fields returns 422."""
-    response = await client.post(
-        "/api/v1/mch/children", json={"birth_weight": 3000}
-    )
+    response = await client.post("/api/v1/mch/children", json={"birth_weight": 3000})
     assert response.status_code == 422
 
 
@@ -568,9 +553,7 @@ async def test_record_immunization(client: AsyncClient) -> None:
         "site": "left_arm",
         "batch_number": "BCG-2026-001",
     }
-    response = await client.post(
-        f"/api/v1/mch/children/{child_record['id']}/immunizations", json=payload
-    )
+    response = await client.post(f"/api/v1/mch/children/{child_record['id']}/immunizations", json=payload)
 
     assert response.status_code == 201
     data: dict[str, Any] = response.json()
@@ -619,9 +602,7 @@ async def test_record_multiple_immunizations(client: AsyncClient) -> None:
         "site": "left_arm",
         "batch_number": "BCG-2026-001",
     }
-    resp1 = await client.post(
-        f"/api/v1/mch/children/{child_id}/immunizations", json=bcg_payload
-    )
+    resp1 = await client.post(f"/api/v1/mch/children/{child_id}/immunizations", json=bcg_payload)
     assert resp1.status_code == 201
 
     # OPV 0
@@ -633,9 +614,7 @@ async def test_record_multiple_immunizations(client: AsyncClient) -> None:
         "site": "oral",
         "batch_number": "OPV-2026-001",
     }
-    resp2 = await client.post(
-        f"/api/v1/mch/children/{child_id}/immunizations", json=opv_payload
-    )
+    resp2 = await client.post(f"/api/v1/mch/children/{child_id}/immunizations", json=opv_payload)
     assert resp2.status_code == 201
 
 
@@ -657,9 +636,7 @@ async def test_list_immunizations_empty(client: AsyncClient) -> None:
     child_patient = child_resp.json()
     child_record = await create_child_record(client, child_patient["id"], mother["id"])
 
-    response = await client.get(
-        f"/api/v1/mch/children/{child_record['id']}/immunizations"
-    )
+    response = await client.get(f"/api/v1/mch/children/{child_record['id']}/immunizations")
 
     assert response.status_code == 200
     data: list[dict[str, Any]] = response.json()
@@ -691,9 +668,7 @@ async def test_list_immunizations_after_recording(client: AsyncClient) -> None:
         "site": "left_arm",
         "batch_number": "BCG-2026-001",
     }
-    await client.post(
-        f"/api/v1/mch/children/{child_id}/immunizations", json=imm_payload
-    )
+    await client.post(f"/api/v1/mch/children/{child_id}/immunizations", json=imm_payload)
 
     # List
     response = await client.get(f"/api/v1/mch/children/{child_id}/immunizations")
@@ -753,9 +728,7 @@ async def test_full_mch_workflow(client: AsyncClient) -> None:
         "site": "left_arm",
         "batch_number": "BCG-2026-001",
     }
-    imm_resp = await client.post(
-        f"/api/v1/mch/children/{child_id}/immunizations", json=imm_payload
-    )
+    imm_resp = await client.post(f"/api/v1/mch/children/{child_id}/immunizations", json=imm_payload)
     assert imm_resp.status_code == 201
 
     # 8. Verify immunization list

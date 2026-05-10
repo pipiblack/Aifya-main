@@ -8,14 +8,18 @@ breakdowns and confidence intervals.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import extract, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.analytics.models import RevenueForecast
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 

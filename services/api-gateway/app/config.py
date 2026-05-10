@@ -74,7 +74,7 @@ class Settings(BaseSettings):
             if self.secret_key in _INSECURE_DEFAULTS:
                 raise ValueError(
                     "SECRET_KEY must be set to a secure random value. "
-                    "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                    'Generate one with: python -c "import secrets; print(secrets.token_hex(32))"'
                 )
             if self.database_url in _INSECURE_DEFAULTS:
                 raise ValueError(

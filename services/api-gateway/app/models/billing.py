@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.models.base import AuditMixin
@@ -23,12 +23,8 @@ class Invoice(AuditMixin, Base):
         Index("ix_invoices_number", "facility_id", "invoice_number", unique=True),
     )
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
     invoice_number: Mapped[str] = mapped_column(String(30), nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), default="draft", nullable=False
@@ -58,13 +54,9 @@ class InvoiceItem(AuditMixin, Base):
     """
 
     __tablename__ = "invoice_items"
-    __table_args__ = (
-        Index("ix_invoice_items_invoice", "invoice_id"),
-    )
+    __table_args__ = (Index("ix_invoice_items_invoice", "invoice_id"),)
 
-    invoice_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=False
-    )
+    invoice_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=False)
     item_type: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # consultation, pharmacy, lab, procedure, bed, nursing, other
@@ -92,20 +84,12 @@ class Payment(AuditMixin, Base):
         Index("ix_payments_facility_date", "facility_id", "paid_at"),
     )
 
-    invoice_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
+    invoice_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
-    payment_method: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # cash, mpesa, insurance, exemption
+    payment_method: Mapped[str] = mapped_column(String(20), nullable=False)  # cash, mpesa, insurance, exemption
     reference_number: Mapped[str | None] = mapped_column(String(100))  # M-Pesa code, receipt #
     mpesa_transaction_id: Mapped[str | None] = mapped_column(String(50))
     received_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    paid_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    paid_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)

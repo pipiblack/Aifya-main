@@ -7,12 +7,12 @@ Year-end close sweeps income/expense balances to Retained Earnings.
 
 from __future__ import annotations
 
-import uuid
-from datetime import date as date_type, datetime, timezone
+from datetime import UTC, datetime
+from datetime import date as date_type
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import (
     Account,
@@ -26,6 +26,10 @@ from app.services.finance.posting_engine import (
     post_transaction,
 )
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _ZERO = Decimal("0")
 _QUANT = Decimal("0.01")
@@ -116,7 +120,7 @@ async def close_period(
     period = await assert_period_open(db, facility_id, period_id)
     period.status = "closed"
     period.closed_by = user_id
-    period.closed_at = datetime.now(timezone.utc)
+    period.closed_at = datetime.now(UTC)
     period.updated_by = user_id
 
     db.add(
@@ -215,8 +219,7 @@ async def run_year_end_close(
         )
         .join(
             TransactionEntry,
-            (TransactionEntry.account_id == Account.id)
-            & (TransactionEntry.facility_id == facility_id),
+            (TransactionEntry.account_id == Account.id) & (TransactionEntry.facility_id == facility_id),
             isouter=True,
         )
         .join(
@@ -359,9 +362,7 @@ async def run_year_end_close(
             UnbalancedTransactionError,
         )
 
-        raise UnbalancedTransactionError(
-            f"Year-end close unbalanced: DR={total_dr} CR={total_cr}"
-        )
+        raise UnbalancedTransactionError(f"Year-end close unbalanced: DR={total_dr} CR={total_cr}")
 
     closing_txn.amount = _q(total_dr)
 
@@ -384,7 +385,7 @@ async def run_year_end_close(
     # Lock the period
     period.status = "locked"
     period.closed_by = user_id
-    period.closed_at = datetime.now(timezone.utc)
+    period.closed_at = datetime.now(UTC)
     period.updated_by = user_id
 
     await db.flush()

@@ -11,7 +11,6 @@ All AI I/O logged to ai_interactions event.
 from __future__ import annotations
 
 import os
-import uuid
 
 import httpx
 from structlog import get_logger
@@ -85,8 +84,10 @@ class ImagingAnalyzer:
         findings: list[ImagingFinding] = []
 
         if tb_result.tb_probability > 0.3:
-            severity = FindingSeverity.CRITICAL if tb_result.tb_probability > 0.8 else (
-                FindingSeverity.SEVERE if tb_result.tb_probability > 0.6 else FindingSeverity.MODERATE
+            severity = (
+                FindingSeverity.CRITICAL
+                if tb_result.tb_probability > 0.8
+                else (FindingSeverity.SEVERE if tb_result.tb_probability > 0.6 else FindingSeverity.MODERATE)
             )
 
             findings.append(

@@ -7,10 +7,13 @@ including readmission risk, bed demand, no-show, stockout, and revenue forecasti
 
 from __future__ import annotations
 
-import uuid
-from datetime import date
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    import uuid
+    from datetime import date
 
 
 class ReadmissionRisk(BaseModel):
@@ -54,15 +57,9 @@ class BedDemandForecast(BaseModel):
 
     date: date
     department: str
-    predicted_occupancy: float = Field(
-        ge=0.0, le=100.0, description="Predicted bed occupancy percentage"
-    )
-    confidence_interval: tuple[float, float] = Field(
-        description="Lower and upper bounds of prediction (percentage)"
-    )
-    current_occupancy: float = Field(
-        ge=0.0, le=100.0, description="Current bed occupancy percentage"
-    )
+    predicted_occupancy: float = Field(ge=0.0, le=100.0, description="Predicted bed occupancy percentage")
+    confidence_interval: tuple[float, float] = Field(description="Lower and upper bounds of prediction (percentage)")
+    current_occupancy: float = Field(ge=0.0, le=100.0, description="Current bed occupancy percentage")
     recommended_actions: list[str] = Field(
         default_factory=list,
         description="Suggested actions based on forecast",
@@ -82,16 +79,12 @@ class NoShowPrediction(BaseModel):
 
     appointment_id: uuid.UUID
     patient_id: uuid.UUID
-    no_show_probability: float = Field(
-        ge=0.0, le=1.0, description="Probability of no-show (0-1)"
-    )
+    no_show_probability: float = Field(ge=0.0, le=1.0, description="Probability of no-show (0-1)")
     risk_factors: list[str] = Field(
         default_factory=list,
         description="Factors contributing to no-show risk",
     )
-    recommended_action: str = Field(
-        description="Suggested action to reduce no-show likelihood"
-    )
+    recommended_action: str = Field(description="Suggested action to reduce no-show likelihood")
 
 
 class StockoutPrediction(BaseModel):
@@ -110,12 +103,8 @@ class StockoutPrediction(BaseModel):
     item_code: str
     item_name: str
     current_stock: int = Field(ge=0, description="Current stock quantity")
-    predicted_days_to_stockout: float = Field(
-        ge=0.0, description="Estimated days until stockout"
-    )
-    daily_consumption_rate: float = Field(
-        ge=0.0, description="Average daily consumption"
-    )
+    predicted_days_to_stockout: float = Field(ge=0.0, description="Estimated days until stockout")
+    daily_consumption_rate: float = Field(ge=0.0, description="Average daily consumption")
     reorder_quantity: int = Field(ge=0, description="Recommended reorder quantity")
     urgency: str = Field(
         pattern=r"^(low|moderate|high|critical)$",
@@ -135,15 +124,9 @@ class RevenueForecast(BaseModel):
     """
 
     period: str = Field(description="Month in YYYY-MM format")
-    predicted_revenue_cents: int = Field(
-        ge=0, description="Predicted revenue in KES cents"
-    )
-    confidence_lower: int = Field(
-        ge=0, description="Lower confidence bound (KES cents)"
-    )
-    confidence_upper: int = Field(
-        ge=0, description="Upper confidence bound (KES cents)"
-    )
+    predicted_revenue_cents: int = Field(ge=0, description="Predicted revenue in KES cents")
+    confidence_lower: int = Field(ge=0, description="Lower confidence bound (KES cents)")
+    confidence_upper: int = Field(ge=0, description="Upper confidence bound (KES cents)")
     components: dict[str, int] = Field(
         default_factory=dict,
         description="Revenue breakdown by department/service (KES cents)",

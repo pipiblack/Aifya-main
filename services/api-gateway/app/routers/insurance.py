@@ -17,7 +17,8 @@ from app.schemas.insurance import (
     InsuranceSummary,
 )
 from app.services.insurance_service import InsuranceService
-from app.services.sha.validation import ShaMember, validate_member as validate_sha_member
+from app.services.sha.validation import ShaMember
+from app.services.sha.validation import validate_member as validate_sha_member
 
 router = APIRouter(dependencies=[Depends(require_module("insurance"))])
 
@@ -73,7 +74,9 @@ async def create_scheme(
     @returns Created scheme
     """
     service = InsuranceService(db)
-    scheme = await service.create_scheme(data=data, facility_id=current_user.facility_id, created_by=current_user.user_id)
+    scheme = await service.create_scheme(
+        data=data, facility_id=current_user.facility_id, created_by=current_user.user_id
+    )
     return InsuranceSchemeResponse.model_validate(scheme)
 
 
@@ -100,9 +103,7 @@ async def list_claims(
 async def create_claim(
     data: ClaimCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "billing_officer")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "billing_officer")),
 ) -> ClaimResponse:
     """
     Create an insurance claim.
@@ -169,9 +170,7 @@ async def update_claim_status(
     claim_id: uuid.UUID,
     data: ClaimStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "billing_officer")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "billing_officer")),
 ) -> ClaimResponse:
     """
     Update claim status.

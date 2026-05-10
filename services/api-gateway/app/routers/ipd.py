@@ -70,9 +70,7 @@ async def list_wards(
 async def create_ward(
     data: WardCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> WardResponse:
     """
     Create a new ward.
@@ -126,9 +124,7 @@ async def list_beds(
 async def create_bed(
     data: BedCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> BedResponse:
     """
     Create a new bed in a ward.
@@ -183,9 +179,7 @@ async def list_admissions(
 async def admit_patient(
     data: AdmissionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "admin", "facility_admin")),
     x_idempotency_key: str | None = Header(None),
 ) -> AdmissionResponse:
     """
@@ -250,9 +244,7 @@ async def discharge_patient(
     admission_id: uuid.UUID,
     data: DischargeRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin", "facility_admin")),
 ) -> AdmissionResponse:
     """
     Discharge an inpatient — frees bed, updates encounter status.
@@ -321,9 +313,7 @@ async def add_nursing_note(
     admission_id: uuid.UUID,
     data: NursingNoteCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("nurse", "doctor", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("nurse", "doctor", "admin", "facility_admin")),
 ) -> NursingNoteResponse:
     """
     Add a nursing note to an admission.

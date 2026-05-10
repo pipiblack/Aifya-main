@@ -6,13 +6,11 @@ from the materialised line items rather than re-running the engine.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.payroll import (
     Employee,
@@ -21,6 +19,10 @@ from app.models.payroll import (
 )
 from app.models.payroll_extra import PayrollLeaveRequest
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _ZERO = Decimal("0")
 
@@ -39,15 +41,22 @@ async def get_monthly_payroll_summary(
     @returns dict with `month`, `year`, `departments` (list), grand totals.
     """
     run = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.facility_id == facility_id,
-                PayrollRun.is_deleted.is_(False),
-                PayrollRun.month == month,
-                PayrollRun.year == year,
-            ).order_by(PayrollRun.created_at.desc()).limit(1)
+        (
+            await db.execute(
+                select(PayrollRun)
+                .where(
+                    PayrollRun.facility_id == facility_id,
+                    PayrollRun.is_deleted.is_(False),
+                    PayrollRun.month == month,
+                    PayrollRun.year == year,
+                )
+                .order_by(PayrollRun.created_at.desc())
+                .limit(1)
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if run is None:
         return {
             "month": month,
@@ -121,15 +130,22 @@ async def _statutory_schedule(
 ) -> list[dict[str, Any]]:
     """Generic per-employee statutory schedule helper."""
     run = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.facility_id == facility_id,
-                PayrollRun.is_deleted.is_(False),
-                PayrollRun.month == month,
-                PayrollRun.year == year,
-            ).order_by(PayrollRun.created_at.desc()).limit(1)
+        (
+            await db.execute(
+                select(PayrollRun)
+                .where(
+                    PayrollRun.facility_id == facility_id,
+                    PayrollRun.is_deleted.is_(False),
+                    PayrollRun.month == month,
+                    PayrollRun.year == year,
+                )
+                .order_by(PayrollRun.created_at.desc())
+                .limit(1)
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if run is None:
         return []
 
@@ -167,31 +183,19 @@ async def _statutory_schedule(
     ]
 
 
-async def get_paye_schedule(
-    db: AsyncSession, facility_id: uuid.UUID, month: int, year: int
-) -> list[dict[str, Any]]:
+async def get_paye_schedule(db: AsyncSession, facility_id: uuid.UUID, month: int, year: int) -> list[dict[str, Any]]:
     """KRA P10 PAYE schedule per employee."""
-    return await _statutory_schedule(
-        db, facility_id, month, year, field="paye", id_field="kra_pin"
-    )
+    return await _statutory_schedule(db, facility_id, month, year, field="paye", id_field="kra_pin")
 
 
-async def get_nssf_schedule(
-    db: AsyncSession, facility_id: uuid.UUID, month: int, year: int
-) -> list[dict[str, Any]]:
+async def get_nssf_schedule(db: AsyncSession, facility_id: uuid.UUID, month: int, year: int) -> list[dict[str, Any]]:
     """NSSF schedule per employee."""
-    return await _statutory_schedule(
-        db, facility_id, month, year, field="nssf_employee", id_field="nssf_number"
-    )
+    return await _statutory_schedule(db, facility_id, month, year, field="nssf_employee", id_field="nssf_number")
 
 
-async def get_shif_schedule(
-    db: AsyncSession, facility_id: uuid.UUID, month: int, year: int
-) -> list[dict[str, Any]]:
+async def get_shif_schedule(db: AsyncSession, facility_id: uuid.UUID, month: int, year: int) -> list[dict[str, Any]]:
     """SHIF schedule per employee."""
-    return await _statutory_schedule(
-        db, facility_id, month, year, field="shif", id_field="shif_number"
-    )
+    return await _statutory_schedule(db, facility_id, month, year, field="shif", id_field="shif_number")
 
 
 # ── P9 annual return ───────────────────────────────────────────────────────
@@ -208,14 +212,18 @@ async def generate_p9(
     The sum of monthly PAYE figures MUST equal `total_paye` in the response.
     """
     emp = (
-        await db.execute(
-            select(Employee).where(
-                Employee.id == employee_id,
-                Employee.facility_id == facility_id,
-                Employee.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == facility_id,
+                    Employee.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if emp is None:
         raise ValueError("Employee not found")
 
@@ -349,10 +357,7 @@ async def get_leave_utilisation(
     ).all()
     return {
         "year": year,
-        "items": [
-            {"leave_type_id": lt, "days_taken": int(days or 0)}
-            for (lt, days) in rows
-        ],
+        "items": [{"leave_type_id": lt, "days_taken": int(days or 0)} for (lt, days) in rows],
     }
 
 
@@ -427,10 +432,7 @@ async def get_employee_turnover(
                 Employee.is_active.is_(True),
                 Employee.hire_date <= period_end,
                 and_(
-                    (
-                        Employee.termination_date.is_(None)
-                        | (Employee.termination_date > period_end)
-                    ),
+                    (Employee.termination_date.is_(None) | (Employee.termination_date > period_end)),
                 ),
             )
         )

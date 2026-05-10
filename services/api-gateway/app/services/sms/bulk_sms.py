@@ -13,18 +13,22 @@ Per CLAUDE.md:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Iterable
+from typing import TYPE_CHECKING
 
 import httpx
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.config import settings
 from app.models.sms import SmsCampaign, SmsDeliveryLog
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -80,7 +84,7 @@ def _chunk(items: list[str], size: int) -> Iterable[list[str]]:
     @param size: Chunk size
     """
     for i in range(0, len(items), size):
-        yield items[i:i + size]
+        yield items[i : i + size]
 
 
 async def send_bulk_sms(
@@ -122,7 +126,7 @@ async def send_bulk_sms(
 
     if not deduped:
         campaign.status = "completed"
-        campaign.completed_at = datetime.now(timezone.utc)
+        campaign.completed_at = datetime.now(UTC)
         return BulkSmsResult(
             campaign_id=campaign.id,
             recipient_count=0,
@@ -144,13 +148,13 @@ async def send_bulk_sms(
                     status="sent",
                     provider_message_id=f"MOCK-{uuid.uuid4().hex[:12]}",
                     cost=Decimal("0"),
-                    sent_at=datetime.now(timezone.utc),
+                    sent_at=datetime.now(UTC),
                     error_msg="MOCK: AT_USERNAME/AT_API_KEY not configured",
                 )
             )
         campaign.sent_count = len(deduped)
         campaign.status = "completed"
-        campaign.completed_at = datetime.now(timezone.utc)
+        campaign.completed_at = datetime.now(UTC)
         await db.flush()
         logger.warning(
             "bulk_sms_mock_mode",
@@ -190,7 +194,7 @@ async def send_bulk_sms(
                         status=info["status"],
                         provider_message_id=info.get("messageId"),
                         cost=Decimal(str(info.get("cost", "0"))),
-                        sent_at=datetime.now(timezone.utc),
+                        sent_at=datetime.now(UTC),
                         error_msg=info.get("error"),
                     )
                 )
@@ -210,7 +214,7 @@ async def send_bulk_sms(
                             message=message,
                             status="failed",
                             cost=Decimal("0"),
-                            sent_at=datetime.now(timezone.utc),
+                            sent_at=datetime.now(UTC),
                             error_msg="Provider request failed",
                         )
                     )
@@ -218,10 +222,8 @@ async def send_bulk_sms(
 
     campaign.sent_count = sent
     campaign.failed_count = failed
-    campaign.status = "completed" if failed == 0 else (
-        "failed" if sent == 0 else "completed"
-    )
-    campaign.completed_at = datetime.now(timezone.utc)
+    campaign.status = "completed" if failed == 0 else ("failed" if sent == 0 else "completed")
+    campaign.completed_at = datetime.now(UTC)
     await db.flush()
 
     return BulkSmsResult(

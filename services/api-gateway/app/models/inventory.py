@@ -1,7 +1,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,9 +47,7 @@ class InventoryItem(AuditMixin, Base):
 
     # Location
     store_location: Mapped[str | None] = mapped_column(String(100))
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
 
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     specifications: Mapped[dict | None] = mapped_column(JSONB)
@@ -56,9 +62,7 @@ class InventoryTransaction(AuditMixin, Base):
         Index("ix_inventory_transactions_date", "facility_id", "transaction_date"),
     )
 
-    item_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("inventory_items.id"), nullable=False
-    )
+    item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("inventory_items.id"), nullable=False)
     transaction_type: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # receipt, issue, return, adjustment, transfer, write_off, opening
@@ -82,9 +86,7 @@ class Supplier(AuditMixin, Base):
     """Vendor/supplier for procurement."""
 
     __tablename__ = "suppliers"
-    __table_args__ = (
-        Index("ix_suppliers_facility", "facility_id"),
-    )
+    __table_args__ = (Index("ix_suppliers_facility", "facility_id"),)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     supplier_code: Mapped[str | None] = mapped_column(String(50))
@@ -110,12 +112,8 @@ class PurchaseOrder(AuditMixin, Base):
     )
 
     po_number: Mapped[str] = mapped_column(String(50), nullable=False)  # PO-YYYYMMDD-XXXX
-    supplier_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=False
-    )
-    order_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    supplier_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=False)
+    order_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expected_delivery: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(
         String(20), default="draft", nullable=False
@@ -135,16 +133,12 @@ class PurchaseOrderItem(AuditMixin, Base):
     """Line item on a purchase order."""
 
     __tablename__ = "purchase_order_items"
-    __table_args__ = (
-        Index("ix_po_items_order", "purchase_order_id"),
-    )
+    __table_args__ = (Index("ix_po_items_order", "purchase_order_id"),)
 
     purchase_order_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("purchase_orders.id"), nullable=False
     )
-    item_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("inventory_items.id"), nullable=False
-    )
+    item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("inventory_items.id"), nullable=False)
     quantity_ordered: Mapped[int] = mapped_column(Integer, nullable=False)
     quantity_received: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     unit_cost: Mapped[int] = mapped_column(Integer, nullable=False)  # KES cents

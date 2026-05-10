@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,15 +23,9 @@ class ImagingOrder(AuditMixin, Base):
         Index("ix_imaging_orders_modality", "facility_id", "modality"),
     )
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    ordered_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    ordered_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Order identifiers
     order_number: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -42,23 +36,17 @@ class ImagingOrder(AuditMixin, Base):
         String(20), nullable=False
     )  # xray, ultrasound, ct, mri, fluoroscopy, mammography, ecg, echo
     body_part: Mapped[str] = mapped_column(String(100), nullable=False)  # chest, abdomen, skull, etc.
-    laterality: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # left, right, bilateral, na
+    laterality: Mapped[str | None] = mapped_column(String(20))  # left, right, bilateral, na
     views_requested: Mapped[str | None] = mapped_column(String(200))  # AP, PA, lateral, etc.
     study_description: Mapped[str] = mapped_column(String(300), nullable=False)
 
     # Clinical context
-    priority: Mapped[str] = mapped_column(
-        String(20), default="routine", nullable=False
-    )  # stat, urgent, routine
+    priority: Mapped[str] = mapped_column(String(20), default="routine", nullable=False)  # stat, urgent, routine
     clinical_indication: Mapped[str | None] = mapped_column(Text)
     clinical_history: Mapped[str | None] = mapped_column(Text)
     contrast_required: Mapped[bool] = mapped_column(default=False, nullable=False)
     contrast_type: Mapped[str | None] = mapped_column(String(100))
-    pregnancy_status: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # not_pregnant, pregnant, unknown, na
+    pregnancy_status: Mapped[str | None] = mapped_column(String(20))  # not_pregnant, pregnant, unknown, na
     allergies_noted: Mapped[str | None] = mapped_column(Text)
 
     # Status
@@ -71,9 +59,7 @@ class ImagingOrder(AuditMixin, Base):
     room: Mapped[str | None] = mapped_column(String(50))
 
     # Performing tech
-    performed_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    performed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     performed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Cost (KES cents)
@@ -95,20 +81,12 @@ class ImagingResult(AuditMixin, Base):
         Index("ix_imaging_results_status", "facility_id", "status"),
     )
 
-    order_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("imaging_orders.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("imaging_orders.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
 
     # Reporting radiologist
-    reported_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
-    verified_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    reported_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
+    verified_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
 
     # Report
     findings: Mapped[str | None] = mapped_column(Text)

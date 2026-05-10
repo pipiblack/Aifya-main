@@ -5,7 +5,7 @@ and Africa's Talking-powered bulk SMS campaigns.
 """
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -33,9 +33,13 @@ from app.services.comms.models import (
 from app.services.comms.service import CommunicationService
 from app.services.sms.bulk_sms import (
     BulkSmsResult,
-    list_campaigns as list_sms_campaigns,
-    list_delivery_log as list_sms_delivery_log,
     send_bulk_sms,
+)
+from app.services.sms.bulk_sms import (
+    list_campaigns as list_sms_campaigns,
+)
+from app.services.sms.bulk_sms import (
+    list_delivery_log as list_sms_delivery_log,
 )
 
 logger = get_logger(__name__)
@@ -68,8 +72,9 @@ async def send_message(
     service = CommunicationService(db)
 
     # Look up patient phone from DB
-    from app.models.patient import Patient
     from sqlalchemy import select
+
+    from app.models.patient import Patient
 
     result = await db.execute(
         select(Patient).where(
@@ -113,9 +118,7 @@ async def send_message(
 async def send_bulk_messages(
     data: BulkMessageRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> list[MessageResponse]:
     """
     Send bulk messages to multiple patients. Admin only.
@@ -304,9 +307,7 @@ async def list_templates(
 async def create_template(
     data: MessageTemplateCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> MessageTemplate:
     """
     Create a custom message template. Admin only.
@@ -326,9 +327,7 @@ async def create_template(
 # ── Bulk SMS Campaigns ────────────────────────────────────────────────────────
 
 
-_RecipientFilter = Literal[
-    "all_patients", "all_staff", "appointments_today", "custom"
-]
+_RecipientFilter = Literal["all_patients", "all_staff", "appointments_today", "custom"]
 
 
 class BulkSmsApiRequest(BaseModel):
@@ -424,7 +423,7 @@ async def _resolve_recipients(
         from app.models.appointment import Appointment
         from app.models.patient import Patient
 
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
         result = await db.execute(
             select(Patient.phone_number)
             .join(Appointment, Appointment.patient_id == Patient.id)
@@ -450,9 +449,7 @@ async def _resolve_recipients(
 async def send_bulk_sms_campaign(
     data: BulkSmsApiRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> BulkSmsResult:
     """
     Send a bulk SMS campaign. Admin only.
@@ -517,7 +514,5 @@ async def get_sms_delivery_log(
     @param current_user: Authenticated user from JWT
     @returns List of delivery records
     """
-    rows = await list_sms_delivery_log(
-        db, current_user.facility_id, campaign_id=campaign_id
-    )
+    rows = await list_sms_delivery_log(db, current_user.facility_id, campaign_id=campaign_id)
     return [SmsDeliveryLogItem.model_validate(r) for r in rows]

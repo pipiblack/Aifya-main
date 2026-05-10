@@ -3,7 +3,6 @@ from datetime import date, datetime, time
 
 from pydantic import BaseModel, Field
 
-
 # ── Staff Profile ───────────────────────────────────────────────────────────
 
 

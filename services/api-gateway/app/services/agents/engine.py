@@ -14,9 +14,9 @@ from __future__ import annotations
 import os
 import time
 import uuid
+from typing import TYPE_CHECKING
 
 import httpx
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.services.agents.models import (
@@ -29,6 +29,9 @@ from app.services.agents.models import (
     ScreeningAgentInput,
     WorkflowStatus,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -78,8 +81,12 @@ class AgentEngine:
 
         # Step 1: Gather clinical data
         step1 = await self._run_step(
-            workflow, 0, "Gather Clinical Summary",
-            self._gather_clinical_data, input_data.patient_id, input_data.encounter_id
+            workflow,
+            0,
+            "Gather Clinical Summary",
+            self._gather_clinical_data,
+            input_data.patient_id,
+            input_data.encounter_id,
         )
 
         if step1.status == AgentStepStatus.FAILED:
@@ -90,26 +97,22 @@ class AgentEngine:
 
         # Step 2: Generate discharge summary via AI
         step2 = await self._run_step(
-            workflow, 1, "Generate Discharge Summary",
-            self._ai_generate, "discharge_summary", clinical_data
+            workflow, 1, "Generate Discharge Summary", self._ai_generate, "discharge_summary", clinical_data
         )
 
         # Step 3: Medication reconciliation
         step3 = await self._run_step(
-            workflow, 2, "Medication Reconciliation",
-            self._ai_generate, "medication_reconciliation", clinical_data
+            workflow, 2, "Medication Reconciliation", self._ai_generate, "medication_reconciliation", clinical_data
         )
 
         # Step 4: Follow-up plan
         step4 = await self._run_step(
-            workflow, 3, "Generate Follow-up Plan",
-            self._ai_generate, "follow_up_plan", clinical_data
+            workflow, 3, "Generate Follow-up Plan", self._ai_generate, "follow_up_plan", clinical_data
         )
 
         # Step 5: Patient education (bilingual)
         step5 = await self._run_step(
-            workflow, 4, "Patient Education Materials",
-            self._ai_generate, "patient_education_bilingual", clinical_data
+            workflow, 4, "Patient Education Materials", self._ai_generate, "patient_education_bilingual", clinical_data
         )
 
         workflow.status = WorkflowStatus.AWAITING_CLINICIAN
@@ -149,35 +152,33 @@ class AgentEngine:
         )
 
         # Step 1: Gather claim data
-        step1 = await self._run_step(
-            workflow, 0, "Gather Encounter Data",
-            self._gather_claim_data, input_data
-        )
+        step1 = await self._run_step(workflow, 0, "Gather Encounter Data", self._gather_claim_data, input_data)
 
         claim_data = step1.output_data or {}
 
         # Step 2: Map to SHA codes
         step2 = await self._run_step(
-            workflow, 1, "Map SHA Claim Codes",
-            self._ai_generate, "sha_code_mapping", claim_data
+            workflow, 1, "Map SHA Claim Codes", self._ai_generate, "sha_code_mapping", claim_data
         )
 
         # Step 3: Validate completeness
         step3 = await self._run_step(
-            workflow, 2, "Validate Claim Completeness",
-            self._ai_generate, "claim_validation", {**claim_data, "sha_codes": step2.output_data}
+            workflow,
+            2,
+            "Validate Claim Completeness",
+            self._ai_generate,
+            "claim_validation",
+            {**claim_data, "sha_codes": step2.output_data},
         )
 
         # Step 4: Generate narrative
         step4 = await self._run_step(
-            workflow, 3, "Generate Claim Narrative",
-            self._ai_generate, "claim_narrative", claim_data
+            workflow, 3, "Generate Claim Narrative", self._ai_generate, "claim_narrative", claim_data
         )
 
         # Step 5: Package claim
         step5 = await self._run_step(
-            workflow, 4, "Package SHA Claim",
-            self._package_claim, claim_data, step2.output_data, step4.output_data
+            workflow, 4, "Package SHA Claim", self._package_claim, claim_data, step2.output_data, step4.output_data
         )
 
         workflow.status = WorkflowStatus.AWAITING_CLINICIAN
@@ -216,28 +217,35 @@ class AgentEngine:
 
         # Step 1: Patient profile
         step1 = await self._run_step(
-            workflow, 0, "Gather Patient Profile",
-            self._gather_patient_profile, input_data.patient_id
+            workflow, 0, "Gather Patient Profile", self._gather_patient_profile, input_data.patient_id
         )
 
         patient_profile = step1.output_data or {}
 
         # Step 2: AI screening match
         step2 = await self._run_step(
-            workflow, 1, "AI Trial Matching",
-            self._ai_generate, "trial_screening", {
+            workflow,
+            1,
+            "AI Trial Matching",
+            self._ai_generate,
+            "trial_screening",
+            {
                 "patient_profile": patient_profile,
                 "trial_id": input_data.trial_id,
-            }
+            },
         )
 
         # Step 3: Generate screening report
         step3 = await self._run_step(
-            workflow, 2, "Generate Screening Report",
-            self._ai_generate, "screening_report", {
+            workflow,
+            2,
+            "Generate Screening Report",
+            self._ai_generate,
+            "screening_report",
+            {
                 "patient_profile": patient_profile,
                 "matches": step2.output_data,
-            }
+            },
         )
 
         workflow.status = WorkflowStatus.AWAITING_CLINICIAN
@@ -296,6 +304,7 @@ class AgentEngine:
         @returns Clinical data dict
         """
         from sqlalchemy import select
+
         from app.models.diagnosis import Diagnosis
         from app.models.encounter import Encounter
         from app.models.patient import Patient
@@ -308,7 +317,7 @@ class AgentEngine:
 
         # Encounter
         enc = await self.db.execute(select(Encounter).where(Encounter.id == encounter_id))
-        encounter = enc.scalar_one_or_none()
+        enc.scalar_one_or_none()
 
         # Diagnoses
         dx = await self.db.execute(
@@ -324,8 +333,10 @@ class AgentEngine:
 
         # Latest vitals
         vt = await self.db.execute(
-            select(VitalSign).where(VitalSign.patient_id == patient_id, VitalSign.is_deleted == False)  # noqa: E712
-            .order_by(VitalSign.created_at.desc()).limit(1)
+            select(VitalSign)
+            .where(VitalSign.patient_id == patient_id, VitalSign.is_deleted == False)  # noqa: E712
+            .order_by(VitalSign.created_at.desc())
+            .limit(1)
         )
         vital = vt.scalar_one_or_none()
 
@@ -341,7 +352,9 @@ class AgentEngine:
                 "bp": f"{vital.systolic_bp}/{vital.diastolic_bp}" if vital and vital.systolic_bp else "N/A",
                 "temp": str(vital.temperature) if vital and vital.temperature else "N/A",
                 "hr": str(vital.heart_rate) if vital and vital.heart_rate else "N/A",
-            } if vital else {},
+            }
+            if vital
+            else {},
         }
 
     async def _gather_claim_data(self, input_data: ClaimsAgentInput) -> dict:
@@ -366,6 +379,7 @@ class AgentEngine:
         @returns Patient clinical profile
         """
         from sqlalchemy import select
+
         from app.models.diagnosis import Diagnosis
         from app.models.patient import Patient
 
@@ -373,8 +387,10 @@ class AgentEngine:
         patient = pat.scalar_one_or_none()
 
         dx = await self.db.execute(
-            select(Diagnosis).where(Diagnosis.patient_id == patient_id, Diagnosis.is_deleted == False)  # noqa: E712
-            .order_by(Diagnosis.created_at.desc()).limit(20)
+            select(Diagnosis)
+            .where(Diagnosis.patient_id == patient_id, Diagnosis.is_deleted == False)  # noqa: E712
+            .order_by(Diagnosis.created_at.desc())
+            .limit(20)
         )
         diagnoses = dx.scalars().all()
 
@@ -454,8 +470,12 @@ class AgentEngine:
 
         # Route clinical tasks to MedGemma 27B; complex multi-step reasoning to R1
         medical_tasks = {
-            "discharge_summary", "medication_reconciliation", "follow_up_plan",
-            "patient_education_bilingual", "trial_screening", "screening_report",
+            "discharge_summary",
+            "medication_reconciliation",
+            "follow_up_plan",
+            "patient_education_bilingual",
+            "trial_screening",
+            "screening_report",
         }
         if task in medical_tasks:
             model_url = f"{MEDGEMMA_URL}/chat/completions"
@@ -471,7 +491,10 @@ class AgentEngine:
                     json={
                         "model": model_name,
                         "messages": [
-                            {"role": "system", "content": "You are a clinical AI assistant for a Kenyan hospital. Respond with structured, evidence-based content."},
+                            {
+                                "role": "system",
+                                "content": "You are a clinical AI assistant for a Kenyan hospital. Respond with structured, evidence-based content.",
+                            },
                             {"role": "user", "content": prompt},
                         ],
                         "max_tokens": 2048,
@@ -487,7 +510,11 @@ class AgentEngine:
         except Exception as exc:
             logger.warning("ai_generate_unavailable", task=task, model=model_name, error=str(exc))
 
-        return {"task": task, "content": f"AI service unavailable for {task}. Manual completion required.", "model": "fallback"}
+        return {
+            "task": task,
+            "content": f"AI service unavailable for {task}. Manual completion required.",
+            "model": "fallback",
+        }
 
     async def _package_claim(self, claim_data: dict, codes: dict | None, narrative: dict | None) -> dict:
         """

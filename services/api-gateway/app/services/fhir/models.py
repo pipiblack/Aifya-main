@@ -9,11 +9,9 @@ All models follow FHIR R4 naming conventions (camelCase fields).
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
-
 
 # ── FHIR Primitives & Building Blocks ──────────────────────────────────────
 
@@ -199,7 +197,7 @@ class FHIRDosageInstruction(BaseModel):
 # ── FHIR Issue (for OperationOutcome) ──────────────────────────────────────
 
 
-class FHIRIssueSeverity(str, Enum):
+class FHIRIssueSeverity(StrEnum):
     """FHIR OperationOutcome issue severity."""
 
     FATAL = "fatal"
@@ -208,7 +206,7 @@ class FHIRIssueSeverity(str, Enum):
     INFORMATION = "information"
 
 
-class FHIRIssueCode(str, Enum):
+class FHIRIssueCode(StrEnum):
     """FHIR OperationOutcome issue code (subset of common codes)."""
 
     NOT_FOUND = "not-found"

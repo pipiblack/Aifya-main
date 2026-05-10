@@ -3,7 +3,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Ward schemas ──────────────────────────────────────────────────────────────
 
 
@@ -19,9 +18,7 @@ class WardCreate(BaseModel):
     department_id: uuid.UUID | None = None
     floor: str | None = Field(None, max_length=20)
     total_beds: int = Field(default=0, ge=0)
-    gender_restriction: str | None = Field(
-        None, pattern=r"^(male|female|any)$"
-    )
+    gender_restriction: str | None = Field(None, pattern=r"^(male|female|any)$")
     charge_per_day_cents: int = Field(default=0, ge=0)
     notes: str | None = Field(None, max_length=1000)
 
@@ -92,12 +89,8 @@ class AdmissionCreate(BaseModel):
     primary_nurse_id: uuid.UUID | None = None
     admission_reason: str | None = Field(None, max_length=2000)
     admission_diagnosis: str | None = Field(None, max_length=500)
-    admitted_from: str | None = Field(
-        None, pattern=r"^(opd|emergency|referral|direct)$"
-    )
-    accommodation_type: str | None = Field(
-        None, pattern=r"^(general|semi_private|private|icu|hdu)$"
-    )
+    admitted_from: str | None = Field(None, pattern=r"^(opd|emergency|referral|direct)$")
+    accommodation_type: str | None = Field(None, pattern=r"^(general|semi_private|private|icu|hdu)$")
 
 
 class AdmissionResponse(BaseModel):

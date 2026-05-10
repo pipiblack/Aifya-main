@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +35,7 @@ class ReferralService:
         @param created_by: Staff UUID
         @returns Created referral
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count_result = await self.db.execute(
             select(func.count(Referral.id)).where(
@@ -80,7 +80,11 @@ class ReferralService:
             stream_type="referral",
             stream_id=data.patient_id,
             event_type="ReferralCreated",
-            event_data={"referral_id": str(referral.id), "referral_number": referral_number, "direction": data.direction},
+            event_data={
+                "referral_id": str(referral.id),
+                "referral_number": referral_number,
+                "direction": data.direction,
+            },
             version=1,
             created_by=created_by,
         )
@@ -140,9 +144,7 @@ class ReferralService:
             for r, pf, pl in rows
         ]
 
-    async def get_referral(
-        self, referral_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> Referral | None:
+    async def get_referral(self, referral_id: uuid.UUID, facility_id: uuid.UUID) -> Referral | None:
         """
         Get a single referral.
 
@@ -185,7 +187,7 @@ class ReferralService:
         if data.feedback:
             referral.feedback = data.feedback
         if data.status in ("accepted", "declined", "completed"):
-            referral.response_date = datetime.now(timezone.utc)
+            referral.response_date = datetime.now(UTC)
         referral.updated_by = updated_by
         await self.db.flush()
         await self.db.refresh(referral)
@@ -201,21 +203,13 @@ class ReferralService:
         base = [Referral.facility_id == facility_id, Referral.is_deleted == False]  # noqa: E712
 
         total = await self.db.execute(select(func.count(Referral.id)).where(*base))
-        outgoing = await self.db.execute(
-            select(func.count(Referral.id)).where(*base, Referral.direction == "outgoing")
-        )
-        incoming = await self.db.execute(
-            select(func.count(Referral.id)).where(*base, Referral.direction == "incoming")
-        )
+        outgoing = await self.db.execute(select(func.count(Referral.id)).where(*base, Referral.direction == "outgoing"))
+        incoming = await self.db.execute(select(func.count(Referral.id)).where(*base, Referral.direction == "incoming"))
         pending = await self.db.execute(
             select(func.count(Referral.id)).where(*base, Referral.status.in_(["draft", "sent", "received"]))
         )
-        accepted = await self.db.execute(
-            select(func.count(Referral.id)).where(*base, Referral.status == "accepted")
-        )
-        completed = await self.db.execute(
-            select(func.count(Referral.id)).where(*base, Referral.status == "completed")
-        )
+        accepted = await self.db.execute(select(func.count(Referral.id)).where(*base, Referral.status == "accepted"))
+        completed = await self.db.execute(select(func.count(Referral.id)).where(*base, Referral.status == "completed"))
 
         return ReferralSummary(
             total_referrals=total.scalar() or 0,

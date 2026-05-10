@@ -24,9 +24,7 @@ class PatientRepository:
         await self.db.refresh(patient)
         return patient
 
-    async def get_by_id(
-        self, patient_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> Patient | None:
+    async def get_by_id(self, patient_id: uuid.UUID, facility_id: uuid.UUID) -> Patient | None:
         """
         Fetch a patient by ID, scoped to facility.
 
@@ -84,11 +82,7 @@ class PatientRepository:
 
         # Paginate
         offset = (page - 1) * page_size
-        result = await self.db.execute(
-            base.order_by(Patient.created_at.desc())
-            .offset(offset)
-            .limit(page_size)
-        )
+        result = await self.db.execute(base.order_by(Patient.created_at.desc()).offset(offset).limit(page_size))
         patients = list(result.scalars().all())
 
         return patients, total
@@ -112,9 +106,7 @@ class PatientRepository:
         @returns MRN string like "MRN-000001"
         """
         result = await self.db.execute(
-            select(func.count())
-            .select_from(Patient)
-            .where(Patient.facility_id == facility_id)
+            select(func.count()).select_from(Patient).where(Patient.facility_id == facility_id)
         )
         count = result.scalar_one()
         return f"MRN-{count + 1:06d}"

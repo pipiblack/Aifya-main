@@ -11,9 +11,10 @@ Creates finance tables:
   inventory_lots, budgets, recurring_templates.
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision = "002"
 down_revision = "001"

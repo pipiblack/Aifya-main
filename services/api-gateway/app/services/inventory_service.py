@@ -1,10 +1,16 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.inventory import InventoryItem, InventoryTransaction, PurchaseOrder, PurchaseOrderItem, Supplier
+from app.models.inventory import (
+    InventoryItem,
+    InventoryTransaction,
+    PurchaseOrder,
+    PurchaseOrderItem,
+    Supplier,
+)
 from app.schemas.inventory import (
     InventoryItemCreate,
     InventoryItemListItem,
@@ -101,9 +107,7 @@ class InventoryService:
             query = query.where(InventoryItem.category == category)
         if search:
             pattern = f"%{search}%"
-            query = query.where(
-                (InventoryItem.name.ilike(pattern)) | (InventoryItem.item_code.ilike(pattern))
-            )
+            query = query.where((InventoryItem.name.ilike(pattern)) | (InventoryItem.item_code.ilike(pattern)))
         if low_stock_only:
             query = query.where(InventoryItem.current_stock <= InventoryItem.reorder_level)
 
@@ -122,18 +126,12 @@ class InventoryService:
                 current_stock=i.current_stock,
                 reorder_level=i.reorder_level,
                 is_active=i.is_active,
-                stock_status=(
-                    "out" if i.current_stock <= 0
-                    else "low" if i.current_stock <= i.reorder_level
-                    else "ok"
-                ),
+                stock_status=("out" if i.current_stock <= 0 else "low" if i.current_stock <= i.reorder_level else "ok"),
             )
             for i in items
         ]
 
-    async def get_item(
-        self, item_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> InventoryItem | None:
+    async def get_item(self, item_id: uuid.UUID, facility_id: uuid.UUID) -> InventoryItem | None:
         """
         Get a single inventory item.
 
@@ -168,11 +166,13 @@ class InventoryService:
         """
         # Lock the item row to prevent concurrent stock miscalculations
         result = await self.db.execute(
-            select(InventoryItem).where(
+            select(InventoryItem)
+            .where(
                 InventoryItem.id == data.item_id,
                 InventoryItem.facility_id == facility_id,
                 InventoryItem.is_deleted == False,  # noqa: E712
-            ).with_for_update()
+            )
+            .with_for_update()
         )
         item = result.scalar_one_or_none()
         if not item:
@@ -185,7 +185,7 @@ class InventoryService:
         new_balance = item.current_stock + qty
         total_cost = abs(qty) * data.unit_cost
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count_result = await self.db.execute(
             select(func.count(InventoryTransaction.id)).where(
@@ -254,11 +254,13 @@ class InventoryService:
         @returns List of suppliers
         """
         result = await self.db.execute(
-            select(Supplier).where(
+            select(Supplier)
+            .where(
                 Supplier.facility_id == facility_id,
                 Supplier.is_deleted == False,  # noqa: E712
                 Supplier.is_active == True,  # noqa: E712
-            ).order_by(Supplier.name.asc())
+            )
+            .order_by(Supplier.name.asc())
         )
         return list(result.scalars().all())
 
@@ -321,7 +323,7 @@ class InventoryService:
         @param created_by: Staff UUID
         @returns Created purchase order
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count_result = await self.db.execute(
             select(func.count(PurchaseOrder.id)).where(
@@ -417,9 +419,7 @@ class InventoryService:
             for po, s_name, count in rows
         ]
 
-    async def get_purchase_order(
-        self, po_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> PurchaseOrderResponse | None:
+    async def get_purchase_order(self, po_id: uuid.UUID, facility_id: uuid.UUID) -> PurchaseOrderResponse | None:
         """
         Get a purchase order with items and supplier name.
 
@@ -503,7 +503,7 @@ class InventoryService:
 
         po.status = "approved"
         po.approved_by = approved_by
-        po.approved_at = datetime.now(timezone.utc)
+        po.approved_at = datetime.now(UTC)
         po.updated_by = approved_by
         await self.db.flush()
         await self.db.refresh(po)
@@ -545,22 +545,18 @@ class InventoryService:
             transaction_type="receipt",
             quantity=data.quantity_received,
             unit_cost=po_item.unit_cost,
-            reason=f"PO receipt",
+            reason="PO receipt",
             batch_number=data.batch_number,
             expiry_date=data.expiry_date,
         )
         await self.create_transaction(txn_data, facility_id, received_by)
 
         # Check if full PO is received
-        po_result = await self.db.execute(
-            select(PurchaseOrder).where(PurchaseOrder.id == po_item.purchase_order_id)
-        )
+        po_result = await self.db.execute(select(PurchaseOrder).where(PurchaseOrder.id == po_item.purchase_order_id))
         po = po_result.scalar_one_or_none()
         if po:
             all_items = await self.db.execute(
-                select(PurchaseOrderItem).where(
-                    PurchaseOrderItem.purchase_order_id == po.id
-                )
+                select(PurchaseOrderItem).where(PurchaseOrderItem.purchase_order_id == po.id)
             )
             items = all_items.scalars().all()
             fully_received = all(i.quantity_received >= i.quantity_ordered for i in items)
@@ -599,9 +595,7 @@ class InventoryService:
                 InventoryItem.current_stock <= InventoryItem.reorder_level,
             )
         )
-        out = await self.db.execute(
-            select(func.count(InventoryItem.id)).where(*base, InventoryItem.current_stock <= 0)
-        )
+        out = await self.db.execute(select(func.count(InventoryItem.id)).where(*base, InventoryItem.current_stock <= 0))
         value = await self.db.execute(
             select(func.sum(InventoryItem.current_stock * InventoryItem.unit_cost)).where(*base)
         )

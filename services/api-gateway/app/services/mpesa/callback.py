@@ -11,13 +11,16 @@ DarajaClient.parse_stk_callback) and our domain.
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.services.mpesa.daraja import DarajaClient, STKCallbackData
 from app.services.mpesa.stk_push import StkPushService
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -58,12 +61,7 @@ async def handle_stk_callback(
     )
 
     # 2) On success with a linked invoice, record the Payment
-    if (
-        row is not None
-        and callback.result_code == 0
-        and callback.mpesa_receipt
-        and row.invoice_id is not None
-    ):
+    if row is not None and callback.result_code == 0 and callback.mpesa_receipt and row.invoice_id is not None:
         await _record_invoice_payment(db, row, callback)
 
     return {"ResultCode": 0, "ResultDesc": "Accepted"}

@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from app.services.payroll.statutory import (
     NSSFTierSpec,
     PAYEBandSpec,
@@ -21,7 +19,6 @@ from app.services.payroll.statutory import (
     calc_paye,
     calc_shif,
 )
-
 
 # ── Test fixtures ──────────────────────────────────────────────────────────
 
@@ -79,9 +76,7 @@ def test_nssf_capped_at_max() -> None:
 
 def test_employer_nssf_mirrors_employee_under_2026_act() -> None:
     """Employer NSSF rate equals employee under 2026 Act."""
-    assert calc_employer_nssf(
-        Decimal("50000"), _nssf_tiers()
-    ) == Decimal("3000.00")
+    assert calc_employer_nssf(Decimal("50000"), _nssf_tiers()) == Decimal("3000.00")
 
 
 def test_nssf_zero_gross() -> None:
@@ -109,9 +104,7 @@ def test_paye_band3_chunk() -> None:
         + Decimal("8333") * Decimal("0.25")
         + (Decimal("100000") - Decimal("32333")) * Decimal("0.30")
     )
-    assert calc_paye(Decimal("100000"), _paye_bands()) == expected.quantize(
-        Decimal("0.01")
-    )
+    assert calc_paye(Decimal("100000"), _paye_bands()) == expected.quantize(Decimal("0.01"))
 
 
 def test_paye_band4_chunk() -> None:
@@ -121,9 +114,7 @@ def test_paye_band4_chunk() -> None:
         + Decimal("8333") * Decimal("0.25")
         + (Decimal("500000") - Decimal("32333")) * Decimal("0.30")
     )
-    assert calc_paye(Decimal("500000"), _paye_bands()) == expected.quantize(
-        Decimal("0.01")
-    )
+    assert calc_paye(Decimal("500000"), _paye_bands()) == expected.quantize(Decimal("0.01"))
 
 
 def test_paye_top_band() -> None:
@@ -135,9 +126,7 @@ def test_paye_top_band() -> None:
         + (Decimal("800000") - Decimal("500000")) * Decimal("0.325")
         + (Decimal("1000000") - Decimal("800000")) * Decimal("0.35")
     )
-    assert calc_paye(Decimal("1000000"), _paye_bands()) == expected.quantize(
-        Decimal("0.01")
-    )
+    assert calc_paye(Decimal("1000000"), _paye_bands()) == expected.quantize(Decimal("0.01"))
 
 
 def test_paye_zero_taxable() -> None:
@@ -227,9 +216,7 @@ def test_disability_exemption_reduces_taxable_pay() -> None:
     taxable_no_ex = gross - nssf - shif - hl
     taxable_with_ex = taxable_no_ex - Decimal("150000")
     assert taxable_with_ex < taxable_no_ex
-    assert calc_paye(taxable_with_ex, _paye_bands()) < calc_paye(
-        taxable_no_ex, _paye_bands()
-    )
+    assert calc_paye(taxable_with_ex, _paye_bands()) < calc_paye(taxable_no_ex, _paye_bands())
 
 
 # ── Edge case: empty band list ─────────────────────────────────────────────

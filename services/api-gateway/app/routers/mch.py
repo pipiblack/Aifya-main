@@ -51,9 +51,7 @@ async def get_summary(
 
 @router.get("/anc", response_model=ANCProfileListResponse)
 async def list_anc_profiles(
-    status_filter: str | None = Query(
-        None, alias="status", description="Filter by ANC status"
-    ),
+    status_filter: str | None = Query(None, alias="status", description="Filter by ANC status"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> ANCProfileListResponse:
@@ -77,9 +75,7 @@ async def list_anc_profiles(
 async def create_anc_profile(
     data: ANCProfileCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")),
 ) -> ANCProfileResponse:
     """
     Register a new pregnancy / ANC profile.
@@ -132,9 +128,7 @@ async def get_anc_profile_detail(
 async def add_anc_visit(
     data: ANCVisitCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")),
 ) -> ANCVisitResponse:
     """
     Record an ANC visit with vitals, obstetric exam, and interventions.
@@ -166,9 +160,7 @@ async def add_anc_visit(
 async def record_delivery(
     data: DeliveryRecordCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")),
 ) -> DeliveryRecordResponse:
     """
     Record a delivery. Updates ANC profile status and pregnancy outcome.
@@ -217,9 +209,7 @@ async def list_child_records(
 async def create_child_record(
     data: ChildRecordCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")),
 ) -> ChildRecordResponse:
     """
     Create a child health record.
@@ -263,14 +253,14 @@ async def list_immunizations(
     return [ImmunizationResponse.model_validate(i) for i in immunizations]
 
 
-@router.post("/children/{child_id}/immunizations", response_model=ImmunizationResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/children/{child_id}/immunizations", response_model=ImmunizationResponse, status_code=status.HTTP_201_CREATED
+)
 async def record_immunization(
     child_id: uuid.UUID,
     data: ImmunizationCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "midwife", "admin", "facility_admin")),
 ) -> ImmunizationResponse:
     """
     Record an immunization dose for a child.

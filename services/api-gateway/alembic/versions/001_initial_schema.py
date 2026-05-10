@@ -22,9 +22,10 @@ Tables created in FK-dependency order:
   Layer 7: immunizations
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision = "001"
 down_revision = None

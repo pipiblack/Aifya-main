@@ -37,9 +37,7 @@ class EventService:
         total = total_result.scalar_one()
 
         # Fetch recent events
-        result = await self.db.execute(
-            base.order_by(EventBase.created_at.desc()).limit(limit)
-        )
+        result = await self.db.execute(base.order_by(EventBase.created_at.desc()).limit(limit))
         events = list(result.scalars().all())
 
         return events, total

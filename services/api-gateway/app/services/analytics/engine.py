@@ -7,19 +7,27 @@ and combining their results into a single response.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.encounter import Encounter
 from app.services.analytics.bed_forecast import forecast_bed_demand
-from app.services.analytics.models import AnalyticsDashboard, NoShowPrediction, ReadmissionRisk
+from app.services.analytics.models import (
+    AnalyticsDashboard,
+    NoShowPrediction,
+    ReadmissionRisk,
+)
 from app.services.analytics.readmission import predict_readmission_risk
 from app.services.analytics.revenue import forecast_revenue
 from app.services.analytics.stockout import predict_stockouts
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -67,9 +75,7 @@ async def get_analytics_dashboard(
             .limit(_TOP_READMISSION_LIMIT)
             .distinct()
         )
-        discharged_patient_ids: list[uuid.UUID] = [
-            row[0] for row in recent_discharged_result.all()
-        ]
+        discharged_patient_ids: list[uuid.UUID] = [row[0] for row in recent_discharged_result.all()]
 
         for pid in discharged_patient_ids:
             risk = await predict_readmission_risk(db, pid, facility_id)
@@ -114,9 +120,7 @@ async def get_analytics_dashboard(
 
     # --- Critical stockouts ---
     all_stockouts = await predict_stockouts(db, facility_id)
-    critical_stockouts = [
-        s for s in all_stockouts if s.urgency in ("critical", "high")
-    ]
+    critical_stockouts = [s for s in all_stockouts if s.urgency in ("critical", "high")]
 
     # --- Revenue forecast: next 3 months ---
     revenue_forecasts = await forecast_revenue(db, facility_id, months_ahead=3)

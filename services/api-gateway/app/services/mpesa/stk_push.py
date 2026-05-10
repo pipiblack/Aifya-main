@@ -13,11 +13,11 @@ Per CLAUDE.md:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.models.mpesa import MpesaStkRequest
@@ -27,6 +27,9 @@ from app.services.mpesa.daraja import (
     STKPushResponse,
     get_daraja_config,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -184,7 +187,7 @@ class StkPushService:
             row.transaction_date = _parse_daraja_timestamp(transaction_date)
         else:
             row.status = "failed"
-        row.completed_at = datetime.now(timezone.utc)
+        row.completed_at = datetime.now(UTC)
         await self.db.flush()
         return row
 
@@ -199,6 +202,6 @@ def _parse_daraja_timestamp(ts: str | None) -> datetime | None:
     if not ts:
         return None
     try:
-        return datetime.strptime(ts, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+        return datetime.strptime(ts, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
     except (ValueError, TypeError):
         return None

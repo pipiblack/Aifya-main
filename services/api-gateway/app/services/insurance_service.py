@@ -1,10 +1,14 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.insurance import InsuranceClaim, InsuranceScheme, PatientInsurance, PreAuthorization
+from app.models.insurance import (
+    InsuranceClaim,
+    InsuranceScheme,
+    PreAuthorization,
+)
 from app.models.patient import Patient
 from app.schemas.insurance import (
     ClaimCreate,
@@ -71,16 +75,16 @@ class InsuranceService:
         @returns List of schemes
         """
         result = await self.db.execute(
-            select(InsuranceScheme).where(
+            select(InsuranceScheme)
+            .where(
                 InsuranceScheme.facility_id == facility_id,
                 InsuranceScheme.is_deleted == False,  # noqa: E712
-            ).order_by(InsuranceScheme.name.asc())
+            )
+            .order_by(InsuranceScheme.name.asc())
         )
         return list(result.scalars().all())
 
-    async def create_claim(
-        self, data: ClaimCreate, facility_id: uuid.UUID, created_by: uuid.UUID
-    ) -> InsuranceClaim:
+    async def create_claim(self, data: ClaimCreate, facility_id: uuid.UUID, created_by: uuid.UUID) -> InsuranceClaim:
         """
         Create an insurance claim.
 
@@ -89,7 +93,7 @@ class InsuranceService:
         @param created_by: Staff UUID
         @returns Created claim
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count = await self.db.execute(
             select(func.count(InsuranceClaim.id)).where(
@@ -122,9 +126,7 @@ class InsuranceService:
         await self.db.refresh(claim)
         return claim
 
-    async def get_claims(
-        self, facility_id: uuid.UUID, status: str | None = None
-    ) -> list[ClaimListItem]:
+    async def get_claims(self, facility_id: uuid.UUID, status: str | None = None) -> list[ClaimListItem]:
         """
         Get claims with patient and scheme names.
 
@@ -200,7 +202,7 @@ class InsuranceService:
         if not claim:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         claim.status = data.status
         if data.approved_amount is not None:
             claim.approved_amount = data.approved_amount
@@ -247,9 +249,7 @@ class InsuranceService:
         rejected = await self.db.execute(
             select(func.count(InsuranceClaim.id)).where(*base, InsuranceClaim.status == "rejected")
         )
-        value = await self.db.execute(
-            select(func.sum(InsuranceClaim.claim_amount)).where(*base)
-        )
+        value = await self.db.execute(select(func.sum(InsuranceClaim.claim_amount)).where(*base))
         schemes = await self.db.execute(
             select(func.count(InsuranceScheme.id)).where(
                 InsuranceScheme.facility_id == facility_id,

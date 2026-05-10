@@ -1,7 +1,16 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,11 +27,9 @@ class DentalChart(AuditMixin, Base):
         Index("ix_dental_charts_patient", "facility_id", "patient_id", unique=True),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
     # Per-tooth status: {"11": {"status": "healthy", "notes": "..."}, "21": {"status": "decayed"}, ...}
-    teeth: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"), nullable=False)
+    teeth: Mapped[dict] = mapped_column(JSONB, default=dict, server_default=text("'{}'"), nullable=False)
     # Periodontal notes
     periodontal_status: Mapped[str | None] = mapped_column(Text)
     occlusion_notes: Mapped[str | None] = mapped_column(Text)
@@ -41,26 +48,16 @@ class DentalVisit(AuditMixin, Base):
     )
 
     visit_number: Mapped[str] = mapped_column(String(50), nullable=False)  # DV-YYYYMMDD-XXXX
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
-    dentist_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    visit_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
+    dentist_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    visit_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     chief_complaint: Mapped[str | None] = mapped_column(Text)
     examination_findings: Mapped[str | None] = mapped_column(Text)
 
     # Procedures done in this visit
-    procedures: Mapped[dict | None] = mapped_column(
-        JSONB
-    )  # [{tooth, surface, procedure_type, material, notes}]
+    procedures: Mapped[dict | None] = mapped_column(JSONB)  # [{tooth, surface, procedure_type, material, notes}]
 
     diagnosis: Mapped[str | None] = mapped_column(String(500))
 
@@ -81,16 +78,12 @@ class DentalTreatmentPlan(AuditMixin, Base):
     )
 
     plan_number: Mapped[str] = mapped_column(String(50), nullable=False)  # DP-YYYYMMDD-XXXX
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    dentist_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    dentist_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
     diagnosis: Mapped[str | None] = mapped_column(Text)
 
     # Plan items: [{tooth, procedure_type, priority, estimated_cost, status, notes}]
-    plan_items: Mapped[dict] = mapped_column(JSONB, server_default=text("'[]'::jsonb"), nullable=False)
+    plan_items: Mapped[list] = mapped_column(JSONB, default=list, server_default=text("'[]'"), nullable=False)
 
     total_estimated_cost: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # KES cents
     status: Mapped[str] = mapped_column(

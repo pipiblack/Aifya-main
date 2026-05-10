@@ -9,15 +9,14 @@ from __future__ import annotations
 
 import csv
 import io
-import uuid
-from datetime import date as date_type, datetime, timezone
+from datetime import UTC, datetime
+from datetime import date as date_type
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import (
-    Account,
     AccountingPeriod,
     BankStatement,
     FinanceAuditLog,
@@ -29,6 +28,10 @@ from app.schemas.finance import (
     ReconciliationResponse,
 )
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _ZERO = Decimal("0")
 _QUANT = Decimal("0.01")
@@ -58,11 +61,9 @@ def parse_bank_csv(csv_text: str) -> list[BankStatementImportRow]:
         rows.append(
             BankStatementImportRow(
                 transaction_date=date_type.fromisoformat(raw_date.strip()),
-                description=(record.get("description") or record.get("Description") or "").strip()
-                or None,
+                description=(record.get("description") or record.get("Description") or "").strip() or None,
                 amount=_q(Decimal(raw_amount.replace(",", "").strip())),
-                reference=(record.get("reference") or record.get("Reference") or "").strip()
-                or None,
+                reference=(record.get("reference") or record.get("Reference") or "").strip() or None,
             )
         )
     return rows
@@ -169,7 +170,7 @@ async def auto_match(
             if _q(net) == _q(target_amt):
                 stmt.status = "matched"
                 stmt.matched_entry_id = entry.id
-                stmt.matched_at = datetime.now(timezone.utc)
+                stmt.matched_at = datetime.now(UTC)
                 stmt.matched_by = user_id
                 stmt.updated_by = user_id
                 used_entries.add(entry.id)
@@ -179,9 +180,7 @@ async def auto_match(
     await db.flush()
 
     unmatched_stmts = sum(1 for s in statements if s.status == "unmatched")
-    unmatched_entries = sum(
-        1 for entry, _ in entries if entry.id not in used_entries
-    )
+    unmatched_entries = sum(1 for entry, _ in entries if entry.id not in used_entries)
 
     return {
         "matched": matched,
@@ -229,7 +228,7 @@ async def manual_match(
 
     stmt.matched_entry_id = entry_id
     stmt.status = "matched"
-    stmt.matched_at = datetime.now(timezone.utc)
+    stmt.matched_at = datetime.now(UTC)
     stmt.matched_by = user_id
     stmt.updated_by = user_id
 
@@ -284,10 +283,7 @@ async def get_reconciliation_report(
 
     # GL balance
     gl_stmt = (
-        select(
-            func.coalesce(func.sum(TransactionEntry.debit), 0)
-            - func.coalesce(func.sum(TransactionEntry.credit), 0)
-        )
+        select(func.coalesce(func.sum(TransactionEntry.debit), 0) - func.coalesce(func.sum(TransactionEntry.credit), 0))
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
@@ -311,13 +307,9 @@ async def get_reconciliation_report(
 
     # Deposits in transit: GL DR entries with no matching statement
     dit_stmt = (
-        select(
-            func.coalesce(func.sum(TransactionEntry.debit), 0)
-        )
+        select(func.coalesce(func.sum(TransactionEntry.debit), 0))
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
-        .outerjoin(
-            BankStatement, BankStatement.matched_entry_id == TransactionEntry.id
-        )
+        .outerjoin(BankStatement, BankStatement.matched_entry_id == TransactionEntry.id)
         .where(
             TransactionEntry.facility_id == facility_id,
             Transaction.facility_id == facility_id,
@@ -332,13 +324,9 @@ async def get_reconciliation_report(
 
     # Outstanding cheques: GL CR entries with no matching statement
     oc_stmt = (
-        select(
-            func.coalesce(func.sum(TransactionEntry.credit), 0)
-        )
+        select(func.coalesce(func.sum(TransactionEntry.credit), 0))
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
-        .outerjoin(
-            BankStatement, BankStatement.matched_entry_id == TransactionEntry.id
-        )
+        .outerjoin(BankStatement, BankStatement.matched_entry_id == TransactionEntry.id)
         .where(
             TransactionEntry.facility_id == facility_id,
             Transaction.facility_id == facility_id,
@@ -375,8 +363,7 @@ async def get_reconciliation_report(
         select(func.count(TransactionEntry.id))
         .outerjoin(
             BankStatement,
-            (BankStatement.matched_entry_id == TransactionEntry.id)
-            & (BankStatement.facility_id == facility_id),
+            (BankStatement.matched_entry_id == TransactionEntry.id) & (BankStatement.facility_id == facility_id),
         )
         .where(
             TransactionEntry.facility_id == facility_id,

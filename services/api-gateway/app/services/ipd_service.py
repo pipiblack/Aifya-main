@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,9 +32,7 @@ class IPDService:
 
     # ── Ward Management ──────────────────────────────────────────────────
 
-    async def create_ward(
-        self, data: WardCreate, facility_id: uuid.UUID, created_by: uuid.UUID
-    ) -> Ward:
+    async def create_ward(self, data: WardCreate, facility_id: uuid.UUID, created_by: uuid.UUID) -> Ward:
         """
         Create a new ward.
 
@@ -62,9 +60,7 @@ class IPDService:
         await self.db.refresh(ward)
         return ward
 
-    async def get_wards(
-        self, facility_id: uuid.UUID
-    ) -> list[WardResponse]:
+    async def get_wards(self, facility_id: uuid.UUID) -> list[WardResponse]:
         """
         Get all wards with bed occupancy counts via a single query
         using a LEFT JOIN on an aggregated bed-counts subquery.
@@ -76,12 +72,8 @@ class IPDService:
             select(
                 Bed.ward_id,
                 func.count(Bed.id).label("total"),
-                func.count(
-                    case((Bed.status == "available", Bed.id))
-                ).label("available"),
-                func.count(
-                    case((Bed.status == "occupied", Bed.id))
-                ).label("occupied"),
+                func.count(case((Bed.status == "available", Bed.id))).label("available"),
+                func.count(case((Bed.status == "occupied", Bed.id))).label("occupied"),
             )
             .where(Bed.is_deleted == False)  # noqa: E712
             .group_by(Bed.ward_id)
@@ -117,9 +109,7 @@ class IPDService:
 
     # ── Bed Management ───────────────────────────────────────────────────
 
-    async def create_bed(
-        self, data: BedCreate, facility_id: uuid.UUID, created_by: uuid.UUID
-    ) -> Bed:
+    async def create_bed(self, data: BedCreate, facility_id: uuid.UUID, created_by: uuid.UUID) -> Bed:
         """
         Create a new bed in a ward.
 
@@ -169,9 +159,13 @@ class IPDService:
         @param status_filter: Optional status filter
         @returns List of beds
         """
-        stmt = select(Bed, Ward).join(Ward, Bed.ward_id == Ward.id).where(
-            Bed.facility_id == facility_id,
-            Bed.is_deleted == False,  # noqa: E712
+        stmt = (
+            select(Bed, Ward)
+            .join(Ward, Bed.ward_id == Ward.id)
+            .where(
+                Bed.facility_id == facility_id,
+                Bed.is_deleted == False,  # noqa: E712
+            )
         )
         if ward_id:
             stmt = stmt.where(Bed.ward_id == ward_id)
@@ -189,9 +183,7 @@ class IPDService:
 
             # Get patient name if occupied
             if bed.current_patient_id:
-                pat_result = await self.db.execute(
-                    select(Patient).where(Patient.id == bed.current_patient_id)
-                )
+                pat_result = await self.db.execute(select(Patient).where(Patient.id == bed.current_patient_id))
                 patient = pat_result.scalar_one_or_none()
                 if patient:
                     br.patient_name = f"{patient.first_name} {patient.last_name}"
@@ -260,14 +252,12 @@ class IPDService:
         bed.current_admission_id = admission.id
 
         # Update encounter
-        enc_result = await self.db.execute(
-            select(Encounter).where(Encounter.id == data.encounter_id)
-        )
+        enc_result = await self.db.execute(select(Encounter).where(Encounter.id == data.encounter_id))
         encounter = enc_result.scalar_one_or_none()
         if encounter:
             encounter.status = "admitted"
             encounter.bed_id = data.bed_id
-            encounter.admission_date = datetime.now(timezone.utc)
+            encounter.admission_date = datetime.now(UTC)
             encounter.disposition = "admitted"
 
         # Emit event
@@ -327,7 +317,7 @@ class IPDService:
         result = await self.db.execute(stmt)
         rows = result.all()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         items: list[AdmissionListItem] = []
         for admission, patient, ward, bed in rows:
             los = (now - admission.admitted_at).days if admission.admitted_at else None
@@ -351,9 +341,7 @@ class IPDService:
 
         return items, len(items)
 
-    async def get_admission_detail(
-        self, admission_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> Admission | None:
+    async def get_admission_detail(self, admission_id: uuid.UUID, facility_id: uuid.UUID) -> Admission | None:
         """
         Get a single admission by ID.
 
@@ -401,7 +389,7 @@ class IPDService:
         if admission.status not in ("admitted", "on_leave"):
             raise ValueError(f"Cannot discharge with status: {admission.status}")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         los = (now - admission.admitted_at).days if admission.admitted_at else 0
 
         admission.status = "discharged"
@@ -416,9 +404,7 @@ class IPDService:
         admission.updated_by = discharged_by
 
         # Free the bed
-        bed_result = await self.db.execute(
-            select(Bed).where(Bed.id == admission.bed_id)
-        )
+        bed_result = await self.db.execute(select(Bed).where(Bed.id == admission.bed_id))
         bed = bed_result.scalar_one_or_none()
         if bed:
             bed.status = "cleaning"
@@ -426,9 +412,7 @@ class IPDService:
             bed.current_admission_id = None
 
         # Update encounter
-        enc_result = await self.db.execute(
-            select(Encounter).where(Encounter.id == admission.encounter_id)
-        )
+        enc_result = await self.db.execute(select(Encounter).where(Encounter.id == admission.encounter_id))
         encounter = enc_result.scalar_one_or_none()
         if encounter:
             encounter.status = "discharged"
@@ -519,9 +503,7 @@ class IPDService:
 
         return note
 
-    async def get_nursing_notes(
-        self, admission_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> list[NursingNote]:
+    async def get_nursing_notes(self, admission_id: uuid.UUID, facility_id: uuid.UUID) -> list[NursingNote]:
         """
         Get all nursing notes for an admission.
 
@@ -542,9 +524,7 @@ class IPDService:
 
     # ── Dashboard ────────────────────────────────────────────────────────
 
-    async def get_ward_board_summary(
-        self, facility_id: uuid.UUID
-    ) -> WardBoardSummary:
+    async def get_ward_board_summary(self, facility_id: uuid.UUID) -> WardBoardSummary:
         """
         Get ward board summary for IPD dashboard.
 
@@ -598,7 +578,7 @@ class IPDService:
 
     async def _next_admission_number(self, facility_id: uuid.UUID) -> str:
         """Generate the next admission number (IP-YYYYMMDD-XXXX)."""
-        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        today = datetime.now(UTC).strftime("%Y%m%d")
         prefix = f"IP-{today}-"
 
         result = await self.db.execute(

@@ -9,8 +9,8 @@ the referring clinician's signature placeholder.
 from __future__ import annotations
 
 import io
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -24,7 +24,11 @@ from reportlab.platypus import (
     TableStyle,
 )
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def generate_referral_note_pdf(
@@ -70,9 +74,7 @@ async def generate_referral_note_pdf(
     )
     patient = pat_q.scalar_one_or_none()
 
-    fac_q = await db.execute(
-        select(Facility).where(Facility.id == facility_id)
-    )
+    fac_q = await db.execute(select(Facility).where(Facility.id == facility_id))
     facility = fac_q.scalar_one_or_none()
 
     doctor = None
@@ -194,11 +196,7 @@ async def generate_referral_note_pdf(
     # Patient demographics
     story.append(Paragraph("Patient Demographics", h2))
     if patient is not None:
-        dob = (
-            patient.date_of_birth.strftime("%d %B %Y")
-            if getattr(patient, "date_of_birth", None)
-            else "—"
-        )
+        dob = patient.date_of_birth.strftime("%d %B %Y") if getattr(patient, "date_of_birth", None) else "—"
         demo = [
             ["Name", f"{patient.first_name} {patient.last_name}"],
             ["MRN / ID", str(patient.id)[:8]],
@@ -216,9 +214,7 @@ async def generate_referral_note_pdf(
     story.append(Paragraph(_safe(referral.reason), body))
     if referral.diagnosis:
         story.append(Spacer(1, 0.15 * cm))
-        story.append(
-            Paragraph(f"<b>Working Diagnosis:</b> {_safe(referral.diagnosis)}", body)
-        )
+        story.append(Paragraph(f"<b>Working Diagnosis:</b> {_safe(referral.diagnosis)}", body))
     story.append(Spacer(1, 0.2 * cm))
 
     # Clinical history & notes
@@ -246,24 +242,27 @@ async def generate_referral_note_pdf(
     story.append(Paragraph("Latest Vital Signs", h2))
     if latest_vital is not None:
         vit_rows = [
-            ["BP",
-             (
-                 f"{latest_vital.systolic_bp}/{latest_vital.diastolic_bp} mmHg"
-                 if latest_vital.systolic_bp and latest_vital.diastolic_bp
-                 else "—"
-             ),
-             "HR",
-             f"{latest_vital.heart_rate} bpm" if latest_vital.heart_rate else "—",
+            [
+                "BP",
+                (
+                    f"{latest_vital.systolic_bp}/{latest_vital.diastolic_bp} mmHg"
+                    if latest_vital.systolic_bp and latest_vital.diastolic_bp
+                    else "—"
+                ),
+                "HR",
+                f"{latest_vital.heart_rate} bpm" if latest_vital.heart_rate else "—",
             ],
-            ["Temp",
-             f"{latest_vital.temperature} °C" if latest_vital.temperature else "—",
-             "RR",
-             f"{latest_vital.respiratory_rate} /min" if getattr(latest_vital, "respiratory_rate", None) else "—",
+            [
+                "Temp",
+                f"{latest_vital.temperature} °C" if latest_vital.temperature else "—",
+                "RR",
+                f"{latest_vital.respiratory_rate} /min" if getattr(latest_vital, "respiratory_rate", None) else "—",
             ],
-            ["SpO2",
-             f"{latest_vital.spo2}%" if getattr(latest_vital, "spo2", None) else "—",
-             "Recorded",
-             latest_vital.created_at.strftime("%Y-%m-%d %H:%M") if latest_vital.created_at else "—",
+            [
+                "SpO2",
+                f"{latest_vital.spo2}%" if getattr(latest_vital, "spo2", None) else "—",
+                "Recorded",
+                latest_vital.created_at.strftime("%Y-%m-%d %H:%M") if latest_vital.created_at else "—",
             ],
         ]
         story.append(_data_table(vit_rows, col_widths=[2 * cm, 4 * cm, 2 * cm, 4 * cm]))
@@ -322,7 +321,7 @@ async def generate_referral_note_pdf(
     sig_rows = [
         ["Name", doc_name or "—"],
         ["Signature", "________________________________"],
-        ["Date", datetime.now(timezone.utc).strftime("%d %B %Y")],
+        ["Date", datetime.now(UTC).strftime("%d %B %Y")],
     ]
     story.append(_two_col_table(sig_rows))
     story.append(Spacer(1, 0.4 * cm))
@@ -342,11 +341,7 @@ def _safe(text: str | None) -> str:
     """Escape minimal HTML for ReportLab Paragraphs."""
     if not text:
         return "—"
-    return (
-        text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _two_col_table(rows: list[list[str]]) -> Table:

@@ -59,9 +59,7 @@ class PatientService:
 
         return patient
 
-    async def get_patient(
-        self, patient_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> Patient | None:
+    async def get_patient(self, patient_id: uuid.UUID, facility_id: uuid.UUID) -> Patient | None:
         """
         Get a patient by ID.
 

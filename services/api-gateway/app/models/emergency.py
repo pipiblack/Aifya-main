@@ -1,7 +1,16 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,18 +31,12 @@ class EmergencyVisit(AuditMixin, Base):
         Index("ix_emergency_visits_status", "facility_id", "status"),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
     visit_number: Mapped[str] = mapped_column(String(50), nullable=False)  # ER-YYYYMMDD-XXXX
 
     # Arrival
-    arrival_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    arrival_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     arrival_mode: Mapped[str] = mapped_column(
         String(20), default="walk_in", nullable=False
     )  # walk_in, ambulance, referral, police, other
@@ -57,9 +60,7 @@ class EmergencyVisit(AuditMixin, Base):
     )  # {bp_systolic, bp_diastolic, hr, rr, temp, spo2, gcs, mobility, trauma}
 
     # Treatment
-    assigned_doctor_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    assigned_doctor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     treatment_area: Mapped[str | None] = mapped_column(
         String(30)
     )  # resus, acute, sub_acute, fast_track, observation, paediatric
@@ -71,14 +72,10 @@ class EmergencyVisit(AuditMixin, Base):
     )  # arrived, triaged, in_treatment, observation, admitted, discharged, transferred, deceased, left_against_advice
 
     # Disposition
-    disposition: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # discharge, admit, transfer, deceased, left_ama
+    disposition: Mapped[str | None] = mapped_column(String(20))  # discharge, admit, transfer, deceased, left_ama
     disposition_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     disposition_notes: Mapped[str | None] = mapped_column(Text)
-    admitted_to_ward_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True)
-    )
+    admitted_to_ward_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
     # Alerts
     is_trauma: Mapped[bool] = mapped_column(default=False, nullable=False)

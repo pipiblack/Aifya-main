@@ -9,6 +9,7 @@ so dev environments can keep working without real SHA credentials.
 
 from __future__ import annotations
 
+import contextlib
 import json
 from typing import Any
 
@@ -68,9 +69,7 @@ async def _get_redis() -> redis_async.Redis | None:
     @returns Redis client or None
     """
     try:
-        client: redis_async.Redis = redis_async.from_url(
-            settings.redis_url, decode_responses=True
-        )
+        client: redis_async.Redis = redis_async.from_url(settings.redis_url, decode_responses=True)
         await client.ping()
         return client
     except Exception as exc:
@@ -161,14 +160,12 @@ async def validate_member(
 
     # 4) Cache success
     if redis is not None and member is not None:
-        try:
+        with contextlib.suppress(Exception):
             await redis.set(
                 cache_key,
                 member.model_dump_json(),
                 ex=_CACHE_TTL_SECONDS,
             )
-        except Exception:
-            pass
     return member
 
 

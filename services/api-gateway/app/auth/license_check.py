@@ -8,17 +8,17 @@ Use as a dependency on routers that need tier gating:
 Caches license validation in Redis for 5 minutes to avoid DB roundtrip per request.
 """
 
+import contextlib
 import json
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
 from app.database import get_db
-from app.schemas.licensing import TIER_ENTITLEMENTS
 from app.services.licensing_service import LicensingService
 
 # Redis cache TTL for license entitlements (seconds)
@@ -52,9 +52,7 @@ async def _get_redis():
     return _redis_client
 
 
-async def _get_entitlements(
-    facility_id: str, db: AsyncSession
-) -> dict:
+async def _get_entitlements(facility_id: str, db: AsyncSession) -> dict:
     """
     Get cached entitlements for a facility. Uses Redis cache, falls back to DB.
 
@@ -106,10 +104,8 @@ async def invalidate_license_cache(facility_id: uuid.UUID) -> None:
     """
     redis = await _get_redis()
     if redis is not None:
-        try:
+        with contextlib.suppress(Exception):
             await redis.delete(f"{_CACHE_PREFIX}{facility_id}")
-        except Exception:
-            pass
 
 
 def require_module(module: str) -> Callable:
@@ -135,9 +131,7 @@ def require_module(module: str) -> Callable:
         @returns CurrentUser if module is accessible
         @raises HTTPException 403: If module not in tier
         """
-        entitlements = await _get_entitlements(
-            str(current_user.facility_id), db
-        )
+        entitlements = await _get_entitlements(str(current_user.facility_id), db)
 
         if module not in entitlements["enabled_modules"]:
             tier = entitlements["tier"]
@@ -148,8 +142,7 @@ def require_module(module: str) -> Callable:
                     "module": module,
                     "current_tier": tier,
                     "message": (
-                        f"The '{module}' module is not available on your "
-                        f"'{tier}' plan. Upgrade to access this feature."
+                        f"The '{module}' module is not available on your '{tier}' plan. Upgrade to access this feature."
                     ),
                     "upgrade_url": "/settings/billing",
                 },
@@ -183,9 +176,7 @@ def require_feature(flag: str) -> Callable:
         @returns CurrentUser if feature is enabled
         @raises HTTPException 403: If feature not in tier
         """
-        entitlements = await _get_entitlements(
-            str(current_user.facility_id), db
-        )
+        entitlements = await _get_entitlements(str(current_user.facility_id), db)
 
         if not entitlements["feature_flags"].get(flag, False):
             tier = entitlements["tier"]
@@ -196,8 +187,7 @@ def require_feature(flag: str) -> Callable:
                     "feature": flag,
                     "current_tier": tier,
                     "message": (
-                        f"The '{flag}' feature is not available on your "
-                        f"'{tier}' plan. Upgrade to access this feature."
+                        f"The '{flag}' feature is not available on your '{tier}' plan. Upgrade to access this feature."
                     ),
                     "upgrade_url": "/settings/billing",
                 },

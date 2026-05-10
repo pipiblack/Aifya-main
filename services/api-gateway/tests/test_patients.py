@@ -107,9 +107,7 @@ async def test_list_patients(client: AsyncClient, sample_patient_data: dict) -> 
 
 
 @pytest.mark.asyncio
-async def test_search_patients_by_name(
-    client: AsyncClient, sample_patient_data: dict
-) -> None:
+async def test_search_patients_by_name(client: AsyncClient, sample_patient_data: dict) -> None:
     """Test searching patients by name."""
     await client.post("/api/v1/patients", json=sample_patient_data)
 
@@ -121,9 +119,7 @@ async def test_search_patients_by_name(
 
 
 @pytest.mark.asyncio
-async def test_search_patients_by_national_id(
-    client: AsyncClient, sample_patient_data: dict
-) -> None:
+async def test_search_patients_by_national_id(client: AsyncClient, sample_patient_data: dict) -> None:
     """Test searching patients by national ID."""
     await client.post("/api/v1/patients", json=sample_patient_data)
 
@@ -134,9 +130,7 @@ async def test_search_patients_by_national_id(
 
 
 @pytest.mark.asyncio
-async def test_search_patients_by_phone(
-    client: AsyncClient, sample_patient_data: dict
-) -> None:
+async def test_search_patients_by_phone(client: AsyncClient, sample_patient_data: dict) -> None:
     """Test searching patients by phone number."""
     await client.post("/api/v1/patients", json=sample_patient_data)
 
@@ -184,9 +178,7 @@ async def test_update_patient(client: AsyncClient, sample_patient_data: dict) ->
 async def test_update_patient_not_found(client: AsyncClient) -> None:
     """Test 404 when updating non-existent patient."""
     fake_id = str(uuid.uuid4())
-    response = await client.patch(
-        f"/api/v1/patients/{fake_id}", json={"first_name": "Test"}
-    )
+    response = await client.patch(f"/api/v1/patients/{fake_id}", json={"first_name": "Test"})
     assert response.status_code == 404
 
 
@@ -214,18 +206,14 @@ async def test_pagination(client: AsyncClient, sample_patient_data: dict) -> Non
         await client.post("/api/v1/patients", json=payload)
 
     # Page 1, size 2
-    response = await client.get(
-        "/api/v1/patients", params={"page": "1", "page_size": "2"}
-    )
+    response = await client.get("/api/v1/patients", params={"page": "1", "page_size": "2"})
     data = response.json()
     assert data["total"] == 3
     assert len(data["items"]) == 2
     assert data["page"] == 1
 
     # Page 2, size 2
-    response = await client.get(
-        "/api/v1/patients", params={"page": "2", "page_size": "2"}
-    )
+    response = await client.get("/api/v1/patients", params={"page": "2", "page_size": "2"})
     data = response.json()
     assert len(data["items"]) == 1
     assert data["page"] == 2

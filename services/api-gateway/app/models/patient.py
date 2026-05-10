@@ -1,8 +1,7 @@
-import uuid
-from datetime import date, datetime
+from datetime import date
 
-from sqlalchemy import Date, DateTime, Index, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Date, Index, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base

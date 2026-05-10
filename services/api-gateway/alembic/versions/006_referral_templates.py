@@ -8,9 +8,10 @@ Adds referral_templates for facility-managed standardized referral
 note prefills by specialty.
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision = "006"
 down_revision = "005"

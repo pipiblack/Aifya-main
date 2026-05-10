@@ -34,9 +34,7 @@ class CDSVitalsRequest(BaseModel):
     """
 
     patient_id: uuid.UUID
-    vitals: dict[str, float | int | str | None] = Field(
-        ..., description="Vital sign key-value pairs"
-    )
+    vitals: dict[str, float | int | str | None] = Field(..., description="Vital sign key-value pairs")
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,9 +30,7 @@ class PharmacyService:
 
     # ── Pharmacy Queue ────────────────────────────────────────────────────
 
-    async def get_pending_prescriptions(
-        self, facility_id: uuid.UUID
-    ) -> tuple[list[PharmacyQueueItem], int]:
+    async def get_pending_prescriptions(self, facility_id: uuid.UUID) -> tuple[list[PharmacyQueueItem], int]:
         """
         Get prescriptions pending dispensing (the pharmacy queue).
         Ordered by creation time (FIFO).
@@ -117,11 +115,13 @@ class PharmacyService:
         unit_price: int | None = None
         if data.pharmacy_item_id:
             item_result = await self.db.execute(
-                select(PharmacyItem).where(
+                select(PharmacyItem)
+                .where(
                     PharmacyItem.id == data.pharmacy_item_id,
                     PharmacyItem.facility_id == facility_id,
                     PharmacyItem.is_deleted == False,  # noqa: E712
-                ).with_for_update()
+                )
+                .with_for_update()
             )
             pharmacy_item = item_result.scalar_one_or_none()
             if not pharmacy_item:
@@ -136,9 +136,7 @@ class PharmacyService:
                 raise ValueError("Cannot dispense expired medication")
             unit_price = pharmacy_item.selling_price_cents
 
-        total_price = (
-            unit_price * data.quantity_dispensed if unit_price else None
-        )
+        total_price = unit_price * data.quantity_dispensed if unit_price else None
 
         # Create dispensing record
         dispensing = Dispensing(
@@ -189,7 +187,7 @@ class PharmacyService:
 
         # Update prescription status
         rx.dispensed_by = dispensed_by
-        rx.dispensed_at = datetime.now(timezone.utc)
+        rx.dispensed_at = datetime.now(UTC)
         rx.dispensed_quantity = (rx.dispensed_quantity or 0) + data.quantity_dispensed
         rx.unit_cost_cents = unit_price
         rx.total_cost_cents = total_price
@@ -341,11 +339,7 @@ class PharmacyService:
         total = (await self.db.execute(count_stmt)).scalar_one()
 
         # Paginate
-        stmt = (
-            stmt.order_by(PharmacyItem.drug_name.asc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
+        stmt = stmt.order_by(PharmacyItem.drug_name.asc()).offset((page - 1) * page_size).limit(page_size)
 
         result = await self.db.execute(stmt)
         return list(result.scalars().all()), total
@@ -433,9 +427,7 @@ class PharmacyService:
         qty_before = item.current_quantity
         new_qty = qty_before + data.quantity_change
         if new_qty < 0:
-            raise ValueError(
-                f"Adjustment would result in negative stock ({new_qty})"
-            )
+            raise ValueError(f"Adjustment would result in negative stock ({new_qty})")
 
         item.current_quantity = new_qty
 
@@ -456,9 +448,7 @@ class PharmacyService:
         await self.db.refresh(tx)
         return tx
 
-    async def get_stock_alerts(
-        self, facility_id: uuid.UUID
-    ) -> list[StockAlert]:
+    async def get_stock_alerts(self, facility_id: uuid.UUID) -> list[StockAlert]:
         """
         Get stock alerts: low stock, expiring soon (30 days), expired, out of stock.
 
@@ -479,46 +469,54 @@ class PharmacyService:
         alerts: list[StockAlert] = []
         for item in items:
             if item.current_quantity == 0:
-                alerts.append(StockAlert(
-                    item_id=item.id,
-                    drug_name=item.drug_name,
-                    drug_code=item.drug_code,
-                    current_quantity=item.current_quantity,
-                    reorder_level=item.reorder_level,
-                    expiry_date=item.expiry_date,
-                    alert_type="out_of_stock",
-                ))
+                alerts.append(
+                    StockAlert(
+                        item_id=item.id,
+                        drug_name=item.drug_name,
+                        drug_code=item.drug_code,
+                        current_quantity=item.current_quantity,
+                        reorder_level=item.reorder_level,
+                        expiry_date=item.expiry_date,
+                        alert_type="out_of_stock",
+                    )
+                )
             elif item.current_quantity <= item.reorder_level:
-                alerts.append(StockAlert(
-                    item_id=item.id,
-                    drug_name=item.drug_name,
-                    drug_code=item.drug_code,
-                    current_quantity=item.current_quantity,
-                    reorder_level=item.reorder_level,
-                    expiry_date=item.expiry_date,
-                    alert_type="low_stock",
-                ))
+                alerts.append(
+                    StockAlert(
+                        item_id=item.id,
+                        drug_name=item.drug_name,
+                        drug_code=item.drug_code,
+                        current_quantity=item.current_quantity,
+                        reorder_level=item.reorder_level,
+                        expiry_date=item.expiry_date,
+                        alert_type="low_stock",
+                    )
+                )
 
             if item.expiry_date:
                 if item.expiry_date < today:
-                    alerts.append(StockAlert(
-                        item_id=item.id,
-                        drug_name=item.drug_name,
-                        drug_code=item.drug_code,
-                        current_quantity=item.current_quantity,
-                        reorder_level=item.reorder_level,
-                        expiry_date=item.expiry_date,
-                        alert_type="expired",
-                    ))
+                    alerts.append(
+                        StockAlert(
+                            item_id=item.id,
+                            drug_name=item.drug_name,
+                            drug_code=item.drug_code,
+                            current_quantity=item.current_quantity,
+                            reorder_level=item.reorder_level,
+                            expiry_date=item.expiry_date,
+                            alert_type="expired",
+                        )
+                    )
                 elif item.expiry_date <= thirty_days:
-                    alerts.append(StockAlert(
-                        item_id=item.id,
-                        drug_name=item.drug_name,
-                        drug_code=item.drug_code,
-                        current_quantity=item.current_quantity,
-                        reorder_level=item.reorder_level,
-                        expiry_date=item.expiry_date,
-                        alert_type="expiring_soon",
-                    ))
+                    alerts.append(
+                        StockAlert(
+                            item_id=item.id,
+                            drug_name=item.drug_name,
+                            drug_code=item.drug_code,
+                            current_quantity=item.current_quantity,
+                            reorder_level=item.reorder_level,
+                            expiry_date=item.expiry_date,
+                            alert_type="expiring_soon",
+                        )
+                    )
 
         return alerts

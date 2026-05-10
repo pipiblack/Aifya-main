@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 class AgentType(StrEnum):
     """Available clinical agent types."""
+
     DISCHARGE = "discharge"
     CLAIMS = "claims"
     SCREENING = "screening"
@@ -20,6 +21,7 @@ class AgentType(StrEnum):
 
 class AgentStepStatus(StrEnum):
     """Status of a single agent step."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -29,6 +31,7 @@ class AgentStepStatus(StrEnum):
 
 class WorkflowStatus(StrEnum):
     """Overall workflow execution status."""
+
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -48,6 +51,7 @@ class AgentStep(BaseModel):
     @param error: Error message if failed
     @param duration_ms: Execution time in milliseconds
     """
+
     step_name: str
     step_index: int
     status: AgentStepStatus = AgentStepStatus.PENDING
@@ -71,6 +75,7 @@ class AgentWorkflow(BaseModel):
     @param final_output: Combined workflow output
     @param requires_clinician_review: True if any step needs human review
     """
+
     workflow_id: str
     agent_type: AgentType
     status: WorkflowStatus
@@ -90,6 +95,7 @@ class DischargeAgentInput(BaseModel):
     @param encounter_id: Encounter UUID
     @param admission_id: Admission UUID
     """
+
     patient_id: str
     encounter_id: str
     admission_id: str
@@ -104,6 +110,7 @@ class ClaimsAgentInput(BaseModel):
     @param invoice_id: Invoice UUID
     @param insurance_scheme_id: Insurance scheme UUID
     """
+
     patient_id: str
     encounter_id: str
     invoice_id: str
@@ -117,5 +124,6 @@ class ScreeningAgentInput(BaseModel):
     @param patient_id: Patient UUID
     @param trial_id: Trial UUID to screen against (or "all" for all active trials)
     """
+
     patient_id: str
     trial_id: str = "all"

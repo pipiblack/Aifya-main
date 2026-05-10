@@ -17,10 +17,7 @@ async def get_keycloak_public_keys() -> dict[str, object]:
     if _jwks_cache is not None:
         return _jwks_cache
 
-    certs_url = (
-        f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
-        "/protocol/openid-connect/certs"
-    )
+    certs_url = f"{settings.keycloak_url}/realms/{settings.keycloak_realm}/protocol/openid-connect/certs"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(certs_url)

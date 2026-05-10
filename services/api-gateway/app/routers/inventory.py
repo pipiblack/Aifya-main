@@ -81,9 +81,7 @@ async def list_items(
 async def create_item(
     data: InventoryItemCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "store_keeper")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "store_keeper")),
 ) -> InventoryItemResponse:
     """
     Create a new inventory item.
@@ -159,9 +157,7 @@ async def list_transactions(
 async def create_transaction(
     data: InventoryTransactionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "store_keeper", "nurse")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "store_keeper", "nurse")),
 ) -> InventoryTransactionResponse:
     """
     Record a stock transaction.
@@ -213,9 +209,7 @@ async def list_suppliers(
 async def create_supplier(
     data: SupplierCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "store_keeper")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "store_keeper")),
 ) -> SupplierResponse:
     """
     Create a supplier.
@@ -267,9 +261,7 @@ async def list_purchase_orders(
 async def create_purchase_order(
     data: PurchaseOrderCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "store_keeper")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "store_keeper")),
 ) -> PurchaseOrderResponse:
     """
     Create a purchase order.
@@ -316,9 +308,7 @@ async def get_purchase_order(
 async def approve_purchase_order(
     po_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> PurchaseOrderResponse:
     """
     Approve a purchase order.
@@ -340,9 +330,7 @@ async def approve_purchase_order(
 async def receive_po_item(
     data: ReceiveItemRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "store_keeper")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "store_keeper")),
 ) -> InventoryTransactionResponse:
     """
     Receive items against a purchase order.

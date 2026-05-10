@@ -27,40 +27,156 @@ logger = get_logger(__name__)
 DRUG_INTERACTIONS: list[dict[str, Any]] = [
     # Anticoagulants
     {"drugs": ["warfarin", "aspirin"], "severity": "high", "desc": "Increased bleeding risk. Monitor INR closely."},
-    {"drugs": ["warfarin", "ibuprofen"], "severity": "critical", "desc": "NSAIDs significantly increase bleeding risk with warfarin. Avoid combination."},
-    {"drugs": ["warfarin", "diclofenac"], "severity": "critical", "desc": "NSAIDs significantly increase bleeding risk with warfarin. Avoid combination."},
-    {"drugs": ["warfarin", "metronidazole"], "severity": "high", "desc": "Metronidazole inhibits warfarin metabolism. Reduce warfarin dose and monitor INR."},
-    {"drugs": ["warfarin", "fluconazole"], "severity": "high", "desc": "Fluconazole inhibits CYP2C9, increasing warfarin effect. Monitor INR."},
-    {"drugs": ["heparin", "aspirin"], "severity": "high", "desc": "Increased bleeding risk with concurrent antiplatelet therapy."},
+    {
+        "drugs": ["warfarin", "ibuprofen"],
+        "severity": "critical",
+        "desc": "NSAIDs significantly increase bleeding risk with warfarin. Avoid combination.",
+    },
+    {
+        "drugs": ["warfarin", "diclofenac"],
+        "severity": "critical",
+        "desc": "NSAIDs significantly increase bleeding risk with warfarin. Avoid combination.",
+    },
+    {
+        "drugs": ["warfarin", "metronidazole"],
+        "severity": "high",
+        "desc": "Metronidazole inhibits warfarin metabolism. Reduce warfarin dose and monitor INR.",
+    },
+    {
+        "drugs": ["warfarin", "fluconazole"],
+        "severity": "high",
+        "desc": "Fluconazole inhibits CYP2C9, increasing warfarin effect. Monitor INR.",
+    },
+    {
+        "drugs": ["heparin", "aspirin"],
+        "severity": "high",
+        "desc": "Increased bleeding risk with concurrent antiplatelet therapy.",
+    },
     # Cardiovascular
-    {"drugs": ["digoxin", "amiodarone"], "severity": "critical", "desc": "Amiodarone increases digoxin levels by 70-100%. Halve digoxin dose."},
-    {"drugs": ["digoxin", "verapamil"], "severity": "high", "desc": "Verapamil increases digoxin levels. Monitor digoxin levels."},
-    {"drugs": ["enalapril", "spironolactone"], "severity": "high", "desc": "Risk of severe hyperkalemia. Monitor potassium closely."},
-    {"drugs": ["enalapril", "potassium chloride"], "severity": "high", "desc": "ACE inhibitors with potassium supplementation risk hyperkalemia."},
-    {"drugs": ["amlodipine", "simvastatin"], "severity": "moderate", "desc": "Amlodipine increases simvastatin levels. Max simvastatin 20mg."},
-    {"drugs": ["atenolol", "verapamil"], "severity": "critical", "desc": "Risk of severe bradycardia and heart block. Avoid combination."},
-    {"drugs": ["nifedipine", "atenolol"], "severity": "moderate", "desc": "Enhanced hypotension. Monitor blood pressure."},
+    {
+        "drugs": ["digoxin", "amiodarone"],
+        "severity": "critical",
+        "desc": "Amiodarone increases digoxin levels by 70-100%. Halve digoxin dose.",
+    },
+    {
+        "drugs": ["digoxin", "verapamil"],
+        "severity": "high",
+        "desc": "Verapamil increases digoxin levels. Monitor digoxin levels.",
+    },
+    {
+        "drugs": ["enalapril", "spironolactone"],
+        "severity": "high",
+        "desc": "Risk of severe hyperkalemia. Monitor potassium closely.",
+    },
+    {
+        "drugs": ["enalapril", "potassium chloride"],
+        "severity": "high",
+        "desc": "ACE inhibitors with potassium supplementation risk hyperkalemia.",
+    },
+    {
+        "drugs": ["amlodipine", "simvastatin"],
+        "severity": "moderate",
+        "desc": "Amlodipine increases simvastatin levels. Max simvastatin 20mg.",
+    },
+    {
+        "drugs": ["atenolol", "verapamil"],
+        "severity": "critical",
+        "desc": "Risk of severe bradycardia and heart block. Avoid combination.",
+    },
+    {
+        "drugs": ["nifedipine", "atenolol"],
+        "severity": "moderate",
+        "desc": "Enhanced hypotension. Monitor blood pressure.",
+    },
     # Antibiotics
-    {"drugs": ["metronidazole", "alcohol"], "severity": "high", "desc": "Disulfiram-like reaction. Avoid alcohol during treatment."},
-    {"drugs": ["ciprofloxacin", "theophylline"], "severity": "high", "desc": "Ciprofloxacin increases theophylline levels. Monitor levels."},
-    {"drugs": ["erythromycin", "simvastatin"], "severity": "critical", "desc": "Risk of rhabdomyolysis. Avoid combination."},
-    {"drugs": ["rifampicin", "oral contraceptives"], "severity": "critical", "desc": "Rifampicin reduces contraceptive efficacy. Use alternative contraception."},
-    {"drugs": ["rifampicin", "warfarin"], "severity": "critical", "desc": "Rifampicin dramatically reduces warfarin effect. Major dose adjustment needed."},
-    {"drugs": ["co-trimoxazole", "methotrexate"], "severity": "critical", "desc": "Co-trimoxazole increases methotrexate toxicity. Avoid combination."},
+    {
+        "drugs": ["metronidazole", "alcohol"],
+        "severity": "high",
+        "desc": "Disulfiram-like reaction. Avoid alcohol during treatment.",
+    },
+    {
+        "drugs": ["ciprofloxacin", "theophylline"],
+        "severity": "high",
+        "desc": "Ciprofloxacin increases theophylline levels. Monitor levels.",
+    },
+    {
+        "drugs": ["erythromycin", "simvastatin"],
+        "severity": "critical",
+        "desc": "Risk of rhabdomyolysis. Avoid combination.",
+    },
+    {
+        "drugs": ["rifampicin", "oral contraceptives"],
+        "severity": "critical",
+        "desc": "Rifampicin reduces contraceptive efficacy. Use alternative contraception.",
+    },
+    {
+        "drugs": ["rifampicin", "warfarin"],
+        "severity": "critical",
+        "desc": "Rifampicin dramatically reduces warfarin effect. Major dose adjustment needed.",
+    },
+    {
+        "drugs": ["co-trimoxazole", "methotrexate"],
+        "severity": "critical",
+        "desc": "Co-trimoxazole increases methotrexate toxicity. Avoid combination.",
+    },
     # Diabetes
-    {"drugs": ["metformin", "contrast dye"], "severity": "high", "desc": "Hold metformin 48h before and after IV contrast. Risk of lactic acidosis."},
-    {"drugs": ["glibenclamide", "fluconazole"], "severity": "high", "desc": "Fluconazole increases glibenclamide effect. Risk of hypoglycemia."},
-    {"drugs": ["insulin", "atenolol"], "severity": "moderate", "desc": "Beta-blockers mask hypoglycemia symptoms. Monitor glucose closely."},
+    {
+        "drugs": ["metformin", "contrast dye"],
+        "severity": "high",
+        "desc": "Hold metformin 48h before and after IV contrast. Risk of lactic acidosis.",
+    },
+    {
+        "drugs": ["glibenclamide", "fluconazole"],
+        "severity": "high",
+        "desc": "Fluconazole increases glibenclamide effect. Risk of hypoglycemia.",
+    },
+    {
+        "drugs": ["insulin", "atenolol"],
+        "severity": "moderate",
+        "desc": "Beta-blockers mask hypoglycemia symptoms. Monitor glucose closely.",
+    },
     # Psychiatric
-    {"drugs": ["fluoxetine", "tramadol"], "severity": "critical", "desc": "Risk of serotonin syndrome. Avoid combination."},
-    {"drugs": ["fluoxetine", "carbamazepine"], "severity": "high", "desc": "Fluoxetine increases carbamazepine levels. Monitor for toxicity."},
-    {"drugs": ["diazepam", "opioids"], "severity": "critical", "desc": "Combined CNS depression risk. Respiratory depression possible."},
-    {"drugs": ["phenytoin", "fluconazole"], "severity": "high", "desc": "Fluconazole increases phenytoin levels. Monitor levels."},
+    {
+        "drugs": ["fluoxetine", "tramadol"],
+        "severity": "critical",
+        "desc": "Risk of serotonin syndrome. Avoid combination.",
+    },
+    {
+        "drugs": ["fluoxetine", "carbamazepine"],
+        "severity": "high",
+        "desc": "Fluoxetine increases carbamazepine levels. Monitor for toxicity.",
+    },
+    {
+        "drugs": ["diazepam", "opioids"],
+        "severity": "critical",
+        "desc": "Combined CNS depression risk. Respiratory depression possible.",
+    },
+    {
+        "drugs": ["phenytoin", "fluconazole"],
+        "severity": "high",
+        "desc": "Fluconazole increases phenytoin levels. Monitor levels.",
+    },
     # HIV/TB
-    {"drugs": ["efavirenz", "rifampicin"], "severity": "moderate", "desc": "Dose adjustment needed. Increase efavirenz to 800mg."},
-    {"drugs": ["lopinavir", "rifampicin"], "severity": "critical", "desc": "Rifampicin dramatically reduces lopinavir levels. Contraindicated."},
-    {"drugs": ["zidovudine", "stavudine"], "severity": "critical", "desc": "Antagonistic antiretrovirals. Never combine."},
-    {"drugs": ["tenofovir", "nsaids"], "severity": "high", "desc": "Increased nephrotoxicity risk. Monitor renal function."},
+    {
+        "drugs": ["efavirenz", "rifampicin"],
+        "severity": "moderate",
+        "desc": "Dose adjustment needed. Increase efavirenz to 800mg.",
+    },
+    {
+        "drugs": ["lopinavir", "rifampicin"],
+        "severity": "critical",
+        "desc": "Rifampicin dramatically reduces lopinavir levels. Contraindicated.",
+    },
+    {
+        "drugs": ["zidovudine", "stavudine"],
+        "severity": "critical",
+        "desc": "Antagonistic antiretrovirals. Never combine.",
+    },
+    {
+        "drugs": ["tenofovir", "nsaids"],
+        "severity": "high",
+        "desc": "Increased nephrotoxicity risk. Monitor renal function.",
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -68,10 +184,29 @@ DRUG_INTERACTIONS: list[dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 
 DRUG_ALLERGY_CLASSES: dict[str, list[str]] = {
-    "penicillin": ["amoxicillin", "ampicillin", "flucloxacillin", "piperacillin", "benzylpenicillin", "phenoxymethylpenicillin", "co-amoxiclav", "augmentin"],
+    "penicillin": [
+        "amoxicillin",
+        "ampicillin",
+        "flucloxacillin",
+        "piperacillin",
+        "benzylpenicillin",
+        "phenoxymethylpenicillin",
+        "co-amoxiclav",
+        "augmentin",
+    ],
     "cephalosporin": ["ceftriaxone", "cefuroxime", "cephalexin", "cefixime", "ceftazidime", "cefotaxime"],
     "sulfonamide": ["co-trimoxazole", "sulfadiazine", "sulfasalazine", "dapsone"],
-    "nsaid": ["ibuprofen", "diclofenac", "aspirin", "naproxen", "piroxicam", "indomethacin", "mefenamic acid", "ketorolac", "celecoxib"],
+    "nsaid": [
+        "ibuprofen",
+        "diclofenac",
+        "aspirin",
+        "naproxen",
+        "piroxicam",
+        "indomethacin",
+        "mefenamic acid",
+        "ketorolac",
+        "celecoxib",
+    ],
     "opioid": ["morphine", "codeine", "tramadol", "pethidine", "fentanyl", "methadone"],
     "macrolide": ["erythromycin", "azithromycin", "clarithromycin"],
     "fluoroquinolone": ["ciprofloxacin", "levofloxacin", "moxifloxacin", "norfloxacin"],
@@ -90,17 +225,72 @@ CROSS_REACTIVITY: dict[str, list[str]] = {
 # ---------------------------------------------------------------------------
 
 DRUG_CONDITION_RULES: list[dict[str, Any]] = [
-    {"drug_class": "nsaid", "conditions": ["peptic ulcer", "gastric ulcer", "gi bleeding", "renal failure", "kidney disease"], "severity": "critical", "desc": "NSAIDs contraindicated in {condition}. Risk of GI bleeding/renal injury."},
-    {"drug_class": "nsaid", "conditions": ["asthma"], "severity": "high", "desc": "NSAIDs may trigger bronchospasm in aspirin-sensitive asthma."},
-    {"drug_class": "nsaid", "conditions": ["heart failure", "cardiac failure"], "severity": "high", "desc": "NSAIDs cause fluid retention. Worsen heart failure."},
-    {"drug_pattern": "metformin", "conditions": ["renal failure", "kidney disease", "hepatic failure", "liver failure"], "severity": "critical", "desc": "Metformin contraindicated in severe renal/hepatic impairment. Risk of lactic acidosis."},
-    {"drug_pattern": "atenolol|propranolol|metoprolol", "conditions": ["asthma", "copd"], "severity": "critical", "desc": "Non-selective beta-blockers contraindicated in asthma/COPD. Risk of bronchospasm."},
-    {"drug_pattern": "enalapril|lisinopril|ramipril|captopril", "conditions": ["angioedema"], "severity": "critical", "desc": "ACE inhibitors contraindicated with history of angioedema."},
-    {"drug_pattern": "enalapril|lisinopril|ramipril|captopril", "conditions": ["bilateral renal artery stenosis"], "severity": "critical", "desc": "ACE inhibitors contraindicated in bilateral renal artery stenosis."},
-    {"drug_pattern": "simvastatin|atorvastatin|rosuvastatin", "conditions": ["active liver disease", "hepatitis"], "severity": "high", "desc": "Statins contraindicated in active liver disease. Check LFTs."},
-    {"drug_pattern": "warfarin", "conditions": ["active bleeding", "hemorrhagic stroke"], "severity": "critical", "desc": "Anticoagulation contraindicated in active bleeding."},
-    {"drug_pattern": "glibenclamide", "conditions": ["renal failure", "kidney disease"], "severity": "high", "desc": "Glibenclamide accumulates in renal impairment. Use gliclazide instead."},
-    {"drug_pattern": "chloroquine|hydroxychloroquine", "conditions": ["retinopathy"], "severity": "high", "desc": "Risk of retinal toxicity. Requires ophthalmology monitoring."},
+    {
+        "drug_class": "nsaid",
+        "conditions": ["peptic ulcer", "gastric ulcer", "gi bleeding", "renal failure", "kidney disease"],
+        "severity": "critical",
+        "desc": "NSAIDs contraindicated in {condition}. Risk of GI bleeding/renal injury.",
+    },
+    {
+        "drug_class": "nsaid",
+        "conditions": ["asthma"],
+        "severity": "high",
+        "desc": "NSAIDs may trigger bronchospasm in aspirin-sensitive asthma.",
+    },
+    {
+        "drug_class": "nsaid",
+        "conditions": ["heart failure", "cardiac failure"],
+        "severity": "high",
+        "desc": "NSAIDs cause fluid retention. Worsen heart failure.",
+    },
+    {
+        "drug_pattern": "metformin",
+        "conditions": ["renal failure", "kidney disease", "hepatic failure", "liver failure"],
+        "severity": "critical",
+        "desc": "Metformin contraindicated in severe renal/hepatic impairment. Risk of lactic acidosis.",
+    },
+    {
+        "drug_pattern": "atenolol|propranolol|metoprolol",
+        "conditions": ["asthma", "copd"],
+        "severity": "critical",
+        "desc": "Non-selective beta-blockers contraindicated in asthma/COPD. Risk of bronchospasm.",
+    },
+    {
+        "drug_pattern": "enalapril|lisinopril|ramipril|captopril",
+        "conditions": ["angioedema"],
+        "severity": "critical",
+        "desc": "ACE inhibitors contraindicated with history of angioedema.",
+    },
+    {
+        "drug_pattern": "enalapril|lisinopril|ramipril|captopril",
+        "conditions": ["bilateral renal artery stenosis"],
+        "severity": "critical",
+        "desc": "ACE inhibitors contraindicated in bilateral renal artery stenosis.",
+    },
+    {
+        "drug_pattern": "simvastatin|atorvastatin|rosuvastatin",
+        "conditions": ["active liver disease", "hepatitis"],
+        "severity": "high",
+        "desc": "Statins contraindicated in active liver disease. Check LFTs.",
+    },
+    {
+        "drug_pattern": "warfarin",
+        "conditions": ["active bleeding", "hemorrhagic stroke"],
+        "severity": "critical",
+        "desc": "Anticoagulation contraindicated in active bleeding.",
+    },
+    {
+        "drug_pattern": "glibenclamide",
+        "conditions": ["renal failure", "kidney disease"],
+        "severity": "high",
+        "desc": "Glibenclamide accumulates in renal impairment. Use gliclazide instead.",
+    },
+    {
+        "drug_pattern": "chloroquine|hydroxychloroquine",
+        "conditions": ["retinopathy"],
+        "severity": "high",
+        "desc": "Risk of retinal toxicity. Requires ophthalmology monitoring.",
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -108,12 +298,33 @@ DRUG_CONDITION_RULES: list[dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 
 PREGNANCY_CONTRAINDICATED: list[str] = [
-    "warfarin", "methotrexate", "isotretinoin", "thalidomide", "misoprostol",
-    "finasteride", "statins", "simvastatin", "atorvastatin", "rosuvastatin",
-    "ace inhibitors", "enalapril", "lisinopril", "ramipril", "captopril",
-    "arbs", "losartan", "valsartan", "telmisartan",
-    "tetracycline", "doxycycline", "ciprofloxacin", "levofloxacin",
-    "phenytoin", "carbamazepine", "valproate", "sodium valproate",
+    "warfarin",
+    "methotrexate",
+    "isotretinoin",
+    "thalidomide",
+    "misoprostol",
+    "finasteride",
+    "statins",
+    "simvastatin",
+    "atorvastatin",
+    "rosuvastatin",
+    "ace inhibitors",
+    "enalapril",
+    "lisinopril",
+    "ramipril",
+    "captopril",
+    "arbs",
+    "losartan",
+    "valsartan",
+    "telmisartan",
+    "tetracycline",
+    "doxycycline",
+    "ciprofloxacin",
+    "levofloxacin",
+    "phenytoin",
+    "carbamazepine",
+    "valproate",
+    "sodium valproate",
     "efavirenz",
 ]
 
@@ -122,18 +333,50 @@ PREGNANCY_CONTRAINDICATED: list[str] = [
 # ---------------------------------------------------------------------------
 
 PEDIATRIC_CONTRAINDICATED: list[dict[str, Any]] = [
-    {"drug_pattern": "aspirin", "max_age_years": 16, "desc": "Aspirin contraindicated in children under 16. Risk of Reye's syndrome."},
-    {"drug_pattern": "tetracycline|doxycycline", "max_age_years": 8, "desc": "Tetracyclines contraindicated under 8 years. Permanent tooth discoloration."},
-    {"drug_pattern": "ciprofloxacin|levofloxacin", "max_age_years": 18, "desc": "Fluoroquinolones avoid in children. Risk of tendon/cartilage damage."},
-    {"drug_pattern": "codeine", "max_age_years": 12, "desc": "Codeine contraindicated under 12. Risk of fatal respiratory depression."},
+    {
+        "drug_pattern": "aspirin",
+        "max_age_years": 16,
+        "desc": "Aspirin contraindicated in children under 16. Risk of Reye's syndrome.",
+    },
+    {
+        "drug_pattern": "tetracycline|doxycycline",
+        "max_age_years": 8,
+        "desc": "Tetracyclines contraindicated under 8 years. Permanent tooth discoloration.",
+    },
+    {
+        "drug_pattern": "ciprofloxacin|levofloxacin",
+        "max_age_years": 18,
+        "desc": "Fluoroquinolones avoid in children. Risk of tendon/cartilage damage.",
+    },
+    {
+        "drug_pattern": "codeine",
+        "max_age_years": 12,
+        "desc": "Codeine contraindicated under 12. Risk of fatal respiratory depression.",
+    },
     {"drug_pattern": "loperamide", "max_age_years": 2, "desc": "Loperamide contraindicated in children under 2 years."},
 ]
 
 GERIATRIC_WARNINGS: list[dict[str, Any]] = [
-    {"drug_pattern": "diazepam|lorazepam|chlordiazepoxide", "min_age_years": 65, "desc": "Long-acting benzodiazepines: increased fall risk in elderly. Consider short-acting alternatives."},
-    {"drug_pattern": "amitriptyline|imipramine", "min_age_years": 65, "desc": "Tricyclic antidepressants: anticholinergic effects magnified in elderly. Use SSRIs."},
-    {"drug_pattern": "glibenclamide", "min_age_years": 65, "desc": "Glibenclamide: prolonged hypoglycemia risk in elderly. Use gliclazide."},
-    {"drug_pattern": "nsaid|ibuprofen|diclofenac", "min_age_years": 65, "desc": "NSAIDs: increased GI bleeding and renal risk in elderly. Use paracetamol first."},
+    {
+        "drug_pattern": "diazepam|lorazepam|chlordiazepoxide",
+        "min_age_years": 65,
+        "desc": "Long-acting benzodiazepines: increased fall risk in elderly. Consider short-acting alternatives.",
+    },
+    {
+        "drug_pattern": "amitriptyline|imipramine",
+        "min_age_years": 65,
+        "desc": "Tricyclic antidepressants: anticholinergic effects magnified in elderly. Use SSRIs.",
+    },
+    {
+        "drug_pattern": "glibenclamide",
+        "min_age_years": 65,
+        "desc": "Glibenclamide: prolonged hypoglycemia risk in elderly. Use gliclazide.",
+    },
+    {
+        "drug_pattern": "nsaid|ibuprofen|diclofenac",
+        "min_age_years": 65,
+        "desc": "NSAIDs: increased GI bleeding and renal risk in elderly. Use paracetamol first.",
+    },
 ]
 
 
@@ -195,32 +438,37 @@ def check_drug_interactions(
         norm_med = _normalize_drug(med)
         for rule in DRUG_INTERACTIONS:
             pair = [_normalize_drug(d) for d in rule["drugs"]]
-            if (norm_drug in pair[0] or pair[0] in norm_drug) and \
-               (norm_med in pair[1] or pair[1] in norm_med):
-                match = True
-            elif (norm_drug in pair[1] or pair[1] in norm_drug) and \
-                 (norm_med in pair[0] or pair[0] in norm_med):
+            if ((norm_drug in pair[0] or pair[0] in norm_drug) and (norm_med in pair[1] or pair[1] in norm_med)) or (
+                (norm_drug in pair[1] or pair[1] in norm_drug) and (norm_med in pair[0] or pair[0] in norm_med)
+            ):
                 match = True
             else:
                 match = False
 
             if match:
-                sev = AlertSeverity.CRITICAL if rule["severity"] == "critical" else \
-                      AlertSeverity.HIGH if rule["severity"] == "high" else AlertSeverity.MODERATE
+                sev = (
+                    AlertSeverity.CRITICAL
+                    if rule["severity"] == "critical"
+                    else AlertSeverity.HIGH
+                    if rule["severity"] == "high"
+                    else AlertSeverity.MODERATE
+                )
                 act = AlertAction.BLOCK if sev == AlertSeverity.CRITICAL else AlertAction.WARN
 
-                alerts.append(CDSAlert(
-                    severity=sev,
-                    category=AlertCategory.DRUG_INTERACTION,
-                    action=act,
-                    title=f"Drug Interaction: {drug_name} ↔ {med}",
-                    message=rule["desc"],
-                    source_rule="drug_interaction_check",
-                    affected_items=[drug_name, med],
-                    evidence={"pair": rule["drugs"], "severity": rule["severity"]},
-                    overridable=sev != AlertSeverity.CRITICAL,
-                    requires_reason=sev == AlertSeverity.CRITICAL,
-                ))
+                alerts.append(
+                    CDSAlert(
+                        severity=sev,
+                        category=AlertCategory.DRUG_INTERACTION,
+                        action=act,
+                        title=f"Drug Interaction: {drug_name} ↔ {med}",
+                        message=rule["desc"],
+                        source_rule="drug_interaction_check",
+                        affected_items=[drug_name, med],
+                        evidence={"pair": rule["drugs"], "severity": rule["severity"]},
+                        overridable=sev != AlertSeverity.CRITICAL,
+                        requires_reason=sev == AlertSeverity.CRITICAL,
+                    )
+                )
 
     return alerts
 
@@ -249,18 +497,20 @@ def check_drug_allergies(
     for allergy in allergy_names:
         # Direct match
         if allergy in norm_drug or norm_drug in allergy:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.CRITICAL,
-                category=AlertCategory.DRUG_ALLERGY,
-                action=AlertAction.BLOCK,
-                title=f"ALLERGY: {drug_name} — Patient allergic to {allergy}",
-                message=f"Patient has documented allergy to {allergy}. {drug_name} is contraindicated.",
-                source_rule="drug_allergy_direct",
-                affected_items=[drug_name],
-                evidence={"allergy": allergy, "match_type": "direct"},
-                overridable=False,
-                requires_reason=True,
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.DRUG_ALLERGY,
+                    action=AlertAction.BLOCK,
+                    title=f"ALLERGY: {drug_name} — Patient allergic to {allergy}",
+                    message=f"Patient has documented allergy to {allergy}. {drug_name} is contraindicated.",
+                    source_rule="drug_allergy_direct",
+                    affected_items=[drug_name],
+                    evidence={"allergy": allergy, "match_type": "direct"},
+                    overridable=False,
+                    requires_reason=True,
+                )
+            )
             continue
 
         # Class match
@@ -269,18 +519,20 @@ def check_drug_allergies(
             drug_is_member = any(m in norm_drug for m in members)
 
             if allergy_is_class and drug_is_member:
-                alerts.append(CDSAlert(
-                    severity=AlertSeverity.CRITICAL,
-                    category=AlertCategory.DRUG_ALLERGY,
-                    action=AlertAction.BLOCK,
-                    title=f"CLASS ALLERGY: {drug_name} ({class_name}) — Patient allergic",
-                    message=f"Patient has {class_name} allergy. {drug_name} belongs to this class.",
-                    source_rule="drug_allergy_class",
-                    affected_items=[drug_name],
-                    evidence={"allergy": allergy, "class": class_name, "match_type": "class"},
-                    overridable=False,
-                    requires_reason=True,
-                ))
+                alerts.append(
+                    CDSAlert(
+                        severity=AlertSeverity.CRITICAL,
+                        category=AlertCategory.DRUG_ALLERGY,
+                        action=AlertAction.BLOCK,
+                        title=f"CLASS ALLERGY: {drug_name} ({class_name}) — Patient allergic",
+                        message=f"Patient has {class_name} allergy. {drug_name} belongs to this class.",
+                        source_rule="drug_allergy_class",
+                        affected_items=[drug_name],
+                        evidence={"allergy": allergy, "class": class_name, "match_type": "class"},
+                        overridable=False,
+                        requires_reason=True,
+                    )
+                )
 
         # Cross-reactivity
         for class_name, cross_classes in CROSS_REACTIVITY.items():
@@ -289,22 +541,22 @@ def check_drug_allergies(
             )
             if allergy_is_class:
                 for cross_class in cross_classes:
-                    drug_is_cross = any(
-                        m in norm_drug for m in DRUG_ALLERGY_CLASSES.get(cross_class, [])
-                    )
+                    drug_is_cross = any(m in norm_drug for m in DRUG_ALLERGY_CLASSES.get(cross_class, []))
                     if drug_is_cross:
-                        alerts.append(CDSAlert(
-                            severity=AlertSeverity.HIGH,
-                            category=AlertCategory.DRUG_ALLERGY,
-                            action=AlertAction.WARN,
-                            title=f"CROSS-REACTIVITY: {drug_name} — {class_name}/{cross_class}",
-                            message=f"Patient has {class_name} allergy. {drug_name} ({cross_class}) has ~10% cross-reactivity risk.",
-                            source_rule="drug_allergy_cross_reactivity",
-                            affected_items=[drug_name],
-                            evidence={"allergy": allergy, "cross_class": cross_class},
-                            overridable=True,
-                            requires_reason=True,
-                        ))
+                        alerts.append(
+                            CDSAlert(
+                                severity=AlertSeverity.HIGH,
+                                category=AlertCategory.DRUG_ALLERGY,
+                                action=AlertAction.WARN,
+                                title=f"CROSS-REACTIVITY: {drug_name} — {class_name}/{cross_class}",
+                                message=f"Patient has {class_name} allergy. {drug_name} ({cross_class}) has ~10% cross-reactivity risk.",
+                                source_rule="drug_allergy_cross_reactivity",
+                                affected_items=[drug_name],
+                                evidence={"allergy": allergy, "cross_class": cross_class},
+                                overridable=True,
+                                requires_reason=True,
+                            )
+                        )
 
     return alerts
 
@@ -345,18 +597,20 @@ def check_drug_conditions(
                 if rule_condition in condition or condition in rule_condition:
                     sev = AlertSeverity.CRITICAL if rule["severity"] == "critical" else AlertSeverity.HIGH
                     desc = rule["desc"].replace("{condition}", condition)
-                    alerts.append(CDSAlert(
-                        severity=sev,
-                        category=AlertCategory.DRUG_CONDITION,
-                        action=AlertAction.BLOCK if sev == AlertSeverity.CRITICAL else AlertAction.WARN,
-                        title=f"Contraindication: {drug_name} + {condition}",
-                        message=desc,
-                        source_rule="drug_condition_check",
-                        affected_items=[drug_name, condition],
-                        evidence={"condition": condition, "rule_condition": rule_condition},
-                        overridable=sev != AlertSeverity.CRITICAL,
-                        requires_reason=True,
-                    ))
+                    alerts.append(
+                        CDSAlert(
+                            severity=sev,
+                            category=AlertCategory.DRUG_CONDITION,
+                            action=AlertAction.BLOCK if sev == AlertSeverity.CRITICAL else AlertAction.WARN,
+                            title=f"Contraindication: {drug_name} + {condition}",
+                            message=desc,
+                            source_rule="drug_condition_check",
+                            affected_items=[drug_name, condition],
+                            evidence={"condition": condition, "rule_condition": rule_condition},
+                            overridable=sev != AlertSeverity.CRITICAL,
+                            requires_reason=True,
+                        )
+                    )
                     break
 
     return alerts
@@ -381,9 +635,9 @@ def check_age_safety(
     norm_drug = _normalize_drug(drug_name)
 
     for rule in PEDIATRIC_CONTRAINDICATED:
-        if age < rule["max_age_years"]:
-            if re.search(rule["drug_pattern"], norm_drug, re.IGNORECASE):
-                alerts.append(CDSAlert(
+        if age < rule["max_age_years"] and re.search(rule["drug_pattern"], norm_drug, re.IGNORECASE):
+            alerts.append(
+                CDSAlert(
                     severity=AlertSeverity.CRITICAL,
                     category=AlertCategory.DRUG_AGE,
                     action=AlertAction.BLOCK,
@@ -394,12 +648,13 @@ def check_age_safety(
                     evidence={"patient_age": age, "max_age": rule["max_age_years"]},
                     overridable=False,
                     requires_reason=True,
-                ))
+                )
+            )
 
     for rule in GERIATRIC_WARNINGS:
-        if age >= rule["min_age_years"]:
-            if re.search(rule["drug_pattern"], norm_drug, re.IGNORECASE):
-                alerts.append(CDSAlert(
+        if age >= rule["min_age_years"] and re.search(rule["drug_pattern"], norm_drug, re.IGNORECASE):
+            alerts.append(
+                CDSAlert(
                     severity=AlertSeverity.MODERATE,
                     category=AlertCategory.DRUG_AGE,
                     action=AlertAction.WARN,
@@ -409,7 +664,8 @@ def check_age_safety(
                     affected_items=[drug_name],
                     evidence={"patient_age": age, "min_age": rule["min_age_years"]},
                     overridable=True,
-                ))
+                )
+            )
 
     return alerts
 
@@ -433,18 +689,20 @@ def check_pregnancy_safety(
 
     for contraindicated in PREGNANCY_CONTRAINDICATED:
         if contraindicated in norm_drug or norm_drug in contraindicated:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.CRITICAL,
-                category=AlertCategory.DRUG_PREGNANCY,
-                action=AlertAction.BLOCK,
-                title=f"PREGNANCY: {drug_name} contraindicated",
-                message=f"{drug_name} is contraindicated in pregnancy. Risk of teratogenic effects.",
-                source_rule="pregnancy_drug_check",
-                affected_items=[drug_name],
-                evidence={"pregnancy_status": True},
-                overridable=False,
-                requires_reason=True,
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.DRUG_PREGNANCY,
+                    action=AlertAction.BLOCK,
+                    title=f"PREGNANCY: {drug_name} contraindicated",
+                    message=f"{drug_name} is contraindicated in pregnancy. Risk of teratogenic effects.",
+                    source_rule="pregnancy_drug_check",
+                    affected_items=[drug_name],
+                    evidence={"pregnancy_status": True},
+                    overridable=False,
+                    requires_reason=True,
+                )
+            )
             break
 
     return alerts
@@ -467,32 +725,36 @@ def check_duplicate_therapy(
     for med in current_medications:
         norm_med = _normalize_drug(med)
         if norm_drug == norm_med:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.HIGH,
-                category=AlertCategory.DRUG_DUPLICATE,
-                action=AlertAction.WARN,
-                title=f"Duplicate: {drug_name} already prescribed",
-                message=f"Patient already has an active prescription for {med}.",
-                source_rule="duplicate_drug_check",
-                affected_items=[drug_name, med],
-                overridable=True,
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.HIGH,
+                    category=AlertCategory.DRUG_DUPLICATE,
+                    action=AlertAction.WARN,
+                    title=f"Duplicate: {drug_name} already prescribed",
+                    message=f"Patient already has an active prescription for {med}.",
+                    source_rule="duplicate_drug_check",
+                    affected_items=[drug_name, med],
+                    overridable=True,
+                )
+            )
             continue
 
         for class_name, members in DRUG_ALLERGY_CLASSES.items():
             drug_in = any(m in norm_drug for m in members)
             med_in = any(m in norm_med for m in members)
             if drug_in and med_in and norm_drug != norm_med:
-                alerts.append(CDSAlert(
-                    severity=AlertSeverity.MODERATE,
-                    category=AlertCategory.DRUG_DUPLICATE,
-                    action=AlertAction.WARN,
-                    title=f"Same Class: {drug_name} + {med} ({class_name})",
-                    message=f"Both {drug_name} and {med} are {class_name}s. Review therapeutic duplication.",
-                    source_rule="duplicate_class_check",
-                    affected_items=[drug_name, med],
-                    evidence={"drug_class": class_name},
-                    overridable=True,
-                ))
+                alerts.append(
+                    CDSAlert(
+                        severity=AlertSeverity.MODERATE,
+                        category=AlertCategory.DRUG_DUPLICATE,
+                        action=AlertAction.WARN,
+                        title=f"Same Class: {drug_name} + {med} ({class_name})",
+                        message=f"Both {drug_name} and {med} are {class_name}s. Review therapeutic duplication.",
+                        source_rule="duplicate_class_check",
+                        affected_items=[drug_name, med],
+                        evidence={"drug_class": class_name},
+                        overridable=True,
+                    )
+                )
 
     return alerts

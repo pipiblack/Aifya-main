@@ -48,12 +48,8 @@ async def get_summary(
 
 @router.get("/worklist", response_model=ImagingWorklistResponse)
 async def get_worklist(
-    status_filter: str | None = Query(
-        None, alias="status", description="Filter by order status"
-    ),
-    modality: str | None = Query(
-        None, description="Filter by imaging modality"
-    ),
+    status_filter: str | None = Query(None, alias="status", description="Filter by order status"),
+    modality: str | None = Query(None, description="Filter by imaging modality"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> ImagingWorklistResponse:
@@ -83,9 +79,7 @@ async def get_worklist(
 async def create_order(
     data: ImagingOrderCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "admin", "facility_admin")),
 ) -> ImagingOrderResponse:
     """
     Create a new imaging order.
@@ -142,9 +136,7 @@ async def schedule_order(
     order_id: uuid.UUID,
     data: ImagingScheduleRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("radiologist", "rad_tech", "nurse", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("radiologist", "rad_tech", "nurse", "admin", "facility_admin")),
 ) -> ImagingOrderResponse:
     """
     Schedule an imaging study for a date/time and room.
@@ -178,9 +170,7 @@ async def perform_study(
     order_id: uuid.UUID,
     data: ImagingPerformRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("radiologist", "rad_tech", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("radiologist", "rad_tech", "admin", "facility_admin")),
 ) -> ImagingOrderResponse:
     """
     Mark an imaging study as performed. Creates a blank result for reporting.
@@ -214,9 +204,7 @@ async def enter_report(
     result_id: uuid.UUID,
     data: ImagingResultCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("radiologist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("radiologist", "admin", "facility_admin")),
 ) -> ImagingResultResponse:
     """
     Enter or update a radiology report (findings, impression, recommendations).
@@ -251,9 +239,7 @@ async def verify_report(
     result_id: uuid.UUID,
     data: ImagingResultVerify,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("radiologist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("radiologist", "admin", "facility_admin")),
 ) -> ImagingResultResponse:
     """
     Verify (finalise) a radiology report. Marks order as completed.
@@ -287,9 +273,7 @@ async def notify_critical(
     result_id: uuid.UUID,
     data: CriticalImagingNotifyRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("radiologist", "rad_tech", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("radiologist", "rad_tech", "admin", "facility_admin")),
 ) -> ImagingResultResponse:
     """
     Record that a critical imaging finding was communicated to a clinician.

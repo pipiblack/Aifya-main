@@ -5,11 +5,10 @@ All queries are scoped by facility_id for multi-tenant safety.
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.models.diagnosis import Diagnosis
@@ -32,14 +31,16 @@ from app.services.fhir.models import (
     FHIRCapabilityRest,
     FHIRCapabilityRestResource,
     FHIRCapabilityStatement,
-    FHIRCondition,
     FHIRDiagnosticReport,
     FHIREncounter,
-    FHIRMedicationRequest,
-    FHIRObservation,
     FHIRPatient,
     FHIRReference,
 )
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -103,10 +104,7 @@ class FHIRService:
 
         if name:
             name_filter = f"%{name}%"
-            stmt = stmt.where(
-                (Patient.first_name.ilike(name_filter))
-                | (Patient.last_name.ilike(name_filter))
-            )
+            stmt = stmt.where((Patient.first_name.ilike(name_filter)) | (Patient.last_name.ilike(name_filter)))
         if identifier:
             stmt = stmt.where(Patient.mrn == identifier)
         if birthdate:
@@ -169,12 +167,15 @@ class FHIRService:
             stmt = stmt.where(Encounter.patient_id == patient)
         if status:
             # Reverse-map FHIR status to Aifya status
-            reverse_map = {v: k for k, v in {
-                "waiting": "arrived",
-                "in_consultation": "in-progress",
-                "completed": "finished",
-                "cancelled": "cancelled",
-            }.items()}
+            reverse_map = {
+                v: k
+                for k, v in {
+                    "waiting": "arrived",
+                    "in_consultation": "in-progress",
+                    "completed": "finished",
+                    "cancelled": "cancelled",
+                }.items()
+            }
             aifya_status = reverse_map.get(status)
             if aifya_status:
                 stmt = stmt.where(Encounter.status == aifya_status)
@@ -243,18 +244,14 @@ class FHIRService:
             if patient:
                 lab_stmt = lab_stmt.where(LabOrder.patient_id == patient)
             if code:
-                lab_stmt = lab_stmt.where(
-                    (LabResult.loinc_code == code) | (LabResult.test_code == code)
-                )
+                lab_stmt = lab_stmt.where((LabResult.loinc_code == code) | (LabResult.test_code == code))
             lab_stmt = lab_stmt.order_by(LabResult.created_at.desc()).limit(20)
 
             result = await self.db.execute(lab_stmt)
             labs = result.scalars().all()
 
             for lr in labs:
-                resources.append(
-                    lab_result_to_fhir(lr).model_dump(exclude_none=True)
-                )
+                resources.append(lab_result_to_fhir(lr).model_dump(exclude_none=True))
 
         return make_searchset_bundle(resources, "Observation")
 
@@ -295,9 +292,7 @@ class FHIRService:
         result = await self.db.execute(stmt)
         prescriptions = result.scalars().all()
 
-        resources = [
-            prescription_to_fhir(rx).model_dump(exclude_none=True) for rx in prescriptions
-        ]
+        resources = [prescription_to_fhir(rx).model_dump(exclude_none=True) for rx in prescriptions]
         return make_searchset_bundle(resources, "MedicationRequest")
 
     # ── Condition ─────────────────────────────────────────────────────────
@@ -330,9 +325,7 @@ class FHIRService:
         result = await self.db.execute(stmt)
         diagnoses = result.scalars().all()
 
-        resources = [
-            diagnosis_to_fhir(dx).model_dump(exclude_none=True) for dx in diagnoses
-        ]
+        resources = [diagnosis_to_fhir(dx).model_dump(exclude_none=True) for dx in diagnoses]
         return make_searchset_bundle(resources, "Condition")
 
     # ── DiagnosticReport ──────────────────────────────────────────────────
@@ -393,7 +386,7 @@ class FHIRService:
 
         @returns FHIRCapabilityStatement
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         resources = [
             FHIRCapabilityRestResource(

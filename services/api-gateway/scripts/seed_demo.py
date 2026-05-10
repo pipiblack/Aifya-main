@@ -30,10 +30,10 @@ import argparse
 import asyncio
 import sys
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # Ensure parent (`api-gateway/`) is on sys.path when this script is
 # invoked directly via `python scripts/seed_demo.py`.
@@ -43,7 +43,6 @@ if str(_API_GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(_API_GATEWAY_DIR))
 
 from sqlalchemy import select, update  # noqa: E402
-from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.database import async_session  # noqa: E402
 from app.models.billing import Invoice, InvoiceItem, Payment  # noqa: E402
@@ -69,6 +68,8 @@ from app.services.payroll.engine import run_monthly_payroll  # noqa: E402
 from app.services.payroll.gl_integration import post_payroll_to_gl  # noqa: E402
 from app.services.payroll.seed_data import seed_payroll_defaults  # noqa: E402
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ DEMO_FACILITY_MFL = "99999"
 
 # Today's reference date (overridable for stable demos)
 TODAY = date.today()
-NOW = datetime.now(timezone.utc)
+NOW = datetime.now(UTC)
 
 
 def _det(label: str) -> uuid.UUID:
@@ -104,11 +105,7 @@ async def get_or_create_facility(db: AsyncSession) -> Facility:
     @param db: Async DB session
     @returns The Facility row (existing or newly created)
     """
-    existing = (
-        await db.execute(
-            select(Facility).where(Facility.code == DEMO_FACILITY_CODE)
-        )
-    ).scalar_one_or_none()
+    existing = (await db.execute(select(Facility).where(Facility.code == DEMO_FACILITY_CODE))).scalar_one_or_none()
     if existing is not None:
         return existing
 
@@ -152,19 +149,13 @@ DEPARTMENTS: list[tuple[str, str, str]] = [
 ]
 
 
-async def seed_departments(
-    db: AsyncSession, facility_id: uuid.UUID
-) -> dict[str, uuid.UUID]:
+async def seed_departments(db: AsyncSession, facility_id: uuid.UUID) -> dict[str, uuid.UUID]:
     """Seed the 8 demo departments idempotently.
 
     @returns Map {code: department_id}
     """
     by_code: dict[str, uuid.UUID] = {}
-    existing = (
-        await db.execute(
-            select(Department).where(Department.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(Department).where(Department.facility_id == facility_id))).scalars().all()
     existing_codes = {d.code: d.id for d in existing}
 
     created = 0
@@ -193,36 +184,116 @@ async def seed_departments(
 
 STAFF_DEFINITIONS: list[dict[str, Any]] = [
     # employee_number, first, last, role, title, dept_code, email
-    {"emp": "AIFYA-001", "first": "Wanjiku", "last": "Kamau", "role": "admin",
-     "title": "Dr.", "dept": "ADMIN", "email": "admin@aifya.co.ke",
-     "license_body": "KMPDC", "license": "KMPDC/12345"},
-    {"emp": "AIFYA-002", "first": "James", "last": "Otieno", "role": "doctor",
-     "title": "Dr.", "dept": "OPD", "email": "doctor@aifya.co.ke",
-     "license_body": "KMPDC", "license": "KMPDC/22001"},
-    {"emp": "AIFYA-003", "first": "Mary", "last": "Akinyi", "role": "doctor",
-     "title": "Dr.", "dept": "IPD", "email": "mary.akinyi@aifya.co.ke",
-     "license_body": "KMPDC", "license": "KMPDC/22002"},
-    {"emp": "AIFYA-004", "first": "Faith", "last": "Njeri", "role": "nurse",
-     "title": "Sister", "dept": "OPD", "email": "nurse@aifya.co.ke",
-     "license_body": "NCK", "license": "NCK/33001"},
-    {"emp": "AIFYA-005", "first": "Grace", "last": "Wanjiru", "role": "nurse",
-     "title": "Sister", "dept": "MCH", "email": "grace.wanjiru@aifya.co.ke",
-     "license_body": "NCK", "license": "NCK/33002"},
-    {"emp": "AIFYA-006", "first": "Peter", "last": "Mwangi", "role": "pharmacist",
-     "title": "Mr.", "dept": "PHARM", "email": "pharmacy@aifya.co.ke",
-     "license_body": "PPB", "license": "PPB/44001"},
-    {"emp": "AIFYA-007", "first": "John", "last": "Kiprop", "role": "lab_tech",
-     "title": "Mr.", "dept": "LAB", "email": "lab@aifya.co.ke",
-     "license_body": "KMLTTB", "license": "KMLTTB/55001"},
-    {"emp": "AIFYA-008", "first": "Ruth", "last": "Achieng", "role": "cashier",
-     "title": "Ms.", "dept": "ADMIN", "email": "cashier@aifya.co.ke",
-     "license_body": None, "license": None},
-    {"emp": "AIFYA-009", "first": "Esther", "last": "Nyambura", "role": "hr_admin",
-     "title": "Ms.", "dept": "ADMIN", "email": "hr@aifya.co.ke",
-     "license_body": None, "license": None},
-    {"emp": "AIFYA-010", "first": "David", "last": "Kimani", "role": "receptionist",
-     "title": "Mr.", "dept": "OPD", "email": "reception@aifya.co.ke",
-     "license_body": None, "license": None},
+    {
+        "emp": "AIFYA-001",
+        "first": "Wanjiku",
+        "last": "Kamau",
+        "role": "admin",
+        "title": "Dr.",
+        "dept": "ADMIN",
+        "email": "admin@aifya.co.ke",
+        "license_body": "KMPDC",
+        "license": "KMPDC/12345",
+    },
+    {
+        "emp": "AIFYA-002",
+        "first": "James",
+        "last": "Otieno",
+        "role": "doctor",
+        "title": "Dr.",
+        "dept": "OPD",
+        "email": "doctor@aifya.co.ke",
+        "license_body": "KMPDC",
+        "license": "KMPDC/22001",
+    },
+    {
+        "emp": "AIFYA-003",
+        "first": "Mary",
+        "last": "Akinyi",
+        "role": "doctor",
+        "title": "Dr.",
+        "dept": "IPD",
+        "email": "mary.akinyi@aifya.co.ke",
+        "license_body": "KMPDC",
+        "license": "KMPDC/22002",
+    },
+    {
+        "emp": "AIFYA-004",
+        "first": "Faith",
+        "last": "Njeri",
+        "role": "nurse",
+        "title": "Sister",
+        "dept": "OPD",
+        "email": "nurse@aifya.co.ke",
+        "license_body": "NCK",
+        "license": "NCK/33001",
+    },
+    {
+        "emp": "AIFYA-005",
+        "first": "Grace",
+        "last": "Wanjiru",
+        "role": "nurse",
+        "title": "Sister",
+        "dept": "MCH",
+        "email": "grace.wanjiru@aifya.co.ke",
+        "license_body": "NCK",
+        "license": "NCK/33002",
+    },
+    {
+        "emp": "AIFYA-006",
+        "first": "Peter",
+        "last": "Mwangi",
+        "role": "pharmacist",
+        "title": "Mr.",
+        "dept": "PHARM",
+        "email": "pharmacy@aifya.co.ke",
+        "license_body": "PPB",
+        "license": "PPB/44001",
+    },
+    {
+        "emp": "AIFYA-007",
+        "first": "John",
+        "last": "Kiprop",
+        "role": "lab_tech",
+        "title": "Mr.",
+        "dept": "LAB",
+        "email": "lab@aifya.co.ke",
+        "license_body": "KMLTTB",
+        "license": "KMLTTB/55001",
+    },
+    {
+        "emp": "AIFYA-008",
+        "first": "Ruth",
+        "last": "Achieng",
+        "role": "cashier",
+        "title": "Ms.",
+        "dept": "ADMIN",
+        "email": "cashier@aifya.co.ke",
+        "license_body": None,
+        "license": None,
+    },
+    {
+        "emp": "AIFYA-009",
+        "first": "Esther",
+        "last": "Nyambura",
+        "role": "hr_admin",
+        "title": "Ms.",
+        "dept": "ADMIN",
+        "email": "hr@aifya.co.ke",
+        "license_body": None,
+        "license": None,
+    },
+    {
+        "emp": "AIFYA-010",
+        "first": "David",
+        "last": "Kimani",
+        "role": "receptionist",
+        "title": "Mr.",
+        "dept": "OPD",
+        "email": "reception@aifya.co.ke",
+        "license_body": None,
+        "license": None,
+    },
 ]
 
 
@@ -236,11 +307,7 @@ async def seed_staff(
     @returns Map {employee_number: staff.id}
     """
     by_num: dict[str, uuid.UUID] = {}
-    existing = (
-        await db.execute(
-            select(Staff).where(Staff.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(Staff).where(Staff.facility_id == facility_id))).scalars().all()
     existing_by_num = {s.employee_number: s.id for s in existing}
 
     created = 0
@@ -280,53 +347,154 @@ async def seed_staff(
 
 PATIENTS: list[dict[str, Any]] = [
     # name, dob_offset_years, gender, insurance_provider, conditions, pregnant
-    {"first": "Baby", "last": "Mwangi", "age_months": 1, "gender": "female",
-     "ins": None, "phone_suffix": "001", "county": "Nairobi"},
-    {"first": "Brian", "last": "Otieno", "age_years": 8, "gender": "male",
-     "ins": "SHA", "phone_suffix": "002", "county": "Kisumu"},
-    {"first": "Sharon", "last": "Achieng", "age_years": 15, "gender": "female",
-     "ins": "SHA", "phone_suffix": "003", "county": "Nairobi"},
-    {"first": "Kevin", "last": "Kariuki", "age_years": 25, "gender": "male",
-     "ins": None, "phone_suffix": "004", "county": "Kiambu"},
-    {"first": "Mercy", "last": "Wanjiku", "age_years": 28, "gender": "female",
-     "ins": "SHA", "phone_suffix": "005", "county": "Nairobi", "pregnant": True},
-    {"first": "Daniel", "last": "Kipchoge", "age_years": 30, "gender": "male",
-     "ins": "Britam", "phone_suffix": "006", "county": "Uasin Gishu"},
-    {"first": "Lucy", "last": "Njoki", "age_years": 32, "gender": "female",
-     "ins": "SHA", "phone_suffix": "007", "county": "Nairobi", "pregnant": True},
-    {"first": "Samuel", "last": "Kiplagat", "age_years": 35, "gender": "male",
-     "ins": None, "phone_suffix": "008", "county": "Nakuru"},
-    {"first": "Faith", "last": "Mumbi", "age_years": 40, "gender": "female",
-     "ins": "Jubilee", "phone_suffix": "009", "county": "Nairobi"},
-    {"first": "Joseph", "last": "Mutua", "age_years": 45, "gender": "male",
-     "ins": "SHA", "phone_suffix": "010", "county": "Machakos",
-     "conditions": ["Diabetes Mellitus Type 2"]},
-    {"first": "Grace", "last": "Wairimu", "age_years": 50, "gender": "female",
-     "ins": "SHA", "phone_suffix": "011", "county": "Nairobi"},
-    {"first": "Joshua", "last": "Omondi", "age_years": 60, "gender": "male",
-     "ins": "AAR", "phone_suffix": "012", "county": "Kisumu"},
-    {"first": "Margaret", "last": "Wambui", "age_years": 65, "gender": "female",
-     "ins": "SHA", "phone_suffix": "013", "county": "Nyeri"},
-    {"first": "Patrick", "last": "Ngugi", "age_years": 70, "gender": "male",
-     "ins": "SHA", "phone_suffix": "014", "county": "Kiambu"},
-    {"first": "Ruth", "last": "Atieno", "age_years": 75, "gender": "female",
-     "ins": None, "phone_suffix": "015", "county": "Siaya"},
+    {
+        "first": "Baby",
+        "last": "Mwangi",
+        "age_months": 1,
+        "gender": "female",
+        "ins": None,
+        "phone_suffix": "001",
+        "county": "Nairobi",
+    },
+    {
+        "first": "Brian",
+        "last": "Otieno",
+        "age_years": 8,
+        "gender": "male",
+        "ins": "SHA",
+        "phone_suffix": "002",
+        "county": "Kisumu",
+    },
+    {
+        "first": "Sharon",
+        "last": "Achieng",
+        "age_years": 15,
+        "gender": "female",
+        "ins": "SHA",
+        "phone_suffix": "003",
+        "county": "Nairobi",
+    },
+    {
+        "first": "Kevin",
+        "last": "Kariuki",
+        "age_years": 25,
+        "gender": "male",
+        "ins": None,
+        "phone_suffix": "004",
+        "county": "Kiambu",
+    },
+    {
+        "first": "Mercy",
+        "last": "Wanjiku",
+        "age_years": 28,
+        "gender": "female",
+        "ins": "SHA",
+        "phone_suffix": "005",
+        "county": "Nairobi",
+        "pregnant": True,
+    },
+    {
+        "first": "Daniel",
+        "last": "Kipchoge",
+        "age_years": 30,
+        "gender": "male",
+        "ins": "Britam",
+        "phone_suffix": "006",
+        "county": "Uasin Gishu",
+    },
+    {
+        "first": "Lucy",
+        "last": "Njoki",
+        "age_years": 32,
+        "gender": "female",
+        "ins": "SHA",
+        "phone_suffix": "007",
+        "county": "Nairobi",
+        "pregnant": True,
+    },
+    {
+        "first": "Samuel",
+        "last": "Kiplagat",
+        "age_years": 35,
+        "gender": "male",
+        "ins": None,
+        "phone_suffix": "008",
+        "county": "Nakuru",
+    },
+    {
+        "first": "Faith",
+        "last": "Mumbi",
+        "age_years": 40,
+        "gender": "female",
+        "ins": "Jubilee",
+        "phone_suffix": "009",
+        "county": "Nairobi",
+    },
+    {
+        "first": "Joseph",
+        "last": "Mutua",
+        "age_years": 45,
+        "gender": "male",
+        "ins": "SHA",
+        "phone_suffix": "010",
+        "county": "Machakos",
+        "conditions": ["Diabetes Mellitus Type 2"],
+    },
+    {
+        "first": "Grace",
+        "last": "Wairimu",
+        "age_years": 50,
+        "gender": "female",
+        "ins": "SHA",
+        "phone_suffix": "011",
+        "county": "Nairobi",
+    },
+    {
+        "first": "Joshua",
+        "last": "Omondi",
+        "age_years": 60,
+        "gender": "male",
+        "ins": "AAR",
+        "phone_suffix": "012",
+        "county": "Kisumu",
+    },
+    {
+        "first": "Margaret",
+        "last": "Wambui",
+        "age_years": 65,
+        "gender": "female",
+        "ins": "SHA",
+        "phone_suffix": "013",
+        "county": "Nyeri",
+    },
+    {
+        "first": "Patrick",
+        "last": "Ngugi",
+        "age_years": 70,
+        "gender": "male",
+        "ins": "SHA",
+        "phone_suffix": "014",
+        "county": "Kiambu",
+    },
+    {
+        "first": "Ruth",
+        "last": "Atieno",
+        "age_years": 75,
+        "gender": "female",
+        "ins": None,
+        "phone_suffix": "015",
+        "county": "Siaya",
+    },
 ]
 
 
-async def seed_patients(
-    db: AsyncSession, facility_id: uuid.UUID
-) -> list[uuid.UUID]:
+async def seed_patients(db: AsyncSession, facility_id: uuid.UUID) -> list[uuid.UUID]:
     """Seed 15 demographically-varied patients (idempotent by MRN).
 
     @returns List of patient.id
     """
     ids: list[uuid.UUID] = []
-    existing = (
-        await db.execute(
-            select(Patient).where(Patient.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(Patient).where(Patient.facility_id == facility_id))).scalars().all()
     existing_mrns = {p.mrn: p.id for p in existing}
 
     created = 0
@@ -356,9 +524,7 @@ async def seed_patients(
             phone_number=f"+254712345{p['phone_suffix']}",
             county=p.get("county"),
             insurance_provider=p.get("ins"),
-            insurance_member_number=(
-                f"SHA{i:09d}" if p.get("ins") == "SHA" else None
-            ),
+            insurance_member_number=(f"SHA{i:09d}" if p.get("ins") == "SHA" else None),
             sha_number=f"SHA{i:09d}" if p.get("ins") == "SHA" else None,
             chronic_conditions=chronic,
             blood_group="O+" if i % 2 == 0 else "A+",
@@ -375,49 +541,163 @@ async def seed_patients(
 # ── Pharmacy Items ───────────────────────────────────────────────────────────
 
 PHARMACY_ITEMS: list[dict[str, Any]] = [
-    {"code": "PCM500", "name": "Paracetamol 500mg", "form": "tablet",
-     "strength": "500mg", "kes": 5, "uom": "tablet", "stock": 500, "keml": True},
-    {"code": "AMX500", "name": "Amoxicillin 500mg", "form": "capsule",
-     "strength": "500mg", "kes": 15, "uom": "capsule", "stock": 300, "keml": True},
-    {"code": "MET500", "name": "Metformin 500mg", "form": "tablet",
-     "strength": "500mg", "kes": 8, "uom": "tablet", "stock": 400, "keml": True},
-    {"code": "AML5", "name": "Amlodipine 5mg", "form": "tablet",
-     "strength": "5mg", "kes": 12, "uom": "tablet", "stock": 250, "keml": True},
-    {"code": "ORS01", "name": "Oral Rehydration Salts", "form": "sachet",
-     "strength": "20.5g", "kes": 30, "uom": "sachet", "stock": 200, "keml": True},
-    {"code": "FEFOL", "name": "Iron + Folic Acid", "form": "tablet",
-     "strength": "60mg/0.4mg", "kes": 5, "uom": "tablet", "stock": 500, "keml": True},
-    {"code": "ALB400", "name": "Albendazole 400mg", "form": "tablet",
-     "strength": "400mg", "kes": 25, "uom": "tablet", "stock": 200, "keml": True},
-    {"code": "DCF50", "name": "Diclofenac 50mg", "form": "tablet",
-     "strength": "50mg", "kes": 10, "uom": "tablet", "stock": 300, "keml": True},
-    {"code": "CTX1G", "name": "Ceftriaxone 1g", "form": "injection",
-     "strength": "1g", "kes": 250, "uom": "vial", "stock": 100, "keml": True},
-    {"code": "SAL100", "name": "Salbutamol Inhaler", "form": "inhaler",
-     "strength": "100mcg", "kes": 350, "uom": "inhaler", "stock": 100, "keml": True},
-    {"code": "INSR", "name": "Insulin Regular", "form": "injection",
-     "strength": "100IU/ml", "kes": 500, "uom": "vial", "stock": 100, "keml": True},
-    {"code": "CSY100", "name": "Cough Syrup 100ml", "form": "syrup",
-     "strength": "100ml", "kes": 180, "uom": "bottle", "stock": 150, "keml": False},
-    {"code": "VITC", "name": "Vitamin C 500mg", "form": "tablet",
-     "strength": "500mg", "kes": 3, "uom": "tablet", "stock": 500, "keml": False},
-    {"code": "MVITS", "name": "Multivitamin Syrup", "form": "syrup",
-     "strength": "200ml", "kes": 220, "uom": "bottle", "stock": 200, "keml": False},
-    {"code": "COART", "name": "Coartem (Artemether/Lumefantrine)", "form": "tablet",
-     "strength": "20mg/120mg", "kes": 850, "uom": "dose", "stock": 150, "keml": True},
+    {
+        "code": "PCM500",
+        "name": "Paracetamol 500mg",
+        "form": "tablet",
+        "strength": "500mg",
+        "kes": 5,
+        "uom": "tablet",
+        "stock": 500,
+        "keml": True,
+    },
+    {
+        "code": "AMX500",
+        "name": "Amoxicillin 500mg",
+        "form": "capsule",
+        "strength": "500mg",
+        "kes": 15,
+        "uom": "capsule",
+        "stock": 300,
+        "keml": True,
+    },
+    {
+        "code": "MET500",
+        "name": "Metformin 500mg",
+        "form": "tablet",
+        "strength": "500mg",
+        "kes": 8,
+        "uom": "tablet",
+        "stock": 400,
+        "keml": True,
+    },
+    {
+        "code": "AML5",
+        "name": "Amlodipine 5mg",
+        "form": "tablet",
+        "strength": "5mg",
+        "kes": 12,
+        "uom": "tablet",
+        "stock": 250,
+        "keml": True,
+    },
+    {
+        "code": "ORS01",
+        "name": "Oral Rehydration Salts",
+        "form": "sachet",
+        "strength": "20.5g",
+        "kes": 30,
+        "uom": "sachet",
+        "stock": 200,
+        "keml": True,
+    },
+    {
+        "code": "FEFOL",
+        "name": "Iron + Folic Acid",
+        "form": "tablet",
+        "strength": "60mg/0.4mg",
+        "kes": 5,
+        "uom": "tablet",
+        "stock": 500,
+        "keml": True,
+    },
+    {
+        "code": "ALB400",
+        "name": "Albendazole 400mg",
+        "form": "tablet",
+        "strength": "400mg",
+        "kes": 25,
+        "uom": "tablet",
+        "stock": 200,
+        "keml": True,
+    },
+    {
+        "code": "DCF50",
+        "name": "Diclofenac 50mg",
+        "form": "tablet",
+        "strength": "50mg",
+        "kes": 10,
+        "uom": "tablet",
+        "stock": 300,
+        "keml": True,
+    },
+    {
+        "code": "CTX1G",
+        "name": "Ceftriaxone 1g",
+        "form": "injection",
+        "strength": "1g",
+        "kes": 250,
+        "uom": "vial",
+        "stock": 100,
+        "keml": True,
+    },
+    {
+        "code": "SAL100",
+        "name": "Salbutamol Inhaler",
+        "form": "inhaler",
+        "strength": "100mcg",
+        "kes": 350,
+        "uom": "inhaler",
+        "stock": 100,
+        "keml": True,
+    },
+    {
+        "code": "INSR",
+        "name": "Insulin Regular",
+        "form": "injection",
+        "strength": "100IU/ml",
+        "kes": 500,
+        "uom": "vial",
+        "stock": 100,
+        "keml": True,
+    },
+    {
+        "code": "CSY100",
+        "name": "Cough Syrup 100ml",
+        "form": "syrup",
+        "strength": "100ml",
+        "kes": 180,
+        "uom": "bottle",
+        "stock": 150,
+        "keml": False,
+    },
+    {
+        "code": "VITC",
+        "name": "Vitamin C 500mg",
+        "form": "tablet",
+        "strength": "500mg",
+        "kes": 3,
+        "uom": "tablet",
+        "stock": 500,
+        "keml": False,
+    },
+    {
+        "code": "MVITS",
+        "name": "Multivitamin Syrup",
+        "form": "syrup",
+        "strength": "200ml",
+        "kes": 220,
+        "uom": "bottle",
+        "stock": 200,
+        "keml": False,
+    },
+    {
+        "code": "COART",
+        "name": "Coartem (Artemether/Lumefantrine)",
+        "form": "tablet",
+        "strength": "20mg/120mg",
+        "kes": 850,
+        "uom": "dose",
+        "stock": 150,
+        "keml": True,
+    },
 ]
 
 
-async def seed_pharmacy(
-    db: AsyncSession, facility_id: uuid.UUID
-) -> list[uuid.UUID]:
+async def seed_pharmacy(db: AsyncSession, facility_id: uuid.UUID) -> list[uuid.UUID]:
     """Seed 15 pharmacy items idempotently."""
     ids: list[uuid.UUID] = []
-    existing = (
-        await db.execute(
-            select(PharmacyItem).where(PharmacyItem.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(PharmacyItem).where(PharmacyItem.facility_id == facility_id))).scalars().all()
     by_code = {p.drug_code: p.id for p in existing}
 
     created = 0
@@ -457,9 +737,7 @@ async def seed_pharmacy(
 # ── Insurance Schemes ────────────────────────────────────────────────────────
 
 
-async def seed_insurance(
-    db: AsyncSession, facility_id: uuid.UUID
-) -> uuid.UUID:
+async def seed_insurance(db: AsyncSession, facility_id: uuid.UUID) -> uuid.UUID:
     """Seed SHA insurance scheme (idempotent)."""
     existing = (
         await db.execute(
@@ -494,9 +772,7 @@ async def seed_insurance(
 # ── Accounting Periods ───────────────────────────────────────────────────────
 
 
-async def seed_accounting_periods(
-    db: AsyncSession, facility_id: uuid.UUID
-) -> dict[str, uuid.UUID]:
+async def seed_accounting_periods(db: AsyncSession, facility_id: uuid.UUID) -> dict[str, uuid.UUID]:
     """Seed 12 monthly periods + 1 fiscal year for the current year (idempotent).
 
     Always creates periods for the current calendar year and all of the
@@ -506,12 +782,8 @@ async def seed_accounting_periods(
     year = TODAY.year
 
     existing = (
-        await db.execute(
-            select(AccountingPeriod).where(
-                AccountingPeriod.facility_id == facility_id
-            )
-        )
-    ).scalars().all()
+        (await db.execute(select(AccountingPeriod).where(AccountingPeriod.facility_id == facility_id))).scalars().all()
+    )
     existing_names = {p.name: p.id for p in existing}
 
     created = 0
@@ -524,10 +796,7 @@ async def seed_accounting_periods(
                 by_name[name] = existing_names[name]
                 continue
             start = date(y, month, 1)
-            if month == 12:
-                end = date(y, 12, 31)
-            else:
-                end = date(y, month + 1, 1) - timedelta(days=1)
+            end = date(y, 12, 31) if month == 12 else date(y, month + 1, 1) - timedelta(days=1)
             period = AccountingPeriod(
                 id=_det(f"period:{name}"),
                 facility_id=facility_id,
@@ -568,15 +837,9 @@ async def seed_accounting_periods(
 # ── Invoices, Payments, Expenses ─────────────────────────────────────────────
 
 
-async def _next_invoice_number(
-    db: AsyncSession, facility_id: uuid.UUID
-) -> str:
+async def _next_invoice_number(db: AsyncSession, facility_id: uuid.UUID) -> str:
     """Generate the next invoice number for the facility."""
-    count = (
-        await db.execute(
-            select(Invoice).where(Invoice.facility_id == facility_id)
-        )
-    ).scalars().all()
+    count = (await db.execute(select(Invoice).where(Invoice.facility_id == facility_id))).scalars().all()
     n = len(count) + 1
     return f"INV-{TODAY.year}-{n:05d}"
 
@@ -623,11 +886,7 @@ async def seed_invoices_and_postings(
     @returns (invoices_created, payments_created)
     """
     # Idempotency: skip if we already have invoices in the system.
-    already = (
-        await db.execute(
-            select(Invoice).where(Invoice.facility_id == facility_id)
-        )
-    ).scalars().all()
+    already = (await db.execute(select(Invoice).where(Invoice.facility_id == facility_id))).scalars().all()
     if already:
         print(f"  Invoices: {len(already)} already exist, skipping")
         return (0, 0)
@@ -649,7 +908,7 @@ async def seed_invoices_and_postings(
             facility_id=facility_id,
             patient_id=patient_id,
             encounter_type="opd",
-            encounter_date=datetime.combine(inv_date, datetime.min.time(), tzinfo=timezone.utc),
+            encounter_date=datetime.combine(inv_date, datetime.min.time(), tzinfo=UTC),
             department_id=dept_id,
             status="completed",
             chief_complaint=label,
@@ -688,11 +947,9 @@ async def seed_invoices_and_postings(
             id=_det(f"invitem:demo:{i}"),
             facility_id=facility_id,
             invoice_id=inv.id,
-            item_type="consultation" if dept_code == "OPD" else (
-                "pharmacy" if dept_code == "PHARM" else (
-                    "lab" if dept_code == "LAB" else "procedure"
-                )
-            ),
+            item_type="consultation"
+            if dept_code == "OPD"
+            else ("pharmacy" if dept_code == "PHARM" else ("lab" if dept_code == "LAB" else "procedure")),
             description=label,
             quantity=1,
             unit_price_cents=total_cents,
@@ -721,18 +978,22 @@ async def seed_invoices_and_postings(
                 idempotency_key=f"demo-invoice:{inv.id}",
                 user_id=user_id,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"  WARN: GL post failed for {inv_num}: {exc}")
 
     # Sample payments — ~15 settle (full or partial) the insurance invoices
     insurance_invoices = (
-        await db.execute(
-            select(Invoice).where(
-                Invoice.facility_id == facility_id,
-                Invoice.payment_method == "insurance",
+        (
+            await db.execute(
+                select(Invoice).where(
+                    Invoice.facility_id == facility_id,
+                    Invoice.payment_method == "insurance",
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     for j, inv in enumerate(insurance_invoices[:15], start=1):
         # Mix of partial (50%) and full payments
@@ -768,7 +1029,7 @@ async def seed_invoices_and_postings(
                 idempotency_key=f"demo-pay:{pay.id}",
                 user_id=user_id,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"  WARN: GL post failed for payment: {exc}")
         payments_created += 1
 
@@ -799,14 +1060,10 @@ async def seed_invoices_and_postings(
                 idempotency_key=f"demo-expense:{k}",
                 user_id=user_id,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"  WARN: GL post failed for expense '{desc}': {exc}")
 
-    print(
-        f"  Invoices posted: {invoices_created}, "
-        f"Payments: {payments_created}, "
-        f"Expenses: {len(expenses)}"
-    )
+    print(f"  Invoices posted: {invoices_created}, Payments: {payments_created}, Expenses: {len(expenses)}")
     return (invoices_created, payments_created)
 
 
@@ -815,59 +1072,167 @@ async def seed_invoices_and_postings(
 
 EMPLOYEE_DEFINITIONS: list[dict[str, Any]] = [
     # Admin / Doctor tier — KSh 200k basic + 50k house + 30k transport
-    {"staff_emp": "AIFYA-001", "name": "Wanjiku Kamau", "title": "Medical Director",
-     "tier": "exec", "kra": "A009658233G", "nssf": "100000001",
-     "shif": "CR1620021837701-1", "bank": "Equity Bank", "branch": "Westlands",
-     "hire_months_ago": 24, "disability": False},
-    {"staff_emp": "AIFYA-002", "name": "James Otieno", "title": "Doctor",
-     "tier": "exec", "kra": "A009658234G", "nssf": "100000002",
-     "shif": "CR1620021837702-1", "bank": "KCB", "branch": "Sarit Centre",
-     "hire_months_ago": 20, "disability": False},
-    {"staff_emp": "AIFYA-003", "name": "Mary Akinyi", "title": "Doctor",
-     "tier": "exec", "kra": "A009658235G", "nssf": "100000003",
-     "shif": "CR1620021837703-1", "bank": "Cooperative", "branch": "Westlands",
-     "hire_months_ago": 18, "disability": False},
+    {
+        "staff_emp": "AIFYA-001",
+        "name": "Wanjiku Kamau",
+        "title": "Medical Director",
+        "tier": "exec",
+        "kra": "A009658233G",
+        "nssf": "100000001",
+        "shif": "CR1620021837701-1",
+        "bank": "Equity Bank",
+        "branch": "Westlands",
+        "hire_months_ago": 24,
+        "disability": False,
+    },
+    {
+        "staff_emp": "AIFYA-002",
+        "name": "James Otieno",
+        "title": "Doctor",
+        "tier": "exec",
+        "kra": "A009658234G",
+        "nssf": "100000002",
+        "shif": "CR1620021837702-1",
+        "bank": "KCB",
+        "branch": "Sarit Centre",
+        "hire_months_ago": 20,
+        "disability": False,
+    },
+    {
+        "staff_emp": "AIFYA-003",
+        "name": "Mary Akinyi",
+        "title": "Doctor",
+        "tier": "exec",
+        "kra": "A009658235G",
+        "nssf": "100000003",
+        "shif": "CR1620021837703-1",
+        "bank": "Cooperative",
+        "branch": "Westlands",
+        "hire_months_ago": 18,
+        "disability": False,
+    },
     # Nurse tier — 80k basic + 20k house + 10k transport
-    {"staff_emp": "AIFYA-004", "name": "Faith Njeri", "title": "Senior Nurse",
-     "tier": "nurse", "kra": "A009658236G", "nssf": "100000004",
-     "shif": "CR1620021837704-1", "bank": "Equity Bank", "branch": "Westlands",
-     "hire_months_ago": 16, "disability": False},
-    {"staff_emp": "AIFYA-005", "name": "Grace Wanjiru", "title": "MCH Nurse",
-     "tier": "nurse", "kra": "A009658237G", "nssf": "100000005",
-     "shif": "CR1620021837705-1", "bank": "KCB", "branch": "Westlands",
-     "hire_months_ago": 12, "disability": False},
+    {
+        "staff_emp": "AIFYA-004",
+        "name": "Faith Njeri",
+        "title": "Senior Nurse",
+        "tier": "nurse",
+        "kra": "A009658236G",
+        "nssf": "100000004",
+        "shif": "CR1620021837704-1",
+        "bank": "Equity Bank",
+        "branch": "Westlands",
+        "hire_months_ago": 16,
+        "disability": False,
+    },
+    {
+        "staff_emp": "AIFYA-005",
+        "name": "Grace Wanjiru",
+        "title": "MCH Nurse",
+        "tier": "nurse",
+        "kra": "A009658237G",
+        "nssf": "100000005",
+        "shif": "CR1620021837705-1",
+        "bank": "KCB",
+        "branch": "Westlands",
+        "hire_months_ago": 12,
+        "disability": False,
+    },
     # Pharmacist tier — 90k basic + 25k house + 12k transport
-    {"staff_emp": "AIFYA-006", "name": "Peter Mwangi", "title": "Chief Pharmacist",
-     "tier": "pharmacist", "kra": "A009658238G", "nssf": "100000006",
-     "shif": "CR1620021837706-1", "bank": "Equity Bank", "branch": "Sarit Centre",
-     "hire_months_ago": 14, "disability": False},
+    {
+        "staff_emp": "AIFYA-006",
+        "name": "Peter Mwangi",
+        "title": "Chief Pharmacist",
+        "tier": "pharmacist",
+        "kra": "A009658238G",
+        "nssf": "100000006",
+        "shif": "CR1620021837706-1",
+        "bank": "Equity Bank",
+        "branch": "Sarit Centre",
+        "hire_months_ago": 14,
+        "disability": False,
+    },
     # Lab Tech tier — 70k basic + 18k house + 10k transport
-    {"staff_emp": "AIFYA-007", "name": "John Kiprop", "title": "Lab Technologist",
-     "tier": "lab", "kra": "A009658239G", "nssf": "100000007",
-     "shif": "CR1620021837707-1", "bank": "Cooperative", "branch": "Westlands",
-     "hire_months_ago": 10, "disability": True},
+    {
+        "staff_emp": "AIFYA-007",
+        "name": "John Kiprop",
+        "title": "Lab Technologist",
+        "tier": "lab",
+        "kra": "A009658239G",
+        "nssf": "100000007",
+        "shif": "CR1620021837707-1",
+        "bank": "Cooperative",
+        "branch": "Westlands",
+        "hire_months_ago": 10,
+        "disability": True,
+    },
     # Cashier / Receptionist / HR tier — 50k + 15k + 8k
-    {"staff_emp": "AIFYA-008", "name": "Ruth Achieng", "title": "Cashier",
-     "tier": "support", "kra": "A009658240G", "nssf": "100000008",
-     "shif": "CR1620021837708-1", "bank": "Equity Bank", "branch": "Westlands",
-     "hire_months_ago": 8, "disability": False},
-    {"staff_emp": "AIFYA-009", "name": "Esther Nyambura", "title": "HR Officer",
-     "tier": "support", "kra": "A009658241G", "nssf": "100000009",
-     "shif": "CR1620021837709-1", "bank": "KCB", "branch": "Sarit Centre",
-     "hire_months_ago": 12, "disability": False},
-    {"staff_emp": "AIFYA-010", "name": "David Kimani", "title": "Receptionist",
-     "tier": "support", "kra": "A009658242G", "nssf": "100000010",
-     "shif": "CR1620021837710-1", "bank": "Cooperative", "branch": "Westlands",
-     "hire_months_ago": 6, "disability": False},
+    {
+        "staff_emp": "AIFYA-008",
+        "name": "Ruth Achieng",
+        "title": "Cashier",
+        "tier": "support",
+        "kra": "A009658240G",
+        "nssf": "100000008",
+        "shif": "CR1620021837708-1",
+        "bank": "Equity Bank",
+        "branch": "Westlands",
+        "hire_months_ago": 8,
+        "disability": False,
+    },
+    {
+        "staff_emp": "AIFYA-009",
+        "name": "Esther Nyambura",
+        "title": "HR Officer",
+        "tier": "support",
+        "kra": "A009658241G",
+        "nssf": "100000009",
+        "shif": "CR1620021837709-1",
+        "bank": "KCB",
+        "branch": "Sarit Centre",
+        "hire_months_ago": 12,
+        "disability": False,
+    },
+    {
+        "staff_emp": "AIFYA-010",
+        "name": "David Kimani",
+        "title": "Receptionist",
+        "tier": "support",
+        "kra": "A009658242G",
+        "nssf": "100000010",
+        "shif": "CR1620021837710-1",
+        "bank": "Cooperative",
+        "branch": "Westlands",
+        "hire_months_ago": 6,
+        "disability": False,
+    },
     # Cleaner / Security — 25k + 8k + 5k
-    {"staff_emp": None, "name": "Mary Wanjala", "title": "Cleaner",
-     "tier": "lowpay", "kra": "A009658243G", "nssf": "100000011",
-     "shif": "CR1620021837711-1", "bank": "Equity Bank", "branch": "Westlands",
-     "hire_months_ago": 10, "disability": False},
-    {"staff_emp": None, "name": "Joseph Kamau", "title": "Security Guard",
-     "tier": "lowpay", "kra": "A009658244G", "nssf": "100000012",
-     "shif": "CR1620021837712-1", "bank": "KCB", "branch": "Westlands",
-     "hire_months_ago": 14, "disability": False},
+    {
+        "staff_emp": None,
+        "name": "Mary Wanjala",
+        "title": "Cleaner",
+        "tier": "lowpay",
+        "kra": "A009658243G",
+        "nssf": "100000011",
+        "shif": "CR1620021837711-1",
+        "bank": "Equity Bank",
+        "branch": "Westlands",
+        "hire_months_ago": 10,
+        "disability": False,
+    },
+    {
+        "staff_emp": None,
+        "name": "Joseph Kamau",
+        "title": "Security Guard",
+        "tier": "lowpay",
+        "kra": "A009658244G",
+        "nssf": "100000012",
+        "shif": "CR1620021837712-1",
+        "bank": "KCB",
+        "branch": "Westlands",
+        "hire_months_ago": 14,
+        "disability": False,
+    },
 ]
 
 SALARY_TIERS: dict[str, tuple[int, int, int]] = {
@@ -889,11 +1254,7 @@ async def seed_employees(
 ) -> list[uuid.UUID]:
     """Seed 12 payroll-grade employees + their salary records."""
     ids: list[uuid.UUID] = []
-    existing = (
-        await db.execute(
-            select(Employee).where(Employee.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(Employee).where(Employee.facility_id == facility_id))).scalars().all()
     existing_by_staff_id = {e.staff_id: e.id for e in existing}
 
     created = 0
@@ -967,15 +1328,19 @@ async def run_demo_payroll(
 
     # Idempotency: skip if a run already exists for this period.
     existing_run = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.facility_id == facility_id,
-                PayrollRun.month == month,
-                PayrollRun.year == year,
-                PayrollRun.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollRun).where(
+                    PayrollRun.facility_id == facility_id,
+                    PayrollRun.month == month,
+                    PayrollRun.year == year,
+                    PayrollRun.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if existing_run is not None:
         print(f"  Payroll: run for {year}-{month:02d} already exists ({existing_run.status})")
         return existing_run
@@ -988,7 +1353,7 @@ async def run_demo_payroll(
             year=year,
             user_id=user_id,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"  WARN: payroll run failed: {exc}")
         return None
 
@@ -1009,7 +1374,7 @@ async def run_demo_payroll(
             print(f"  Payroll: run {year}-{month:02d} approved + posted to GL")
         else:
             print(f"  Payroll: run {year}-{month:02d} approved (GL post skipped)")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"  WARN: payroll GL post failed: {exc}")
     return run
 
@@ -1028,12 +1393,10 @@ async def seed_leave_requests(
         return 0
 
     existing = (
-        await db.execute(
-            select(PayrollLeaveRequest).where(
-                PayrollLeaveRequest.facility_id == facility_id
-            )
-        )
-    ).scalars().all()
+        (await db.execute(select(PayrollLeaveRequest).where(PayrollLeaveRequest.facility_id == facility_id)))
+        .scalars()
+        .all()
+    )
     if existing:
         print(f"  Leave requests: {len(existing)} already exist")
         return 0
@@ -1041,25 +1404,32 @@ async def seed_leave_requests(
     # Resolve leave types (global defaults).
     leave_types = {
         lt.name: lt.id
-        for lt in (
-            await db.execute(select(LeaveType).where(LeaveType.facility_id.is_(None)))
-        ).scalars().all()
+        for lt in (await db.execute(select(LeaveType).where(LeaveType.facility_id.is_(None)))).scalars().all()
     }
     if not leave_types:
         print("  Leave requests: no leave types found, skipping")
         return 0
 
     samples: list[dict[str, Any]] = [
-        {"emp_idx": 0, "type": "Annual", "days": 5, "status": "approved",
-         "start_offset": -30, "reason": "Vacation"},
-        {"emp_idx": 1, "type": "Sick", "days": 3, "status": "pending",
-         "start_offset": -2, "reason": "Flu"},
-        {"emp_idx": 4, "type": "Maternity", "days": 90, "status": "approved",
-         "start_offset": 30, "reason": "Maternity leave"},
-        {"emp_idx": 7, "type": "Unpaid", "days": 2, "status": "approved",
-         "start_offset": -10, "reason": "Personal matters"},
-        {"emp_idx": 9, "type": "Annual", "days": 7, "status": "rejected",
-         "start_offset": -5, "reason": "Travel"},
+        {"emp_idx": 0, "type": "Annual", "days": 5, "status": "approved", "start_offset": -30, "reason": "Vacation"},
+        {"emp_idx": 1, "type": "Sick", "days": 3, "status": "pending", "start_offset": -2, "reason": "Flu"},
+        {
+            "emp_idx": 4,
+            "type": "Maternity",
+            "days": 90,
+            "status": "approved",
+            "start_offset": 30,
+            "reason": "Maternity leave",
+        },
+        {
+            "emp_idx": 7,
+            "type": "Unpaid",
+            "days": 2,
+            "status": "approved",
+            "start_offset": -10,
+            "reason": "Personal matters",
+        },
+        {"emp_idx": 9, "type": "Annual", "days": 7, "status": "rejected", "start_offset": -5, "reason": "Travel"},
     ]
 
     created = 0
@@ -1099,48 +1469,34 @@ async def seed_leave_requests(
 # ── Fixed Assets ─────────────────────────────────────────────────────────────
 
 
-async def seed_fixed_assets(
-    db: AsyncSession, facility_id: uuid.UUID, user_id: uuid.UUID
-) -> int:
+async def seed_fixed_assets(db: AsyncSession, facility_id: uuid.UUID, user_id: uuid.UUID) -> int:
     """Seed 4 sample fixed assets for the depreciation demo."""
-    existing = (
-        await db.execute(
-            select(FixedAsset).where(FixedAsset.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(FixedAsset).where(FixedAsset.facility_id == facility_id))).scalars().all()
     if existing:
         print(f"  Fixed assets: {len(existing)} already exist")
         return 0
 
     # Look up the asset + depreciation accounts seeded by seed_facility_finance.
-    accounts = (
-        await db.execute(
-            select(Account).where(Account.facility_id == facility_id)
-        )
-    ).scalars().all()
+    accounts = (await db.execute(select(Account).where(Account.facility_id == facility_id))).scalars().all()
     by_code = {a.code: a.id for a in accounts}
 
     asset_acc_id = by_code.get("1500")  # Fixed Assets - Equipment
     accum_dep_id = by_code.get("1510")  # Accumulated Depreciation
-    dep_exp_id = by_code.get("5020")    # Depreciation Expense
+    dep_exp_id = by_code.get("5020")  # Depreciation Expense
     if not asset_acc_id:
         print("  Fixed assets: required accounts missing, skipping")
         return 0
 
     samples: list[dict[str, Any]] = [
-        {"name": "Ultrasound Machine", "tag": "ASSET-001",
-         "cost": 1_200_000, "months": 60, "salvage_pct": 5},
-        {"name": "X-ray Machine", "tag": "ASSET-002",
-         "cost": 2_500_000, "months": 84, "salvage_pct": 10},
-        {"name": "ICU Monitor", "tag": "ASSET-003",
-         "cost": 350_000, "months": 60, "salvage_pct": 5},
-        {"name": "Hospital Beds (5 units)", "tag": "ASSET-004",
-         "cost": 80_000 * 5, "months": 120, "salvage_pct": 10},
+        {"name": "Ultrasound Machine", "tag": "ASSET-001", "cost": 1_200_000, "months": 60, "salvage_pct": 5},
+        {"name": "X-ray Machine", "tag": "ASSET-002", "cost": 2_500_000, "months": 84, "salvage_pct": 10},
+        {"name": "ICU Monitor", "tag": "ASSET-003", "cost": 350_000, "months": 60, "salvage_pct": 5},
+        {"name": "Hospital Beds (5 units)", "tag": "ASSET-004", "cost": 80_000 * 5, "months": 120, "salvage_pct": 10},
     ]
 
     created = 0
     for s in samples:
-        salvage = (Decimal(s["cost"]) * Decimal(s["salvage_pct"]) / Decimal(100))
+        salvage = Decimal(s["cost"]) * Decimal(s["salvage_pct"]) / Decimal(100)
         fa = FixedAsset(
             id=_det(f"asset:{s['tag']}"),
             facility_id=facility_id,
@@ -1177,20 +1533,12 @@ async def seed_budgets(
     user_id: uuid.UUID,
 ) -> int:
     """Seed ~10 budget lines for the current month."""
-    existing = (
-        await db.execute(
-            select(Budget).where(Budget.facility_id == facility_id)
-        )
-    ).scalars().all()
+    existing = (await db.execute(select(Budget).where(Budget.facility_id == facility_id))).scalars().all()
     if existing:
         print(f"  Budgets: {len(existing)} already exist")
         return 0
 
-    accounts = (
-        await db.execute(
-            select(Account).where(Account.facility_id == facility_id)
-        )
-    ).scalars().all()
+    accounts = (await db.execute(select(Account).where(Account.facility_id == facility_id))).scalars().all()
     by_code = {a.code: a.id for a in accounts}
 
     current_period_name = f"{TODAY.year}-{TODAY.month:02d}"
@@ -1201,16 +1549,16 @@ async def seed_budgets(
 
     samples: list[tuple[str, str, int]] = [
         # (account_code, dept_code, kes_amount)
-        ("5000", "OPD", 500_000),     # OPD Salaries
-        ("5030", "OPD", 50_000),      # OPD Operating
-        ("1200", "PHARM", 800_000),   # Pharmacy Inventory
-        ("5000", "PHARM", 200_000),   # Pharmacy Salaries
-        ("5030", "LAB", 150_000),     # Lab Reagents (op exp)
-        ("5000", "LAB", 250_000),     # Lab Salaries
-        ("5030", "ADMIN", 80_000),    # Admin Utilities (op exp)
-        ("5030", "ADMIN", 100_000),   # Admin Rent (op exp)
-        ("5000", "IPD", 600_000),     # IPD Salaries
-        ("5030", "IPD", 100_000),     # IPD Supplies (op exp)
+        ("5000", "OPD", 500_000),  # OPD Salaries
+        ("5030", "OPD", 50_000),  # OPD Operating
+        ("1200", "PHARM", 800_000),  # Pharmacy Inventory
+        ("5000", "PHARM", 200_000),  # Pharmacy Salaries
+        ("5030", "LAB", 150_000),  # Lab Reagents (op exp)
+        ("5000", "LAB", 250_000),  # Lab Salaries
+        ("5030", "ADMIN", 80_000),  # Admin Utilities (op exp)
+        ("5030", "ADMIN", 100_000),  # Admin Rent (op exp)
+        ("5000", "IPD", 600_000),  # IPD Salaries
+        ("5030", "IPD", 100_000),  # IPD Supplies (op exp)
     ]
 
     created = 0
@@ -1241,26 +1589,18 @@ async def seed_budgets(
 # ── Recurring Templates ──────────────────────────────────────────────────────
 
 
-async def seed_recurring_templates(
-    db: AsyncSession, facility_id: uuid.UUID, user_id: uuid.UUID
-) -> int:
+async def seed_recurring_templates(db: AsyncSession, facility_id: uuid.UUID, user_id: uuid.UUID) -> int:
     """Seed 3 sample recurring transaction templates."""
     existing = (
-        await db.execute(
-            select(RecurringTemplate).where(
-                RecurringTemplate.facility_id == facility_id
-            )
-        )
-    ).scalars().all()
+        (await db.execute(select(RecurringTemplate).where(RecurringTemplate.facility_id == facility_id)))
+        .scalars()
+        .all()
+    )
     if existing:
         print(f"  Recurring templates: {len(existing)} already exist")
         return 0
 
-    accounts = (
-        await db.execute(
-            select(Account).where(Account.facility_id == facility_id)
-        )
-    ).scalars().all()
+    accounts = (await db.execute(select(Account).where(Account.facility_id == facility_id))).scalars().all()
     by_code = {a.code: a.id for a in accounts}
 
     cash_id = by_code.get("1010")
@@ -1278,20 +1618,35 @@ async def seed_recurring_templates(
         last_day = date(TODAY.year, TODAY.month + 1, 1) - timedelta(days=1)
 
     samples: list[dict[str, Any]] = [
-        {"name": "Monthly Rent", "event": "expense_paid",
-         "amount": 100_000, "debit": op_exp_id, "credit": cash_id,
-         "frequency": "monthly", "next": last_day},
-        {"name": "Monthly Salary Run", "event": "payroll_run",
-         "amount": 1_000_000, "debit": sal_exp_id, "credit": bank_id,
-         "frequency": "monthly", "next": date(TODAY.year, TODAY.month, 25)
-         if TODAY.day <= 25 else (
-             date(TODAY.year + (1 if TODAY.month == 12 else 0),
-                  1 if TODAY.month == 12 else TODAY.month + 1, 25))},
-        {"name": "Insurance Premium", "event": "expense_paid",
-         "amount": 25_000, "debit": op_exp_id, "credit": cash_id,
-         "frequency": "monthly",
-         "next": date(TODAY.year + (1 if TODAY.month == 12 else 0),
-                      1 if TODAY.month == 12 else TODAY.month + 1, 1)},
+        {
+            "name": "Monthly Rent",
+            "event": "expense_paid",
+            "amount": 100_000,
+            "debit": op_exp_id,
+            "credit": cash_id,
+            "frequency": "monthly",
+            "next": last_day,
+        },
+        {
+            "name": "Monthly Salary Run",
+            "event": "payroll_run",
+            "amount": 1_000_000,
+            "debit": sal_exp_id,
+            "credit": bank_id,
+            "frequency": "monthly",
+            "next": date(TODAY.year, TODAY.month, 25)
+            if TODAY.day <= 25
+            else (date(TODAY.year + (1 if TODAY.month == 12 else 0), 1 if TODAY.month == 12 else TODAY.month + 1, 25)),
+        },
+        {
+            "name": "Insurance Premium",
+            "event": "expense_paid",
+            "amount": 25_000,
+            "debit": op_exp_id,
+            "credit": cash_id,
+            "frequency": "monthly",
+            "next": date(TODAY.year + (1 if TODAY.month == 12 else 0), 1 if TODAY.month == 12 else TODAY.month + 1, 1),
+        },
     ]
 
     created = 0
@@ -1329,28 +1684,25 @@ async def seed_mpesa_samples(
 ) -> int:
     """Seed 5 sample M-Pesa STK Push request rows."""
     existing = (
-        await db.execute(
-            select(MpesaStkRequest).where(
-                MpesaStkRequest.facility_id == facility_id
-            )
-        )
-    ).scalars().all()
+        (await db.execute(select(MpesaStkRequest).where(MpesaStkRequest.facility_id == facility_id))).scalars().all()
+    )
     if existing:
         print(f"  M-Pesa samples: {len(existing)} already exist")
         return 0
 
     samples: list[dict[str, Any]] = [
-        {"phone": "+254712345001", "amount": 500, "status": "success",
-         "result_code": 0, "receipt": "QA12CD3456"},
-        {"phone": "+254712345004", "amount": 1500, "status": "success",
-         "result_code": 0, "receipt": "QB45EF6789"},
-        {"phone": "+254712345008", "amount": 800, "status": "pending",
-         "result_code": None, "receipt": None},
-        {"phone": "+254712345002", "amount": 2200, "status": "failed",
-         "result_code": 1032, "receipt": None,
-         "result_desc": "Request cancelled by user"},
-        {"phone": "+254712345011", "amount": 1200, "status": "success",
-         "result_code": 0, "receipt": "QC78GH9012"},
+        {"phone": "+254712345001", "amount": 500, "status": "success", "result_code": 0, "receipt": "QA12CD3456"},
+        {"phone": "+254712345004", "amount": 1500, "status": "success", "result_code": 0, "receipt": "QB45EF6789"},
+        {"phone": "+254712345008", "amount": 800, "status": "pending", "result_code": None, "receipt": None},
+        {
+            "phone": "+254712345002",
+            "amount": 2200,
+            "status": "failed",
+            "result_code": 1032,
+            "receipt": None,
+            "result_desc": "Request cancelled by user",
+        },
+        {"phone": "+254712345011", "amount": 1200, "status": "success", "result_code": 0, "receipt": "QC78GH9012"},
     ]
 
     created = 0
@@ -1388,11 +1740,7 @@ async def seed_mpesa_samples(
 
 async def reset_demo_data(db: AsyncSession) -> None:
     """Soft-delete all demo facility data (is_deleted=True)."""
-    fac = (
-        await db.execute(
-            select(Facility).where(Facility.code == DEMO_FACILITY_CODE)
-        )
-    ).scalar_one_or_none()
+    fac = (await db.execute(select(Facility).where(Facility.code == DEMO_FACILITY_CODE))).scalar_one_or_none()
     if fac is None:
         print("No demo facility found, nothing to reset.")
         return
@@ -1402,17 +1750,28 @@ async def reset_demo_data(db: AsyncSession) -> None:
 
     # Tables with AuditMixin (have is_deleted) — flag them.
     tables_with_soft_delete = [
-        Department, Staff, Patient, Encounter, Invoice, InvoiceItem, Payment,
-        PharmacyItem, InsuranceScheme, Account, AccountingPeriod, Budget,
-        FixedAsset, RecurringTemplate, Employee, EmployeeSalary, PayrollRun,
-        PayrollLeaveRequest, MpesaStkRequest,
+        Department,
+        Staff,
+        Patient,
+        Encounter,
+        Invoice,
+        InvoiceItem,
+        Payment,
+        PharmacyItem,
+        InsuranceScheme,
+        Account,
+        AccountingPeriod,
+        Budget,
+        FixedAsset,
+        RecurringTemplate,
+        Employee,
+        EmployeeSalary,
+        PayrollRun,
+        PayrollLeaveRequest,
+        MpesaStkRequest,
     ]
     for model in tables_with_soft_delete:
-        await db.execute(
-            update(model)
-            .where(model.facility_id == facility_id)
-            .values(is_deleted=True, deleted_at=NOW)
-        )
+        await db.execute(update(model).where(model.facility_id == facility_id).values(is_deleted=True, deleted_at=NOW))
     # Facility itself: is_active=False (no is_deleted on Facility model).
     fac.is_active = False
     await db.flush()
@@ -1460,13 +1819,8 @@ async def main(reset: bool = False) -> None:
             await seed_insurance(db, facility_id)
 
             print("\n[7] Finance: Chart of Accounts + Posting Rules")
-            fin_summary = await seed_facility_finance(
-                db, facility_id, admin_staff_id
-            )
-            print(
-                f"  Accounts: {fin_summary['accounts_created']}, "
-                f"Posting rules: {fin_summary['rules_created']}"
-            )
+            fin_summary = await seed_facility_finance(db, facility_id, admin_staff_id)
+            print(f"  Accounts: {fin_summary['accounts_created']}, Posting rules: {fin_summary['rules_created']}")
 
             print("\n[8] Accounting Periods")
             period_map = await seed_accounting_periods(db, facility_id)
@@ -1477,33 +1831,25 @@ async def main(reset: bool = False) -> None:
             await db.flush()
 
             print("\n[9] Invoices, Payments, Expenses (with GL postings)")
-            await seed_invoices_and_postings(
-                db, facility_id, patient_ids, dept_map, admin_staff_id
-            )
+            await seed_invoices_and_postings(db, facility_id, patient_ids, dept_map, admin_staff_id)
 
             print("\n[10] Payroll: Statutory Defaults (PAYE, NSSF, SHIF, HL)")
             await seed_payroll_defaults(db)
 
             print("\n[11] Employees + Salaries")
-            employee_ids = await seed_employees(
-                db, facility_id, dept_map, admin_staff_id
-            )
+            employee_ids = await seed_employees(db, facility_id, dept_map, admin_staff_id)
 
             print("\n[12] Demo Payroll Run (previous month)")
             await run_demo_payroll(db, facility_id, admin_staff_id)
 
             print("\n[13] Leave Requests")
-            await seed_leave_requests(
-                db, facility_id, employee_ids, admin_staff_id
-            )
+            await seed_leave_requests(db, facility_id, employee_ids, admin_staff_id)
 
             print("\n[14] Fixed Assets")
             await seed_fixed_assets(db, facility_id, admin_staff_id)
 
             print("\n[15] Budgets")
-            await seed_budgets(
-                db, facility_id, period_map, dept_map, admin_staff_id
-            )
+            await seed_budgets(db, facility_id, period_map, dept_map, admin_staff_id)
 
             print("\n[16] Recurring Templates")
             await seed_recurring_templates(db, facility_id, admin_staff_id)
@@ -1561,9 +1907,7 @@ def print_summary(facility_id: uuid.UUID) -> None:
 
 def parse_args() -> argparse.Namespace:
     """Parse CLI args."""
-    p = argparse.ArgumentParser(
-        description="Seed (or reset) the Aifya demo dataset."
-    )
+    p = argparse.ArgumentParser(description="Seed (or reset) the Aifya demo dataset.")
     p.add_argument(
         "--reset",
         action="store_true",

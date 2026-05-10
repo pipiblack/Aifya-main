@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 class SurveillanceAlertLevel(StrEnum):
     """Disease surveillance alert levels."""
+
     NORMAL = "normal"
     WATCH = "watch"
     ALERT = "alert"
@@ -21,6 +22,7 @@ class SurveillanceAlertLevel(StrEnum):
 
 class AggregationPeriod(StrEnum):
     """Time period for data aggregation."""
+
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
@@ -38,6 +40,7 @@ class DiseaseSurveillanceEntry(BaseModel):
     @param alert_level: Surveillance alert level
     @param county: County name (if county-level data)
     """
+
     condition: str
     icd10_code: str | None = None
     case_count: int
@@ -60,6 +63,7 @@ class OutbreakAlert(BaseModel):
     @param affected_facilities: Number of facilities reporting
     @param recommendation: Public health recommendation
     """
+
     condition: str
     icd10_code: str | None = None
     alert_level: SurveillanceAlertLevel
@@ -86,6 +90,7 @@ class AnonymizedFacilityReport(BaseModel):
     @param lab_tests_count: Total lab tests performed
     @param immunizations_count: Total immunizations given
     """
+
     facility_id: str
     period_start: str
     period_end: str
@@ -112,6 +117,7 @@ class CountyDashboard(BaseModel):
     @param surveillance_alerts: Active surveillance alerts
     @param outbreak_alerts: Active outbreak alerts
     """
+
     county: str
     period: str
     facilities_reporting: int

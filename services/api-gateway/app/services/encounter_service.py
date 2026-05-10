@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import EventBase
 from app.models.encounter import Encounter
-from app.models.patient import Patient
 from app.schemas.encounter import EncounterCreate, EncounterUpdate
 
 
@@ -101,16 +100,12 @@ class EncounterService:
         if status_filter:
             stmt = stmt.where(Encounter.status == status_filter)
         else:
-            stmt = stmt.where(
-                Encounter.status.in_(["waiting", "in_consultation"])
-            )
+            stmt = stmt.where(Encounter.status.in_(["waiting", "in_consultation"]))
 
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_encounter(
-        self, encounter_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> Encounter | None:
+    async def get_encounter(self, encounter_id: uuid.UUID, facility_id: uuid.UUID) -> Encounter | None:
         """
         Get a single encounter by ID.
 
@@ -160,9 +155,7 @@ class EncounterService:
 
         return encounter
 
-    async def call_next(
-        self, facility_id: uuid.UUID, doctor_id: uuid.UUID
-    ) -> Encounter | None:
+    async def call_next(self, facility_id: uuid.UUID, doctor_id: uuid.UUID) -> Encounter | None:
         """
         Call the next patient in the OPD queue (highest priority waiting).
 
@@ -199,8 +192,7 @@ class EncounterService:
     async def _next_queue_number(self, facility_id: uuid.UUID) -> int:
         """Generate the next queue number for today."""
         result = await self.db.execute(
-            select(func.coalesce(func.max(Encounter.queue_number), 0))
-            .where(
+            select(func.coalesce(func.max(Encounter.queue_number), 0)).where(
                 Encounter.facility_id == facility_id,
                 Encounter.encounter_type == "opd",
                 func.date(Encounter.encounter_date) == func.current_date(),
@@ -212,10 +204,10 @@ class EncounterService:
     def _triage_priority(category: str | None) -> int:
         """Map SATS triage category to numeric priority."""
         mapping = {
-            "emergency": 5,   # Red
-            "urgent": 4,      # Orange
-            "standard": 3,    # Yellow
+            "emergency": 5,  # Red
+            "urgent": 4,  # Orange
+            "standard": 3,  # Yellow
             "non_urgent": 2,  # Green
-            "dead": 1,        # Blue
+            "dead": 1,  # Blue
         }
         return mapping.get(category or "", 2)

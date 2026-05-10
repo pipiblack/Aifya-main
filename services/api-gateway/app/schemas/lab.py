@@ -3,7 +3,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Lab Order schemas ──────────────────────────────────────────────────────
 
 
@@ -12,9 +11,7 @@ class LabOrderCreate(BaseModel):
 
     encounter_id: uuid.UUID
     patient_id: uuid.UUID
-    priority: str = Field(
-        default="routine", pattern=r"^(stat|urgent|routine)$"
-    )
+    priority: str = Field(default="routine", pattern=r"^(stat|urgent|routine)$")
     specimen_type: str | None = Field(None, max_length=50)
     clinical_info: str | None = Field(None, max_length=1000)
     fasting: bool = False
@@ -134,9 +131,7 @@ class LabResultEntry(BaseModel):
     result_numeric: float | None = None
     result_unit: str | None = Field(None, max_length=50)
     reference_range: str | None = Field(None, max_length=100)
-    interpretation: str | None = Field(
-        None, pattern=r"^(normal|abnormal|critical|inconclusive)$"
-    )
+    interpretation: str | None = Field(None, pattern=r"^(normal|abnormal|critical|inconclusive)$")
     is_abnormal: bool = False
     notes: str | None = Field(None, max_length=2000)
     method: str | None = Field(None, max_length=100)

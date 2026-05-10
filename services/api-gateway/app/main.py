@@ -1,17 +1,45 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import (
-    agents, analytics, appointments, billing, cds, clinical_trials, communications, dental,
-    dhis2, emergency, encounters, federated, fhir, finance, help_bot, hr, imaging, insurance, inventory,
-    ipd, laboratory, licensing, mch, mpesa, patients, payroll, performance, pharmacy, radiology,
-    referral, reports, theatre,
-)
 from app.middleware.license_guard import LicenseGuardMiddleware
+from app.routers import (
+    agents,
+    analytics,
+    appointments,
+    billing,
+    cds,
+    clinical_trials,
+    communications,
+    dental,
+    dhis2,
+    emergency,
+    encounters,
+    federated,
+    fhir,
+    finance,
+    help_bot,
+    hr,
+    imaging,
+    insurance,
+    inventory,
+    ipd,
+    laboratory,
+    licensing,
+    mch,
+    mpesa,
+    patients,
+    payroll,
+    performance,
+    pharmacy,
+    radiology,
+    referral,
+    reports,
+    theatre,
+)
 
 # Disable OpenAPI/Swagger docs in production to avoid exposing API surface
 _is_dev: bool = settings.debug

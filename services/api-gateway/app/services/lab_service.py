@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,6 @@ from app.schemas.lab import (
     LabResultEntry,
     LabWorklistItem,
 )
-
 
 # Critical value thresholds for common lab tests
 CRITICAL_LAB_VALUES: dict[str, dict[str, float]] = {
@@ -131,9 +130,7 @@ class LabService:
             select(
                 LabResult.order_id,
                 func.count(LabResult.id).label("total"),
-                func.count(
-                    case((LabResult.status == "pending", LabResult.id))
-                ).label("pending"),
+                func.count(case((LabResult.status == "pending", LabResult.id))).label("pending"),
                 func.count(
                     case((LabResult.is_critical == True, LabResult.id))  # noqa: E712
                 ).label("critical"),
@@ -162,9 +159,7 @@ class LabService:
         if status_filter:
             stmt = stmt.where(LabOrder.status == status_filter)
         else:
-            stmt = stmt.where(
-                LabOrder.status.in_(["ordered", "collected", "processing"])
-            )
+            stmt = stmt.where(LabOrder.status.in_(["ordered", "collected", "processing"]))
 
         priority_order = func.case(
             (LabOrder.priority == "stat", 3),
@@ -244,9 +239,7 @@ class LabService:
 
     # ── Encounter Orders ──────────────────────────────────────────────────
 
-    async def get_encounter_orders(
-        self, encounter_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> list[LabOrder]:
+    async def get_encounter_orders(self, encounter_id: uuid.UUID, facility_id: uuid.UUID) -> list[LabOrder]:
         """
         Get all lab orders for an encounter.
 
@@ -295,7 +288,7 @@ class LabService:
             return None
 
         order.status = "collected"
-        order.specimen_collected_at = datetime.now(timezone.utc)
+        order.specimen_collected_at = datetime.now(UTC)
         order.specimen_collected_by = collected_by
         if specimen_id:
             order.specimen_id = specimen_id
@@ -359,7 +352,7 @@ class LabService:
         lab_result.notes = data.notes
         lab_result.method = data.method
         lab_result.performed_by = performed_by
-        lab_result.resulted_at = datetime.now(timezone.utc)
+        lab_result.resulted_at = datetime.now(UTC)
         lab_result.status = "preliminary"
         lab_result.updated_by = performed_by
 
@@ -373,18 +366,14 @@ class LabService:
 
         # Auto-check critical thresholds
         if data.result_numeric is not None:
-            is_critical = self._check_critical_value(
-                lab_result.test_code, data.result_numeric
-            )
+            is_critical = self._check_critical_value(lab_result.test_code, data.result_numeric)
             if is_critical:
                 lab_result.is_critical = True
                 lab_result.is_abnormal = True
                 lab_result.interpretation = "critical"
 
         # Update parent order status to processing
-        order_result = await self.db.execute(
-            select(LabOrder).where(LabOrder.id == lab_result.order_id)
-        )
+        order_result = await self.db.execute(select(LabOrder).where(LabOrder.id == lab_result.order_id))
         order = order_result.scalar_one_or_none()
         if order and order.status in ("ordered", "collected"):
             order.status = "processing"
@@ -445,7 +434,7 @@ class LabService:
 
         lab_result.status = "final"
         lab_result.verified_by = verified_by
-        lab_result.verified_at = datetime.now(timezone.utc)
+        lab_result.verified_at = datetime.now(UTC)
         lab_result.updated_by = verified_by
         if notes:
             lab_result.notes = (lab_result.notes or "") + f"\nVerification: {notes}"
@@ -462,9 +451,7 @@ class LabService:
         all_final = all(r.status == "final" for r in all_results)
 
         if all_final:
-            order_q = await self.db.execute(
-                select(LabOrder).where(LabOrder.id == lab_result.order_id)
-            )
+            order_q = await self.db.execute(select(LabOrder).where(LabOrder.id == lab_result.order_id))
             order = order_q.scalar_one_or_none()
             if order:
                 order.status = "completed"
@@ -523,7 +510,7 @@ class LabService:
 
         lab_result.critical_notified = True
         lab_result.critical_notified_to = notified_to
-        lab_result.critical_notified_at = datetime.now(timezone.utc)
+        lab_result.critical_notified_at = datetime.now(UTC)
         lab_result.updated_by = notified_by
 
         await self.db.flush()
@@ -548,7 +535,7 @@ class LabService:
 
     async def _next_order_number(self, facility_id: uuid.UUID) -> str:
         """Generate the next lab order number (LAB-YYYYMMDD-XXXX)."""
-        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        today = datetime.now(UTC).strftime("%Y%m%d")
         prefix = f"LAB-{today}-"
 
         result = await self.db.execute(

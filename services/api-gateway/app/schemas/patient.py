@@ -31,9 +31,7 @@ class PatientCreate(BaseModel):
 
     # Personal
     occupation: str | None = Field(None, max_length=100)
-    marital_status: str | None = Field(
-        None, pattern=r"^(single|married|divorced|widowed)$"
-    )
+    marital_status: str | None = Field(None, pattern=r"^(single|married|divorced|widowed)$")
 
     # Next of Kin
     next_of_kin_name: str | None = Field(None, max_length=200)
@@ -46,9 +44,7 @@ class PatientCreate(BaseModel):
     sha_number: str | None = Field(None, max_length=50)
 
     # Medical
-    blood_group: str | None = Field(
-        None, pattern=r"^(A|B|AB|O)[+-]$"
-    )
+    blood_group: str | None = Field(None, pattern=r"^(A|B|AB|O)[+-]$")
     allergies: list[str] | None = None
     chronic_conditions: list[str] | None = None
 
@@ -72,9 +68,7 @@ class PatientUpdate(BaseModel):
     village: str | None = Field(None, max_length=200)
     postal_address: str | None = Field(None, max_length=200)
     occupation: str | None = Field(None, max_length=100)
-    marital_status: str | None = Field(
-        None, pattern=r"^(single|married|divorced|widowed)$"
-    )
+    marital_status: str | None = Field(None, pattern=r"^(single|married|divorced|widowed)$")
     next_of_kin_name: str | None = Field(None, max_length=200)
     next_of_kin_phone: str | None = Field(None, max_length=20)
     next_of_kin_relationship: str | None = Field(None, max_length=50)

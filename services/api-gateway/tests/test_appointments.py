@@ -13,13 +13,16 @@ async def _create_patient(client: AsyncClient) -> str:
     @param client: Async HTTP test client
     @returns Patient UUID string
     """
-    response = await client.post("/api/v1/patients", json={
-        "first_name": "Amina",
-        "last_name": "Ochieng",
-        "date_of_birth": "1990-01-01",
-        "gender": "male",
-        "phone_number": "0700000000",
-    })
+    response = await client.post(
+        "/api/v1/patients",
+        json={
+            "first_name": "Amina",
+            "last_name": "Ochieng",
+            "date_of_birth": "1990-01-01",
+            "gender": "male",
+            "phone_number": "0700000000",
+        },
+    )
     assert response.status_code == 201
     return response.json()["id"]
 

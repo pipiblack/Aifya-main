@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,9 +40,7 @@ class ClinicalTrialService:
 
     # ── Trials ───────────────────────────────────────────────────────────────
 
-    async def create_trial(
-        self, data: TrialCreate, facility_id: uuid.UUID, created_by: uuid.UUID
-    ) -> ClinicalTrial:
+    async def create_trial(self, data: TrialCreate, facility_id: uuid.UUID, created_by: uuid.UUID) -> ClinicalTrial:
         """
         Create a clinical trial.
 
@@ -101,9 +99,7 @@ class ClinicalTrialService:
         await self.db.refresh(trial)
         return trial
 
-    async def get_trials(
-        self, facility_id: uuid.UUID, status: str | None = None
-    ) -> list[TrialListItem]:
+    async def get_trials(self, facility_id: uuid.UUID, status: str | None = None) -> list[TrialListItem]:
         """
         Get trials with enrolled count.
 
@@ -160,9 +156,7 @@ class ClinicalTrialService:
             for t, ec in result.all()
         ]
 
-    async def get_trial(
-        self, trial_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> ClinicalTrial | None:
+    async def get_trial(self, trial_id: uuid.UUID, facility_id: uuid.UUID) -> ClinicalTrial | None:
         """
         Get a single trial.
 
@@ -253,7 +247,7 @@ class ClinicalTrialService:
         @param created_by: Staff UUID
         @returns Created participant
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         count = await self.db.execute(
             select(func.count(TrialParticipant.id)).where(
@@ -332,9 +326,7 @@ class ClinicalTrialService:
             for p, pf, pl in result.all()
         ]
 
-    async def get_participant(
-        self, participant_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> TrialParticipant | None:
+    async def get_participant(self, participant_id: uuid.UUID, facility_id: uuid.UUID) -> TrialParticipant | None:
         """
         Get a single participant.
 
@@ -371,7 +363,7 @@ class ClinicalTrialService:
         if not participant:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         participant.status = data.status
         participant.updated_by = updated_by
 
@@ -395,9 +387,7 @@ class ClinicalTrialService:
 
     # ── Visit Schedule ───────────────────────────────────────────────────────
 
-    async def create_visit_schedule(
-        self, trial_id: uuid.UUID, data: VisitScheduleCreate
-    ) -> TrialVisitSchedule:
+    async def create_visit_schedule(self, trial_id: uuid.UUID, data: VisitScheduleCreate) -> TrialVisitSchedule:
         """
         Create a visit schedule entry for a trial protocol.
 
@@ -421,9 +411,7 @@ class ClinicalTrialService:
         await self.db.refresh(schedule)
         return schedule
 
-    async def get_visit_schedule(
-        self, trial_id: uuid.UUID
-    ) -> list[TrialVisitSchedule]:
+    async def get_visit_schedule(self, trial_id: uuid.UUID) -> list[TrialVisitSchedule]:
         """
         Get visit schedule for a trial.
 
@@ -473,9 +461,7 @@ class ClinicalTrialService:
         await self.db.refresh(visit)
         return visit
 
-    async def get_participant_visits(
-        self, participant_id: uuid.UUID
-    ) -> list[TrialParticipantVisit]:
+    async def get_participant_visits(self, participant_id: uuid.UUID) -> list[TrialParticipantVisit]:
         """
         Get visits for a participant.
 
@@ -542,7 +528,7 @@ class ClinicalTrialService:
         @param reported_by: Staff UUID
         @returns Created adverse event
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         ae = TrialAdverseEvent(
             facility_id=facility_id,
@@ -618,9 +604,7 @@ class ClinicalTrialService:
             for ae, pn in result.all()
         ]
 
-    async def get_adverse_event(
-        self, ae_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> TrialAdverseEvent | None:
+    async def get_adverse_event(self, ae_id: uuid.UUID, facility_id: uuid.UUID) -> TrialAdverseEvent | None:
         """
         Get a single adverse event.
 
@@ -657,7 +641,7 @@ class ClinicalTrialService:
         if not ae or not ae.is_serious:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ae.sae_aware_date = data.sae_aware_date
         ae.sae_report_document_url = data.sae_report_document_url
         if data.reported_to_sponsor:
@@ -744,45 +728,30 @@ class ClinicalTrialService:
         p_base = [TrialParticipant.facility_id == facility_id, TrialParticipant.is_deleted == False]  # noqa: E712
         ae_base = [TrialAdverseEvent.facility_id == facility_id, TrialAdverseEvent.is_deleted == False]  # noqa: E712
 
-        total_trials = await self.db.execute(
-            select(func.count(ClinicalTrial.id)).where(*t_base)
-        )
+        total_trials = await self.db.execute(select(func.count(ClinicalTrial.id)).where(*t_base))
         recruiting = await self.db.execute(
-            select(func.count(ClinicalTrial.id)).where(
-                *t_base, ClinicalTrial.status == "recruiting"
-            )
+            select(func.count(ClinicalTrial.id)).where(*t_base, ClinicalTrial.status == "recruiting")
         )
         active = await self.db.execute(
-            select(func.count(ClinicalTrial.id)).where(
-                *t_base, ClinicalTrial.status == "active"
-            )
+            select(func.count(ClinicalTrial.id)).where(*t_base, ClinicalTrial.status == "active")
         )
         completed = await self.db.execute(
-            select(func.count(ClinicalTrial.id)).where(
-                *t_base, ClinicalTrial.status == "completed"
-            )
+            select(func.count(ClinicalTrial.id)).where(*t_base, ClinicalTrial.status == "completed")
         )
 
-        total_participants = await self.db.execute(
-            select(func.count(TrialParticipant.id)).where(*p_base)
-        )
+        total_participants = await self.db.execute(select(func.count(TrialParticipant.id)).where(*p_base))
         enrolled = await self.db.execute(
-            select(func.count(TrialParticipant.id)).where(
-                *p_base, TrialParticipant.status.in_(["enrolled", "active"])
-            )
+            select(func.count(TrialParticipant.id)).where(*p_base, TrialParticipant.status.in_(["enrolled", "active"]))
         )
         screen_failures = await self.db.execute(
-            select(func.count(TrialParticipant.id)).where(
-                *p_base, TrialParticipant.status == "screen_failed"
-            )
+            select(func.count(TrialParticipant.id)).where(*p_base, TrialParticipant.status == "screen_failed")
         )
 
-        total_ae = await self.db.execute(
-            select(func.count(TrialAdverseEvent.id)).where(*ae_base)
-        )
+        total_ae = await self.db.execute(select(func.count(TrialAdverseEvent.id)).where(*ae_base))
         sae = await self.db.execute(
             select(func.count(TrialAdverseEvent.id)).where(
-                *ae_base, TrialAdverseEvent.is_serious == True  # noqa: E712
+                *ae_base,
+                TrialAdverseEvent.is_serious == True,  # noqa: E712
             )
         )
 

@@ -26,9 +26,7 @@ router = APIRouter(dependencies=[Depends(require_module("laboratory"))])
 
 @router.get("/worklist", response_model=LabWorklistResponse)
 async def get_worklist(
-    status_filter: str | None = Query(
-        None, alias="status", description="Filter by order status"
-    ),
+    status_filter: str | None = Query(None, alias="status", description="Filter by order status"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> LabWorklistResponse:
@@ -95,9 +93,7 @@ async def collect_specimen(
     order_id: uuid.UUID,
     data: SpecimenCollectRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("lab_tech", "nurse", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("lab_tech", "nurse", "admin", "facility_admin")),
 ) -> LabOrderResponse:
     """
     Record specimen collection for a lab order.
@@ -134,9 +130,7 @@ async def enter_result(
     result_id: uuid.UUID,
     data: LabResultEntry,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("lab_tech", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("lab_tech", "admin", "facility_admin")),
 ) -> LabResultResponse:
     """
     Enter a lab result. Auto-detects critical values.
@@ -174,9 +168,7 @@ async def verify_result(
     result_id: uuid.UUID,
     data: LabResultVerify,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("lab_tech", "pathologist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("lab_tech", "pathologist", "admin", "facility_admin")),
 ) -> LabResultResponse:
     """
     Verify (approve) a lab result. Changes status from preliminary to final.
@@ -220,9 +212,7 @@ async def notify_critical(
     result_id: uuid.UUID,
     data: CriticalNotifyRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("lab_tech", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("lab_tech", "admin", "facility_admin")),
 ) -> LabResultResponse:
     """
     Record that a critical lab value was communicated to a clinician.

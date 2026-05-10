@@ -18,7 +18,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
-
 _ZERO = Decimal("0")
 _TWO_PLACES = Decimal("0.01")
 
@@ -74,9 +73,7 @@ def calc_nssf(gross_salary: Decimal, tiers: list[NSSFTierSpec]) -> Decimal:
     return _q(total)
 
 
-def calc_employer_nssf(
-    gross_salary: Decimal, tiers: list[NSSFTierSpec]
-) -> Decimal:
+def calc_employer_nssf(gross_salary: Decimal, tiers: list[NSSFTierSpec]) -> Decimal:
     """Calculate the employer NSSF contribution (mirrors employee under the 2026 Act)."""
     if gross_salary <= _ZERO or not tiers:
         return _ZERO
@@ -118,27 +115,21 @@ def calc_paye(taxable_pay: Decimal, bands: list[PAYEBandSpec]) -> Decimal:
     return _q(total)
 
 
-def calc_shif(
-    gross_salary: Decimal, rate: Decimal = Decimal("0.0275")
-) -> Decimal:
+def calc_shif(gross_salary: Decimal, rate: Decimal = Decimal("0.0275")) -> Decimal:
     """Social Health Insurance Fund: 2.75% of gross."""
     if gross_salary <= _ZERO:
         return _ZERO
     return _q(gross_salary * rate)
 
 
-def calc_housing_levy(
-    gross_salary: Decimal, rate: Decimal = Decimal("0.015")
-) -> Decimal:
+def calc_housing_levy(gross_salary: Decimal, rate: Decimal = Decimal("0.015")) -> Decimal:
     """Affordable Housing Levy: 1.5% of gross (employee share)."""
     if gross_salary <= _ZERO:
         return _ZERO
     return _q(gross_salary * rate)
 
 
-def calc_employer_housing_levy(
-    gross_salary: Decimal, rate: Decimal = Decimal("0.015")
-) -> Decimal:
+def calc_employer_housing_levy(gross_salary: Decimal, rate: Decimal = Decimal("0.015")) -> Decimal:
     """Affordable Housing Levy: 1.5% of gross (employer share)."""
     if gross_salary <= _ZERO:
         return _ZERO

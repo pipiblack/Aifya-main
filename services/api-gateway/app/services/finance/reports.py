@@ -7,12 +7,11 @@ no caching, single source of truth.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date as date_type
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import (
     Account,
@@ -40,6 +39,10 @@ from app.schemas.finance import (
     TrialBalanceRow,
 )
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _ZERO = Decimal("0")
 _QUANT = Decimal("0.01")
@@ -73,9 +76,7 @@ async def get_general_ledger(
     @returns Per-entry running balance + opening/closing
     """
     account_result = await db.execute(
-        select(Account).where(
-            Account.id == account_id, Account.facility_id == facility_id
-        )
+        select(Account).where(Account.id == account_id, Account.facility_id == facility_id)
     )
     account = account_result.scalar_one()
 
@@ -184,14 +185,12 @@ async def get_trial_balance(
         )
         .join(
             TransactionEntry,
-            (TransactionEntry.account_id == Account.id)
-            & (TransactionEntry.facility_id == facility_id),
+            (TransactionEntry.account_id == Account.id) & (TransactionEntry.facility_id == facility_id),
             isouter=True,
         )
         .join(
             Transaction,
-            (TransactionEntry.transaction_id == Transaction.id)
-            & (Transaction.facility_id == facility_id),
+            (TransactionEntry.transaction_id == Transaction.id) & (Transaction.facility_id == facility_id),
             isouter=True,
         )
         .where(
@@ -203,9 +202,7 @@ async def get_trial_balance(
     )
 
     if end_date is not None:
-        stmt = stmt.where(
-            (Transaction.date <= end_date) | (Transaction.date.is_(None))
-        )
+        stmt = stmt.where((Transaction.date <= end_date) | (Transaction.date.is_(None)))
 
     result = await db.execute(stmt)
 
@@ -286,8 +283,7 @@ async def get_profit_loss(
         )
         .join(
             TransactionEntry,
-            (TransactionEntry.account_id == Account.id)
-            & (TransactionEntry.facility_id == facility_id),
+            (TransactionEntry.account_id == Account.id) & (TransactionEntry.facility_id == facility_id),
             isouter=True,
         )
         .join(
@@ -317,8 +313,10 @@ async def get_profit_loss(
             amt = _q(cr_d - dr_d)
             income.append(
                 ProfitLossRow(
-                    account_id=acct_id, account_code=code,
-                    account_name=name, amount=amt,
+                    account_id=acct_id,
+                    account_code=code,
+                    account_name=name,
+                    amount=amt,
                 )
             )
             total_income += amt
@@ -326,8 +324,10 @@ async def get_profit_loss(
             amt = _q(dr_d - cr_d)
             expenses.append(
                 ProfitLossRow(
-                    account_id=acct_id, account_code=code,
-                    account_name=name, amount=amt,
+                    account_id=acct_id,
+                    account_code=code,
+                    account_name=name,
+                    amount=amt,
                 )
             )
             total_expenses += amt
@@ -372,8 +372,7 @@ async def get_balance_sheet(
         )
         .join(
             TransactionEntry,
-            (TransactionEntry.account_id == Account.id)
-            & (TransactionEntry.facility_id == facility_id),
+            (TransactionEntry.account_id == Account.id) & (TransactionEntry.facility_id == facility_id),
             isouter=True,
         )
         .join(
@@ -408,24 +407,15 @@ async def get_balance_sheet(
         cr_d = Decimal(cr)
         if atype == "asset":
             amt = _q(dr_d - cr_d)
-            asset_rows.append(
-                ProfitLossRow(account_id=acct_id, account_code=code,
-                              account_name=name, amount=amt)
-            )
+            asset_rows.append(ProfitLossRow(account_id=acct_id, account_code=code, account_name=name, amount=amt))
             total_assets += amt
         elif atype == "liability":
             amt = _q(cr_d - dr_d)
-            liability_rows.append(
-                ProfitLossRow(account_id=acct_id, account_code=code,
-                              account_name=name, amount=amt)
-            )
+            liability_rows.append(ProfitLossRow(account_id=acct_id, account_code=code, account_name=name, amount=amt))
             total_liab += amt
         else:  # equity
             amt = _q(cr_d - dr_d)
-            equity_rows.append(
-                ProfitLossRow(account_id=acct_id, account_code=code,
-                              account_name=name, amount=amt)
-            )
+            equity_rows.append(ProfitLossRow(account_id=acct_id, account_code=code, account_name=name, amount=amt))
             total_eq += amt
 
     # Add net profit YTD into equity (retained earnings approximation)
@@ -479,10 +469,7 @@ async def get_cash_flow(
 
     # Opening cash
     opening_result = await db.execute(
-        select(
-            func.coalesce(func.sum(TransactionEntry.debit), 0)
-            - func.coalesce(func.sum(TransactionEntry.credit), 0)
-        )
+        select(func.coalesce(func.sum(TransactionEntry.debit), 0) - func.coalesce(func.sum(TransactionEntry.credit), 0))
         .join(Transaction, TransactionEntry.transaction_id == Transaction.id)
         .where(
             TransactionEntry.facility_id == facility_id,
@@ -525,9 +512,7 @@ async def get_cash_flow(
                 .where(
                     Transaction.facility_id == facility_id,
                     TransactionEntry.facility_id == facility_id,
-                    TransactionEntry.account_id.in_(cash_account_ids)
-                    if cash_account_ids
-                    else False,
+                    TransactionEntry.account_id.in_(cash_account_ids) if cash_account_ids else False,
                 )
             ),
         )
@@ -543,9 +528,7 @@ async def get_cash_flow(
 
     for cat, acct_id, code, name, net in result.all():
         amt = _q(Decimal(net))
-        row = ProfitLossRow(
-            account_id=acct_id, account_code=code, account_name=name, amount=amt
-        )
+        row = ProfitLossRow(account_id=acct_id, account_code=code, account_name=name, amount=amt)
         if cat == "operating":
             operating_rows.append(row)
             op_total += amt
@@ -605,9 +588,7 @@ async def get_ar_aging(
         outstanding = _q(claim.amount_claimed - claim.amount_paid)
         if outstanding <= 0:
             continue
-        days_outstanding = (
-            (as_of_date - claim.due_date).days if claim.due_date else 0
-        )
+        days_outstanding = (as_of_date - claim.due_date).days if claim.due_date else 0
         if days_outstanding <= 0:
             bucket = 0
         elif days_outstanding <= 30:
@@ -722,18 +703,11 @@ async def get_budget_vs_actual(
             )
         )
         dr, cr = actual_result.first() or (0, 0)
-        if account.type == "expense":
-            actual = _q(Decimal(dr) - Decimal(cr))
-        else:
-            actual = _q(Decimal(cr) - Decimal(dr))
+        actual = _q(Decimal(dr) - Decimal(cr)) if account.type == "expense" else _q(Decimal(cr) - Decimal(dr))
 
         budgeted = _q(budget.budgeted_amount)
         variance = _q(budgeted - actual)
-        pct_used = (
-            _q((actual / budgeted) * Decimal("100"))
-            if budgeted > 0
-            else _ZERO
-        )
+        pct_used = _q((actual / budgeted) * Decimal("100")) if budgeted > 0 else _ZERO
         rows.append(
             BudgetVsActualRow(
                 account_id=account.id,

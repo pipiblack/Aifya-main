@@ -11,9 +11,7 @@ class DiagnosisCreate(BaseModel):
     patient_id: uuid.UUID
     icd10_code: str = Field(..., min_length=3, max_length=20)
     icd10_description: str = Field(..., min_length=1, max_length=500)
-    diagnosis_type: str = Field(
-        ..., pattern=r"^(primary|secondary|differential|ruled_out)$"
-    )
+    diagnosis_type: str = Field(..., pattern=r"^(primary|secondary|differential|ruled_out)$")
     clinical_status: str = Field(
         default="active",
         pattern=r"^(active|recurrence|relapse|inactive|remission|resolved)$",

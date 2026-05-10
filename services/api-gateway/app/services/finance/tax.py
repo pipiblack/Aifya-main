@@ -8,14 +8,17 @@ component when a caller already knows which rate applies.
 
 from __future__ import annotations
 
-import uuid
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import TaxRate
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _QUANT = Decimal("0.01")
 
@@ -51,9 +54,7 @@ def calc_vat_exclusive(net_amount: Decimal, rate: Decimal) -> tuple[Decimal, Dec
     return _q(net_amount + vat), _q(vat)
 
 
-def calc_withholding(
-    gross_amount: Decimal, rate: Decimal
-) -> tuple[Decimal, Decimal]:
+def calc_withholding(gross_amount: Decimal, rate: Decimal) -> tuple[Decimal, Decimal]:
     """
     Compute withholding tax — supplier receives ``net``, ``wht`` goes to authority.
 

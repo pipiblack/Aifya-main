@@ -1,7 +1,15 @@
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import (
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,23 +31,15 @@ class Prescription(AuditMixin, Base):
         Index("ix_prescriptions_status", "facility_id", "status"),
     )
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    prescriber_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    prescriber_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Drug
     drug_name: Mapped[str] = mapped_column(String(300), nullable=False)
     drug_code: Mapped[str | None] = mapped_column(String(50))  # Formulary code
     generic_name: Mapped[str | None] = mapped_column(String(300))
-    is_keml: Mapped[bool] = mapped_column(
-        default=False, nullable=False
-    )  # Kenya Essential Medicines List
+    is_keml: Mapped[bool] = mapped_column(default=False, nullable=False)  # Kenya Essential Medicines List
     atc_code: Mapped[str | None] = mapped_column(String(20))  # ATC classification
 
     # Dosage
@@ -49,9 +49,7 @@ class Prescription(AuditMixin, Base):
     route: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # oral, iv, im, sc, topical, inhaled, rectal, sublingual
-    frequency: Mapped[str] = mapped_column(
-        String(50), nullable=False
-    )  # od, bd, tds, qds, prn, stat, nocte
+    frequency: Mapped[str] = mapped_column(String(50), nullable=False)  # od, bd, tds, qds, prn, stat, nocte
     duration_days: Mapped[int | None] = mapped_column(Integer)
     quantity: Mapped[int | None] = mapped_column(Integer)
 
@@ -59,9 +57,7 @@ class Prescription(AuditMixin, Base):
     instructions: Mapped[str | None] = mapped_column(Text)  # Special instructions
 
     # Drug interaction check (CRITICAL — must run before save)
-    interaction_checked: Mapped[bool] = mapped_column(
-        default=False, nullable=False
-    )
+    interaction_checked: Mapped[bool] = mapped_column(default=False, nullable=False)
     interactions: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
     # [{severity: 'critical'|'major'|'moderate'|'minor', drug, description}]
 
@@ -69,14 +65,10 @@ class Prescription(AuditMixin, Base):
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False
     )  # pending, dispensed, partially_dispensed, cancelled, on_hold
-    dispensed_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    dispensed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     dispensed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dispensed_quantity: Mapped[int | None] = mapped_column(Integer)
-    substitution_drug: Mapped[str | None] = mapped_column(
-        String(300)
-    )  # If generic substitution
+    substitution_drug: Mapped[str | None] = mapped_column(String(300))  # If generic substitution
 
     # Refill
     refills_allowed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

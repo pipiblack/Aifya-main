@@ -70,9 +70,7 @@ async def list_schedules(
 async def create_schedule(
     data: DoctorScheduleCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> DoctorScheduleWithName:
     """
     Create a doctor availability schedule.
@@ -156,9 +154,7 @@ async def list_appointments(
 async def create_appointment(
     data: AppointmentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "receptionist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "receptionist", "admin", "facility_admin")),
 ) -> AppointmentResponse:
     """
     Book a new appointment.
@@ -209,9 +205,7 @@ async def update_appointment(
     appointment_id: uuid.UUID,
     data: AppointmentUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "nurse", "receptionist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "nurse", "receptionist", "admin", "facility_admin")),
 ) -> AppointmentResponse:
     """
     Update an appointment (reschedule, change status, cancel).
@@ -242,9 +236,7 @@ async def check_in_appointment(
     appointment_id: uuid.UUID,
     data: AppointmentCheckIn,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("nurse", "receptionist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("nurse", "receptionist", "admin", "facility_admin")),
 ) -> AppointmentResponse:
     """
     Check in a patient for their appointment.

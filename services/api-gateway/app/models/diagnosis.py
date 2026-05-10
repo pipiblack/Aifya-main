@@ -1,7 +1,7 @@
 import uuid
-from datetime import date, datetime
+from datetime import date
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import Date, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,15 +22,9 @@ class Diagnosis(AuditMixin, Base):
         Index("ix_diagnoses_icd10", "icd10_code"),
     )
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    diagnosed_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    diagnosed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # ICD-10
     icd10_code: Mapped[str] = mapped_column(String(20), nullable=False)

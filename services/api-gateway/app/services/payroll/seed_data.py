@@ -8,13 +8,15 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.payroll import NSSFTier, PAYEBand, StatutoryRate
 from app.models.payroll_extra import LeaveType
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 # ── Effective dates ──────────────────────────────────────────────────────────
 PAYE_EFFECTIVE_FROM = date(2023, 7, 1)
@@ -157,13 +159,17 @@ async def seed_payroll_defaults(db: AsyncSession) -> None:
     """
     # PAYE bands
     existing_paye = (
-        await db.execute(
-            select(PAYEBand).where(
-                PAYEBand.facility_id.is_(None),
-                PAYEBand.effective_from == PAYE_EFFECTIVE_FROM,
+        (
+            await db.execute(
+                select(PAYEBand).where(
+                    PAYEBand.facility_id.is_(None),
+                    PAYEBand.effective_from == PAYE_EFFECTIVE_FROM,
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if existing_paye is None:
         for band in PAYE_BAND_DEFAULTS:
             db.add(
@@ -178,13 +184,17 @@ async def seed_payroll_defaults(db: AsyncSession) -> None:
 
     # NSSF tiers
     existing_nssf = (
-        await db.execute(
-            select(NSSFTier).where(
-                NSSFTier.facility_id.is_(None),
-                NSSFTier.effective_from == NSSF_EFFECTIVE_FROM,
+        (
+            await db.execute(
+                select(NSSFTier).where(
+                    NSSFTier.facility_id.is_(None),
+                    NSSFTier.effective_from == NSSF_EFFECTIVE_FROM,
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if existing_nssf is None:
         for tier in NSSF_TIER_DEFAULTS:
             db.add(
@@ -202,15 +212,19 @@ async def seed_payroll_defaults(db: AsyncSession) -> None:
     # Statutory rates
     for rate_def in STATUTORY_RATE_DEFAULTS:
         existing = (
-            await db.execute(
-                select(StatutoryRate).where(
-                    StatutoryRate.facility_id.is_(None),
-                    StatutoryRate.category == rate_def["category"],
-                    StatutoryRate.name == rate_def["name"],
-                    StatutoryRate.effective_from == RATE_EFFECTIVE_FROM,
+            (
+                await db.execute(
+                    select(StatutoryRate).where(
+                        StatutoryRate.facility_id.is_(None),
+                        StatutoryRate.category == rate_def["category"],
+                        StatutoryRate.name == rate_def["name"],
+                        StatutoryRate.effective_from == RATE_EFFECTIVE_FROM,
+                    )
                 )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if existing is None:
             db.add(
                 StatutoryRate(
@@ -227,13 +241,17 @@ async def seed_payroll_defaults(db: AsyncSession) -> None:
     # Leave types
     for lt in LEAVE_TYPE_DEFAULTS:
         existing_lt = (
-            await db.execute(
-                select(LeaveType).where(
-                    LeaveType.facility_id.is_(None),
-                    LeaveType.name == lt["name"],
+            (
+                await db.execute(
+                    select(LeaveType).where(
+                        LeaveType.facility_id.is_(None),
+                        LeaveType.name == lt["name"],
+                    )
                 )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if existing_lt is None:
             db.add(
                 LeaveType(

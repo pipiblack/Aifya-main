@@ -110,6 +110,7 @@ class STKPushApiRequest(BaseModel):
     @param reference: Account reference shown on M-Pesa (typically invoice number)
     @param description: Optional transaction description
     """
+
     phone_number: str
     amount_kes: int
     invoice_id: str | None = None
@@ -126,6 +127,7 @@ class MPesaStatusResponse(BaseModel):
     @param environment: sandbox or production
     @param shortcode: Configured business shortcode
     """
+
     configured: bool
     environment: str = ""
     shortcode: str = ""
@@ -383,8 +385,9 @@ async def _record_mpesa_payment(
     @param callback: Parsed M-Pesa callback data
     @param account_ref: Account reference from C2B (invoice number)
     """
-    from app.models.billing import Invoice, Payment
     from sqlalchemy import select
+
+    from app.models.billing import Invoice, Payment
 
     try:
         # Idempotency: do not double-record a payment for the same M-Pesa receipt

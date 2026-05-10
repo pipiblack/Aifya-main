@@ -3,8 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-
 # ── Helper data ──────────────────────────────────────────────────────────────
+
 
 def _inventory_item_payload() -> dict[str, object]:
     """Return a valid pharmacy inventory item creation payload."""
@@ -153,18 +153,14 @@ async def test_list_inventory_pagination(client: AsyncClient) -> None:
         payload = {**_inventory_item_payload(), "drug_code": f"DRUG-{i}", "drug_name": f"Drug {i}"}
         await client.post("/api/v1/pharmacy/inventory", json=payload)
 
-    response = await client.get(
-        "/api/v1/pharmacy/inventory", params={"page": "1", "page_size": "2"}
-    )
+    response = await client.get("/api/v1/pharmacy/inventory", params={"page": "1", "page_size": "2"})
     data = response.json()
     assert data["total"] == 3
     assert len(data["items"]) == 2
     assert data["page"] == 1
     assert data["page_size"] == 2
 
-    response = await client.get(
-        "/api/v1/pharmacy/inventory", params={"page": "2", "page_size": "2"}
-    )
+    response = await client.get("/api/v1/pharmacy/inventory", params={"page": "2", "page_size": "2"})
     data = response.json()
     assert len(data["items"]) == 1
     assert data["page"] == 2
@@ -176,9 +172,7 @@ async def test_list_inventory_pagination(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_update_inventory_item(client: AsyncClient) -> None:
     """Test updating a pharmacy inventory item."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
 
     update_payload: dict[str, object] = {
@@ -187,9 +181,7 @@ async def test_update_inventory_item(client: AsyncClient) -> None:
         "selling_price_cents": 600,
         "shelf_location": "A-12",
     }
-    response = await client.patch(
-        f"/api/v1/pharmacy/inventory/{item_id}", json=update_payload
-    )
+    response = await client.patch(f"/api/v1/pharmacy/inventory/{item_id}", json=update_payload)
 
     assert response.status_code == 200
     data = response.json()
@@ -206,14 +198,10 @@ async def test_update_inventory_item(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_update_inventory_item_deactivate(client: AsyncClient) -> None:
     """Test deactivating a pharmacy inventory item."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
 
-    response = await client.patch(
-        f"/api/v1/pharmacy/inventory/{item_id}", json={"is_active": False}
-    )
+    response = await client.patch(f"/api/v1/pharmacy/inventory/{item_id}", json={"is_active": False})
 
     assert response.status_code == 200
     data = response.json()
@@ -239,9 +227,7 @@ async def test_update_inventory_item_not_found(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_receive_stock(client: AsyncClient) -> None:
     """Test receiving stock increases inventory and returns a transaction record."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
 
     receipt_payload: dict[str, object] = {
@@ -273,9 +259,7 @@ async def test_receive_stock(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_receive_stock_minimal(client: AsyncClient) -> None:
     """Test receiving stock with only required fields."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
 
     receipt_payload: dict[str, object] = {
@@ -305,9 +289,7 @@ async def test_receive_stock_invalid_item(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_receive_stock_zero_quantity(client: AsyncClient) -> None:
     """Test validation rejects zero quantity on stock receipt."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
 
     receipt_payload: dict[str, object] = {
@@ -326,9 +308,7 @@ async def test_receive_stock_zero_quantity(client: AsyncClient) -> None:
 async def test_stock_adjustment_positive(client: AsyncClient) -> None:
     """Test positive stock adjustment (correction/found stock)."""
     # Create item and receive initial stock
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
     await client.post(
         "/api/v1/pharmacy/stock/receive",
@@ -357,9 +337,7 @@ async def test_stock_adjustment_positive(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_stock_adjustment_negative(client: AsyncClient) -> None:
     """Test negative stock adjustment (loss, damage, expiry)."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
     await client.post(
         "/api/v1/pharmacy/stock/receive",
@@ -383,9 +361,7 @@ async def test_stock_adjustment_negative(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_stock_adjustment_missing_reason(client: AsyncClient) -> None:
     """Test validation rejects stock adjustment without a reason."""
-    create_response = await client.post(
-        "/api/v1/pharmacy/inventory", json=_inventory_item_payload()
-    )
+    create_response = await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     item_id = create_response.json()["id"]
 
     adjustment_payload: dict[str, object] = {

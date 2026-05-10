@@ -10,13 +10,16 @@ the API contract stays stable.
 
 from __future__ import annotations
 
-import uuid
-from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
+from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, case, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import case, func, select
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @dataclass(frozen=True)
@@ -33,29 +36,29 @@ class FacilityKpis:
 
     period_start: date
     period_end: date
-    patient_volume: float                # encounters per day average
-    bed_occupancy_rate: float            # 0-100 %
-    average_length_of_stay: float        # days
-    readmission_rate: float              # 0-100 %
-    revenue_per_patient: float           # KES (whole)
-    claim_rejection_rate: float          # 0-100 %
-    lab_turnaround_time: float           # avg hours
-    emergency_response_time: float       # avg minutes
-    staff_attendance_rate: float         # 0-100 %
-    patient_satisfaction: float          # 0-100 score (placeholder)
+    patient_volume: float  # encounters per day average
+    bed_occupancy_rate: float  # 0-100 %
+    average_length_of_stay: float  # days
+    readmission_rate: float  # 0-100 %
+    revenue_per_patient: float  # KES (whole)
+    claim_rejection_rate: float  # 0-100 %
+    lab_turnaround_time: float  # avg hours
+    emergency_response_time: float  # avg minutes
+    staff_attendance_rate: float  # 0-100 %
+    patient_satisfaction: float  # 0-100 score (placeholder)
     total_encounters: int
     total_admissions: int
-    total_revenue: float                 # KES whole
+    total_revenue: float  # KES whole
 
 
 def _start_of_day(d: date) -> datetime:
     """Return UTC datetime for the start of a date."""
-    return datetime.combine(d, time.min, tzinfo=timezone.utc)
+    return datetime.combine(d, time.min, tzinfo=UTC)
 
 
 def _end_of_day(d: date) -> datetime:
     """Return UTC datetime for the end of a date (inclusive)."""
-    return datetime.combine(d, time.max, tzinfo=timezone.utc)
+    return datetime.combine(d, time.max, tzinfo=UTC)
 
 
 async def get_facility_kpis(
@@ -81,14 +84,13 @@ async def get_facility_kpis(
     end_dt = _end_of_day(end)
 
     # Lazy imports to avoid circular dependencies at module import time
-    from app.models.billing import Invoice, Payment
+    from app.models.billing import Payment
     from app.models.emergency import EmergencyVisit
     from app.models.encounter import Encounter
     from app.models.hr import Attendance
     from app.models.insurance import InsuranceClaim
     from app.models.ipd import Admission, Bed
     from app.models.lab import LabOrder, LabResult
-    from app.models.patient import Patient
 
     # ── Patient volume ────────────────────────────────────────────────────
     enc_q = await db.execute(
@@ -147,8 +149,7 @@ async def get_facility_kpis(
                 Admission.admitted_at <= end_dt,
                 Admission.is_deleted == False,  # noqa: E712
                 Admission.patient_id.in_(
-                    select(Admission.patient_id)
-                    .where(
+                    select(Admission.patient_id).where(
                         Admission.facility_id == facility_id,
                         Admission.discharged_at.is_not(None),
                         Admission.discharged_at >= start_dt - timedelta(days=30),
@@ -159,9 +160,7 @@ async def get_facility_kpis(
             )
         )
         readmission_count = int(readmits_q.scalar() or 0)
-    readmission_rate = (
-        readmission_count / total_admissions * 100 if total_admissions else 0.0
-    )
+    readmission_rate = readmission_count / total_admissions * 100 if total_admissions else 0.0
 
     # ── Revenue per patient ───────────────────────────────────────────────
     rev_q = await db.execute(
@@ -184,9 +183,7 @@ async def get_facility_kpis(
         )
     )
     distinct_patients = int(distinct_pt_q.scalar() or 0)
-    revenue_per_patient = (
-        total_revenue / distinct_patients if distinct_patients else 0.0
-    )
+    revenue_per_patient = total_revenue / distinct_patients if distinct_patients else 0.0
 
     # ── Claim rejection rate ──────────────────────────────────────────────
     claims_q = await db.execute(
@@ -276,9 +273,7 @@ async def get_facility_kpis(
     att_row = att_q.one()
     total_attendance = int(att_row[0] or 0)
     present_count = int(att_row[1] or 0)
-    staff_attendance_rate = (
-        present_count / total_attendance * 100 if total_attendance else 0.0
-    )
+    staff_attendance_rate = present_count / total_attendance * 100 if total_attendance else 0.0
 
     # ── Patient satisfaction (placeholder) ────────────────────────────────
     # Wire to feedback table when it exists.
@@ -363,10 +358,7 @@ async def get_metric_trend(
             .group_by("b")
             .order_by("b")
         )
-        return [
-            KpiTrendPoint(bucket=row[0], value=float(int(row[1] or 0) / 100.0))
-            for row in q.all()
-        ]
+        return [KpiTrendPoint(bucket=row[0], value=float(int(row[1] or 0) / 100.0)) for row in q.all()]
 
     if metric == "claim_rejection_rate":
         q = await db.execute(

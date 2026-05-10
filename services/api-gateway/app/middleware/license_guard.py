@@ -10,14 +10,11 @@ Uses Redis cache for performance (avoids DB hit on every request).
 Falls back to DB if cache miss.
 """
 
-import json
 from datetime import timedelta
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
-
-from app.config import settings
 
 # Map URL prefixes to module names for tier gating
 ROUTE_MODULE_MAP: dict[str, str] = {
@@ -61,9 +58,7 @@ class LicenseGuardMiddleware(BaseHTTPMiddleware):
     Reads facility_id from request state (set by auth dependency).
     """
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """
         Check license entitlements before processing the request.
 

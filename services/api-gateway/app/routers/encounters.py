@@ -95,9 +95,7 @@ async def get_opd_queue(
 @router.post("/queue/call-next", response_model=EncounterResponse)
 async def call_next_patient(
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin", "facility_admin")),
 ) -> EncounterResponse:
     """
     Call the next patient in the OPD queue (highest priority waiting).
@@ -134,9 +132,7 @@ async def get_encounter(
     @returns Encounter details
     """
     service = EncounterService(db)
-    encounter = await service.get_encounter(
-        encounter_id, current_user.facility_id
-    )
+    encounter = await service.get_encounter(encounter_id, current_user.facility_id)
     if not encounter:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -231,9 +227,7 @@ async def get_encounter_vitals(
     @returns List of vital sign recordings
     """
     service = VitalsService(db)
-    vitals = await service.get_encounter_vitals(
-        encounter_id, current_user.facility_id
-    )
+    vitals = await service.get_encounter_vitals(encounter_id, current_user.facility_id)
     return [VitalSignResponse.model_validate(v) for v in vitals]
 
 
@@ -249,9 +243,7 @@ async def add_diagnosis(
     encounter_id: uuid.UUID,
     data: DiagnosisCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin", "facility_admin")),
 ) -> DiagnosisResponse:
     """
     Add a diagnosis (ICD-10) to an encounter.
@@ -294,9 +286,7 @@ async def get_encounter_diagnoses(
     @returns List of diagnoses
     """
     service = DiagnosisService(db)
-    diagnoses = await service.get_encounter_diagnoses(
-        encounter_id, current_user.facility_id
-    )
+    diagnoses = await service.get_encounter_diagnoses(encounter_id, current_user.facility_id)
     return [DiagnosisResponse.model_validate(d) for d in diagnoses]
 
 
@@ -312,9 +302,7 @@ async def create_prescription(
     encounter_id: uuid.UUID,
     data: PrescriptionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin", "facility_admin")),
 ) -> PrescriptionWithInteractions:
     """
     Create a prescription with drug interaction checking.
@@ -341,9 +329,7 @@ async def create_prescription(
         DrugInteractionAlert(
             severity=i.get("severity", "moderate"),
             interacting_drug=(
-                ", ".join(i.get("affected_items", []))
-                if i.get("affected_items")
-                else i.get("interacting_drug", "")
+                ", ".join(i.get("affected_items", [])) if i.get("affected_items") else i.get("interacting_drug", "")
             ),
             description=i.get("message", i.get("description", "")),
         )
@@ -374,9 +360,7 @@ async def get_encounter_prescriptions(
     @returns List of prescriptions
     """
     service = PrescriptionService(db)
-    prescriptions = await service.get_encounter_prescriptions(
-        encounter_id, current_user.facility_id
-    )
+    prescriptions = await service.get_encounter_prescriptions(encounter_id, current_user.facility_id)
     return [PrescriptionResponse.model_validate(p) for p in prescriptions]
 
 
@@ -392,9 +376,7 @@ async def create_lab_order(
     encounter_id: uuid.UUID,
     data: LabOrderCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("doctor", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("doctor", "admin", "facility_admin")),
 ) -> LabOrderResponse:
     """
     Create a lab order with one or more tests.
@@ -437,7 +419,5 @@ async def get_encounter_lab_orders(
     @returns List of lab orders
     """
     service = LabService(db)
-    orders = await service.get_encounter_orders(
-        encounter_id, current_user.facility_id
-    )
+    orders = await service.get_encounter_orders(encounter_id, current_user.facility_id)
     return [LabOrderResponse.model_validate(o) for o in orders]

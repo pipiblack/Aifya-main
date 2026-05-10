@@ -9,13 +9,16 @@ no-show rate, day of week, time of day, appointment type, and lead time.
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, time
+from datetime import date, time
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.analytics.models import NoShowPrediction
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -105,7 +108,9 @@ async def predict_no_show(
 
         # --- Factor: Historical no-show rate ---
         total_past_result = await db.execute(
-            select(func.count()).select_from(Appointment).where(
+            select(func.count())
+            .select_from(Appointment)
+            .where(
                 Appointment.facility_id == facility_id,
                 Appointment.patient_id == patient_id,
                 Appointment.appointment_date < date.today(),
@@ -115,7 +120,9 @@ async def predict_no_show(
         total_past: int = total_past_result.scalar_one()
 
         no_show_count_result = await db.execute(
-            select(func.count()).select_from(Appointment).where(
+            select(func.count())
+            .select_from(Appointment)
+            .where(
                 Appointment.facility_id == facility_id,
                 Appointment.patient_id == patient_id,
                 Appointment.status == "no_show",
@@ -158,7 +165,9 @@ async def predict_no_show(
 
         # --- Factor: Prior cancellations ---
         cancel_count_result = await db.execute(
-            select(func.count()).select_from(Appointment).where(
+            select(func.count())
+            .select_from(Appointment)
+            .where(
                 Appointment.facility_id == facility_id,
                 Appointment.patient_id == patient_id,
                 Appointment.status == "cancelled",

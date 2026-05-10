@@ -66,9 +66,7 @@ async def update_chart(
     patient_id: uuid.UUID,
     data: DentalChartUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "dentist")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "dentist")),
 ) -> DentalChartResponse:
     """
     Update dental chart.
@@ -115,9 +113,7 @@ async def list_visits(
 async def create_visit(
     data: DentalVisitCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "dentist")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "dentist")),
 ) -> DentalVisitResponse:
     """
     Create a dental visit.
@@ -190,9 +186,7 @@ async def list_treatment_plans(
 async def create_treatment_plan(
     data: DentalTreatmentPlanCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "dentist")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "dentist")),
 ) -> DentalTreatmentPlanResponse:
     """
     Create a dental treatment plan.

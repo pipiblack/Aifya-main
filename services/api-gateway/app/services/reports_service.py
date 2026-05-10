@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,12 +8,12 @@ from app.models.appointment import Appointment
 from app.models.billing import Invoice, Payment
 from app.models.diagnosis import Diagnosis
 from app.models.encounter import Encounter
-from app.models.ipd import Admission, Bed, Ward
+from app.models.ipd import Admission, Bed
 from app.models.lab import LabOrder, LabResult
 from app.models.mch import ANCProfile, DeliveryRecord, Immunization
 from app.models.patient import Patient
 from app.models.pharmacy import Dispensing, PharmacyItem
-from app.models.radiology import ImagingOrder, ImagingResult
+from app.models.radiology import ImagingOrder
 from app.models.report import GeneratedReport, ReportTemplate
 from app.schemas.report import (
     DashboardTrends,
@@ -147,7 +147,7 @@ class ReportsService:
         if not template:
             raise ValueError("Report template not found")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
 
         count_result = await self.db.execute(
@@ -224,6 +224,7 @@ class ReportsService:
             return await self._report_moh_705a(facility_id, date_from, date_to)
         elif code in ("MOH_705B", "MOH_710", "MOH_711", "MOH_713", "MOH_718"):
             from app.services.dhis2.sync import DHIS2SyncService
+
             sync = DHIS2SyncService(self.db)
             report = await sync._generate_report(code, facility_id, date_from, date_to)
             if report:
@@ -234,9 +235,7 @@ class ReportsService:
         else:
             return {"rows": []}, {"message": "Custom report — no built-in query"}, 0
 
-    async def _report_opd_daily(
-        self, facility_id: uuid.UUID, date_from: date, date_to: date
-    ) -> tuple[dict, dict, int]:
+    async def _report_opd_daily(self, facility_id: uuid.UUID, date_from: date, date_to: date) -> tuple[dict, dict, int]:
         """
         OPD daily attendance report.
 
@@ -262,10 +261,7 @@ class ReportsService:
             .order_by(func.date(Encounter.started_at).asc())
         )
         rows = result.all()
-        data = [
-            {"date": str(r.visit_date), "total_visits": r.total_visits, "triaged": r.triaged}
-            for r in rows
-        ]
+        data = [{"date": str(r.visit_date), "total_visits": r.total_visits, "triaged": r.triaged} for r in rows]
 
         total_visits = sum(r.total_visits for r in rows)
         return (
@@ -385,16 +381,12 @@ class ReportsService:
                 "critical_results": critical_count,
             },
             {
-                "completion_rate": round(
-                    (completed_count / total_count * 100) if total_count else 0, 1
-                ),
+                "completion_rate": round((completed_count / total_count * 100) if total_count else 0, 1),
             },
             1,
         )
 
-    async def _report_pharmacy_stock(
-        self, facility_id: uuid.UUID
-    ) -> tuple[dict, dict, int]:
+    async def _report_pharmacy_stock(self, facility_id: uuid.UUID) -> tuple[dict, dict, int]:
         """
         Pharmacy stock status report.
 
@@ -439,9 +431,7 @@ class ReportsService:
             len(rows),
         )
 
-    async def _report_revenue(
-        self, facility_id: uuid.UUID, date_from: date, date_to: date
-    ) -> tuple[dict, dict, int]:
+    async def _report_revenue(self, facility_id: uuid.UUID, date_from: date, date_to: date) -> tuple[dict, dict, int]:
         """
         Revenue summary report (KES cents).
 
@@ -477,16 +467,12 @@ class ReportsService:
                 "outstanding_cents": billed_total - paid_total,
             },
             {
-                "collection_rate": round(
-                    (paid_total / billed_total * 100) if billed_total else 0, 1
-                ),
+                "collection_rate": round((paid_total / billed_total * 100) if billed_total else 0, 1),
             },
             1,
         )
 
-    async def _report_moh_705a(
-        self, facility_id: uuid.UUID, date_from: date, date_to: date
-    ) -> tuple[dict, dict, int]:
+    async def _report_moh_705a(self, facility_id: uuid.UUID, date_from: date, date_to: date) -> tuple[dict, dict, int]:
         """
         MOH 705A — Outpatient Summary (daily disease returns).
         Groups OPD diagnoses by ICD-10 code.
@@ -514,10 +500,7 @@ class ReportsService:
             .order_by(func.count(Diagnosis.id).desc())
         )
         rows = result.all()
-        data = [
-            {"icd_code": r.icd_code, "description": r.description, "cases": r.case_count}
-            for r in rows
-        ]
+        data = [{"icd_code": r.icd_code, "description": r.description, "cases": r.case_count} for r in rows]
 
         return (
             {"rows": data},
@@ -553,10 +536,7 @@ class ReportsService:
             .limit(20)
         )
         rows = result.all()
-        data = [
-            {"icd_code": r.icd_code, "description": r.description, "count": r.case_count}
-            for r in rows
-        ]
+        data = [{"icd_code": r.icd_code, "description": r.description, "count": r.case_count} for r in rows]
 
         return ({"rows": data}, {"top_count": len(data)}, len(data))
 
@@ -610,9 +590,7 @@ class ReportsService:
 
     # ── Facility Dashboard ───────────────────────────────────────────────
 
-    async def get_facility_dashboard(
-        self, facility_id: uuid.UUID
-    ) -> FacilityDashboard:
+    async def get_facility_dashboard(self, facility_id: uuid.UUID) -> FacilityDashboard:
         """
         Get facility-wide dashboard analytics for today.
 
@@ -810,9 +788,7 @@ class ReportsService:
 
     # ── Dashboard Trends ─────────────────────────────────────────────────
 
-    async def get_dashboard_trends(
-        self, facility_id: uuid.UUID, days: int = 14
-    ) -> DashboardTrends:
+    async def get_dashboard_trends(self, facility_id: uuid.UUID, days: int = 14) -> DashboardTrends:
         """
         Get time-series trend data for the last N days.
 
@@ -876,10 +852,7 @@ class ReportsService:
             .limit(limit)
         )
         rows = result.all()
-        return [
-            TopDiagnosis(icd_code=r.icd_code, description=r.description or "", count=r.case_count)
-            for r in rows
-        ]
+        return [TopDiagnosis(icd_code=r.icd_code, description=r.description or "", count=r.case_count) for r in rows]
 
     # ── Summary ──────────────────────────────────────────────────────────
 
@@ -940,9 +913,7 @@ class ReportsService:
         )
         return result.scalar() or 0
 
-    async def _count_date(
-        self, model: type, facility_id: uuid.UUID, d_from: date, d_to: date
-    ) -> int:
+    async def _count_date(self, model: type, facility_id: uuid.UUID, d_from: date, d_to: date) -> int:
         """Count records created within a date range."""
         result = await self.db.execute(
             select(func.count(model.id)).where(

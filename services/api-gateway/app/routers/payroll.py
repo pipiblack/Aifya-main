@@ -6,7 +6,7 @@ router.
 """
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
@@ -26,7 +26,7 @@ from app.models.payroll import (
     PayrollRun,
     StatutoryRate,
 )
-from app.models.payroll_extra import LeaveType, PayrollLeaveRequest
+from app.models.payroll_extra import LeaveType
 from app.schemas.payroll import (
     EmployeeCreate,
     EmployeeListItem,
@@ -72,7 +72,6 @@ from app.services.payroll.reports import (
     get_payroll_cost_trend,
     get_shif_schedule,
 )
-
 
 router = APIRouter(dependencies=[Depends(require_module("hr"))])
 
@@ -125,9 +124,7 @@ async def list_employees(
 async def create_employee(
     data: EmployeeCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "hr_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "hr_admin")),
 ) -> EmployeeResponse:
     """Create a payroll-grade employee record."""
     emp = Employee(
@@ -150,18 +147,20 @@ async def get_employee(
 ) -> EmployeeResponse:
     """Fetch a single employee."""
     emp = (
-        await db.execute(
-            select(Employee).where(
-                Employee.id == employee_id,
-                Employee.facility_id == current_user.facility_id,
-                Employee.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == current_user.facility_id,
+                    Employee.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if emp is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
     return EmployeeResponse.model_validate(emp)
 
 
@@ -170,24 +169,24 @@ async def update_employee(
     employee_id: uuid.UUID,
     data: EmployeeUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "hr_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "hr_admin")),
 ) -> EmployeeResponse:
     """Patch an employee record."""
     emp = (
-        await db.execute(
-            select(Employee).where(
-                Employee.id == employee_id,
-                Employee.facility_id == current_user.facility_id,
-                Employee.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == current_user.facility_id,
+                    Employee.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if emp is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(emp, field, value)
     emp.updated_by = current_user.user_id
@@ -205,37 +204,41 @@ async def add_salary(
     employee_id: uuid.UUID,
     data: SalaryStructureCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "hr_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "hr_admin")),
 ) -> SalaryStructureResponse:
     """Add a salary effective record (HR admin only). Closes the previous
     open record by setting its `effective_to` to (effective_from − 1)."""
     emp = (
-        await db.execute(
-            select(Employee).where(
-                Employee.id == employee_id,
-                Employee.facility_id == current_user.facility_id,
-                Employee.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(Employee).where(
+                    Employee.id == employee_id,
+                    Employee.facility_id == current_user.facility_id,
+                    Employee.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if emp is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
 
     # Close any currently-open record
     open_records = (
-        await db.execute(
-            select(EmployeeSalary).where(
-                EmployeeSalary.employee_id == employee_id,
-                EmployeeSalary.facility_id == current_user.facility_id,
-                EmployeeSalary.is_deleted.is_(False),
-                EmployeeSalary.effective_to.is_(None),
+        (
+            await db.execute(
+                select(EmployeeSalary).where(
+                    EmployeeSalary.employee_id == employee_id,
+                    EmployeeSalary.facility_id == current_user.facility_id,
+                    EmployeeSalary.is_deleted.is_(False),
+                    EmployeeSalary.effective_to.is_(None),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for sal in open_records:
         sal.effective_to = date.fromordinal(data.effective_from.toordinal() - 1)
 
@@ -270,9 +273,7 @@ async def add_salary(
 async def create_payroll_run(
     data: PayrollRunCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "hr_officer", "hr_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "hr_officer", "hr_admin")),
     x_idempotency_key: str | None = Header(None),
 ) -> PayrollRunResponse:
     """Calculate a draft payroll run (HR officer).
@@ -290,9 +291,7 @@ async def create_payroll_run(
             user_id=current_user.user_id,
         )
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     return await _build_run_response(db, current_user.facility_id, run)
 
@@ -327,18 +326,20 @@ async def get_payroll_run(
 ) -> PayrollRunResponse:
     """Get a payroll run with all line items."""
     run = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.id == run_id,
-                PayrollRun.facility_id == current_user.facility_id,
-                PayrollRun.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollRun).where(
+                    PayrollRun.id == run_id,
+                    PayrollRun.facility_id == current_user.facility_id,
+                    PayrollRun.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if run is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Payroll run not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payroll run not found")
     return await _build_run_response(db, current_user.facility_id, run)
 
 
@@ -346,24 +347,24 @@ async def get_payroll_run(
 async def approve_payroll_run(
     run_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "finance_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "finance_admin")),
 ) -> PayrollRunResponse:
     """Approve a draft run; triggers GL posting (gracefully degrades)."""
     run = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.id == run_id,
-                PayrollRun.facility_id == current_user.facility_id,
-                PayrollRun.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollRun).where(
+                    PayrollRun.id == run_id,
+                    PayrollRun.facility_id == current_user.facility_id,
+                    PayrollRun.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if run is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Payroll run not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payroll run not found")
     if run.status != "draft":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -372,14 +373,12 @@ async def approve_payroll_run(
 
     run.status = "approved"
     run.approved_by = current_user.user_id
-    run.approved_at = datetime.now(timezone.utc)
+    run.approved_at = datetime.now(UTC)
     run.updated_by = current_user.user_id
     await db.flush()
 
     # Post to GL (best-effort)
-    txn_id = await post_payroll_to_gl(
-        db=db, run=run, user_id=current_user.user_id
-    )
+    txn_id = await post_payroll_to_gl(db=db, run=run, user_id=current_user.user_id)
     if txn_id is not None:
         run.gl_transaction_id = txn_id
         run.status = "posted"
@@ -407,14 +406,18 @@ async def get_run_payslip(
 
     if not is_privileged:
         emp_row = (
-            await db.execute(
-                select(Employee).where(
-                    Employee.id == employee_id,
-                    Employee.facility_id == current_user.facility_id,
-                    Employee.is_deleted.is_(False),
+            (
+                await db.execute(
+                    select(Employee).where(
+                        Employee.id == employee_id,
+                        Employee.facility_id == current_user.facility_id,
+                        Employee.is_deleted.is_(False),
+                    )
                 )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         owns_record = (
             emp_row is not None
             and bool(current_user.email)
@@ -434,19 +437,13 @@ async def get_run_payslip(
             employee_id=employee_id,
         )
     except PayslipNotAvailableError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     media = "application/pdf" if pdf_bytes[:4] == b"%PDF" else "text/plain"
     return StreamingResponse(
         iter([pdf_bytes]),
         media_type=media,
-        headers={
-            "Content-Disposition": (
-                f'attachment; filename="payslip-{run_id}-{employee_id}.pdf"'
-            )
-        },
+        headers={"Content-Disposition": (f'attachment; filename="payslip-{run_id}-{employee_id}.pdf"')},
     )
 
 
@@ -465,14 +462,18 @@ async def list_employee_payslips(
     is_privileged = bool(privileged_roles.intersection(current_user.roles))
     if not is_privileged:
         emp_row = (
-            await db.execute(
-                select(Employee).where(
-                    Employee.id == employee_id,
-                    Employee.facility_id == current_user.facility_id,
-                    Employee.is_deleted.is_(False),
+            (
+                await db.execute(
+                    select(Employee).where(
+                        Employee.id == employee_id,
+                        Employee.facility_id == current_user.facility_id,
+                        Employee.is_deleted.is_(False),
+                    )
                 )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         owns_record = (
             emp_row is not None
             and bool(current_user.email)
@@ -537,9 +538,7 @@ async def get_p9(
             year=year,
         )
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return P9Response(
         employee_id=data["employee_id"],
         employee_name=data["employee_name"],
@@ -564,9 +563,7 @@ async def paye_schedule(
     """KRA P10 PAYE schedule per employee."""
     return [
         {**r, "amount": str(r["amount"]), "gross": str(r["gross"])}
-        for r in await get_paye_schedule(
-            db, current_user.facility_id, month, year
-        )
+        for r in await get_paye_schedule(db, current_user.facility_id, month, year)
     ]
 
 
@@ -580,9 +577,7 @@ async def nssf_schedule(
     """NSSF schedule per employee."""
     return [
         {**r, "amount": str(r["amount"]), "gross": str(r["gross"])}
-        for r in await get_nssf_schedule(
-            db, current_user.facility_id, month, year
-        )
+        for r in await get_nssf_schedule(db, current_user.facility_id, month, year)
     ]
 
 
@@ -596,9 +591,7 @@ async def shif_schedule(
     """SHIF schedule per employee."""
     return [
         {**r, "amount": str(r["amount"]), "gross": str(r["gross"])}
-        for r in await get_shif_schedule(
-            db, current_user.facility_id, month, year
-        )
+        for r in await get_shif_schedule(db, current_user.facility_id, month, year)
     ]
 
 
@@ -623,9 +616,7 @@ async def leave_utilisation(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """Leave utilisation for the year."""
-    return await get_leave_utilisation(
-        db=db, facility_id=current_user.facility_id, year=year
-    )
+    return await get_leave_utilisation(db=db, facility_id=current_user.facility_id, year=year)
 
 
 @router.get("/reports/cost-trend")
@@ -635,9 +626,7 @@ async def cost_trend(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> list[dict]:
     """Per-month payroll cost trend."""
-    rows = await get_payroll_cost_trend(
-        db=db, facility_id=current_user.facility_id, year=year
-    )
+    rows = await get_payroll_cost_trend(db=db, facility_id=current_user.facility_id, year=year)
     return [
         {
             "month": r["month"],
@@ -696,9 +685,7 @@ async def list_statutory_rates(
 async def create_statutory_rate(
     data: StatutoryRateCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "finance_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "finance_admin")),
 ) -> StatutoryRateResponse:
     """Create a facility-scoped statutory rate override."""
     rate = StatutoryRate(
@@ -729,18 +716,24 @@ async def list_paye_bands(
     """List currently-effective PAYE bands."""
     today = date.today()
     rows = (
-        await db.execute(
-            select(PAYEBand).where(
-                PAYEBand.is_deleted.is_(False),
-                PAYEBand.effective_from <= today,
-                or_(PAYEBand.effective_to.is_(None), PAYEBand.effective_to >= today),
-                or_(
-                    PAYEBand.facility_id == current_user.facility_id,
-                    PAYEBand.facility_id.is_(None),
-                ),
-            ).order_by(PAYEBand.lower_limit.asc())
+        (
+            await db.execute(
+                select(PAYEBand)
+                .where(
+                    PAYEBand.is_deleted.is_(False),
+                    PAYEBand.effective_from <= today,
+                    or_(PAYEBand.effective_to.is_(None), PAYEBand.effective_to >= today),
+                    or_(
+                        PAYEBand.facility_id == current_user.facility_id,
+                        PAYEBand.facility_id.is_(None),
+                    ),
+                )
+                .order_by(PAYEBand.lower_limit.asc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return [PAYEBandResponse.model_validate(b) for b in rows]
 
 
@@ -752,18 +745,24 @@ async def list_nssf_tiers(
     """List currently-effective NSSF tiers."""
     today = date.today()
     rows = (
-        await db.execute(
-            select(NSSFTier).where(
-                NSSFTier.is_deleted.is_(False),
-                NSSFTier.effective_from <= today,
-                or_(NSSFTier.effective_to.is_(None), NSSFTier.effective_to >= today),
-                or_(
-                    NSSFTier.facility_id == current_user.facility_id,
-                    NSSFTier.facility_id.is_(None),
-                ),
-            ).order_by(NSSFTier.lower_limit.asc())
+        (
+            await db.execute(
+                select(NSSFTier)
+                .where(
+                    NSSFTier.is_deleted.is_(False),
+                    NSSFTier.effective_from <= today,
+                    or_(NSSFTier.effective_to.is_(None), NSSFTier.effective_to >= today),
+                    or_(
+                        NSSFTier.facility_id == current_user.facility_id,
+                        NSSFTier.facility_id.is_(None),
+                    ),
+                )
+                .order_by(NSSFTier.lower_limit.asc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return [NSSFTierResponse.model_validate(t) for t in rows]
 
 
@@ -777,16 +776,22 @@ async def list_leave_types(
 ) -> list[LeaveTypeResponse]:
     """List leave types (facility-specific + globals)."""
     rows = (
-        await db.execute(
-            select(LeaveType).where(
-                LeaveType.is_deleted.is_(False),
-                or_(
-                    LeaveType.facility_id == current_user.facility_id,
-                    LeaveType.facility_id.is_(None),
-                ),
-            ).order_by(LeaveType.name.asc())
+        (
+            await db.execute(
+                select(LeaveType)
+                .where(
+                    LeaveType.is_deleted.is_(False),
+                    or_(
+                        LeaveType.facility_id == current_user.facility_id,
+                        LeaveType.facility_id.is_(None),
+                    ),
+                )
+                .order_by(LeaveType.name.asc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return [LeaveTypeResponse.model_validate(lt) for lt in rows]
 
 
@@ -814,9 +819,7 @@ async def create_leave_request(
             user_id=current_user.user_id,
         )
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return LeaveRequestResponse.model_validate(req)
 
 
@@ -828,9 +831,7 @@ async def process_leave_request(
     leave_id: uuid.UUID,
     data: LeaveApprovalRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "hr_admin", "hr_officer")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "hr_admin", "hr_officer")),
 ) -> LeaveRequestResponse:
     """Approve or reject a leave request."""
     if data.action == "approve":
@@ -849,9 +850,7 @@ async def process_leave_request(
             reason=data.rejection_reason,
         )
     if req is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Leave request not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Leave request not found")
     return LeaveRequestResponse.model_validate(req)
 
 
@@ -865,14 +864,18 @@ async def _build_run_response(
 ) -> PayrollRunResponse:
     """Hydrate a PayrollRun with its line items as a response model."""
     lines = (
-        await db.execute(
-            select(PayrollLineItem).where(
-                PayrollLineItem.payroll_run_id == run.id,
-                PayrollLineItem.facility_id == facility_id,
-                PayrollLineItem.is_deleted.is_(False),
+        (
+            await db.execute(
+                select(PayrollLineItem).where(
+                    PayrollLineItem.payroll_run_id == run.id,
+                    PayrollLineItem.facility_id == facility_id,
+                    PayrollLineItem.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     resp = PayrollRunResponse.model_validate(run)
     resp.line_items = [PayrollLineItemResponse.model_validate(li) for li in lines]
     return resp
@@ -887,9 +890,7 @@ async def monthly_summary(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> dict:
     """Per-department monthly summary."""
-    data = await get_monthly_payroll_summary(
-        db=db, facility_id=current_user.facility_id, month=month, year=year
-    )
+    data = await get_monthly_payroll_summary(db=db, facility_id=current_user.facility_id, month=month, year=year)
     # Convert Decimals to strings for JSON safety
     for d in data["departments"]:
         d["total_gross"] = str(d["total_gross"])

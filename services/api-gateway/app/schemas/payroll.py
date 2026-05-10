@@ -6,7 +6,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ── Employees ────────────────────────────────────────────────────────────────
 
 
@@ -47,9 +46,7 @@ class EmployeeUpdate(BaseModel):
     shif_number: str | None = Field(None, max_length=20)
     department_id: uuid.UUID | None = None
     job_title: str | None = Field(None, max_length=200)
-    employment_type: str | None = Field(
-        None, pattern=r"^(permanent|contract|casual|intern)$"
-    )
+    employment_type: str | None = Field(None, pattern=r"^(permanent|contract|casual|intern)$")
     termination_date: date | None = None
     is_active: bool | None = None
     bank_name: str | None = Field(None, max_length=100)
@@ -238,9 +235,7 @@ class StatutoryRateCreate(BaseModel):
     """Create a statutory rate."""
 
     name: str = Field(..., max_length=100)
-    category: str = Field(
-        ..., pattern=r"^(paye|nssf|shif|housing_levy|relief)$"
-    )
+    category: str = Field(..., pattern=r"^(paye|nssf|shif|housing_levy|relief)$")
     rate: Decimal | None = None
     fixed_amount: Decimal | None = None
     fixed_cap: Decimal | None = None

@@ -10,9 +10,10 @@ exit). The pre-existing `staff` and `staff_profiles` tables remain in place
 for the general staff directory; payroll uses the new `employees` table.
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision = "003"
 down_revision = "002"

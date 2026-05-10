@@ -1,8 +1,18 @@
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, Time, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,21 +26,13 @@ class DoctorSchedule(AuditMixin, Base):
     """
 
     __tablename__ = "doctor_schedules"
-    __table_args__ = (
-        Index("ix_doctor_schedules_doctor", "facility_id", "doctor_id"),
-    )
+    __table_args__ = (Index("ix_doctor_schedules_doctor", "facility_id", "doctor_id"),)
 
-    doctor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
+    doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
 
     # Schedule
-    day_of_week: Mapped[int] = mapped_column(
-        Integer, nullable=False
-    )  # 0=Monday, 1=Tuesday, ..., 6=Sunday
+    day_of_week: Mapped[int] = mapped_column(Integer, nullable=False)  # 0=Monday, 1=Tuesday, ..., 6=Sunday
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     slot_duration_minutes: Mapped[int] = mapped_column(
@@ -67,21 +69,11 @@ class Appointment(AuditMixin, Base):
         Index("ix_appointments_status", "facility_id", "status"),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    doctor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
-    schedule_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("doctor_schedules.id")
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    doctor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
+    schedule_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("doctor_schedules.id"))
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
 
     # Booking
     appointment_number: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -95,9 +87,7 @@ class Appointment(AuditMixin, Base):
         String(30), default="consultation", nullable=False
     )  # consultation, follow_up, procedure, lab, radiology, anc, dental, vaccination
     visit_reason: Mapped[str | None] = mapped_column(Text)
-    priority: Mapped[str] = mapped_column(
-        String(20), default="routine", nullable=False
-    )  # routine, urgent, emergency
+    priority: Mapped[str] = mapped_column(String(20), default="routine", nullable=False)  # routine, urgent, emergency
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -119,9 +109,7 @@ class Appointment(AuditMixin, Base):
 
     # Recurrence (for follow-up series)
     is_recurring: Mapped[bool] = mapped_column(default=False, nullable=False)
-    recurrence_parent_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("appointments.id")
-    )
+    recurrence_parent_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("appointments.id"))
 
     # Location
     room: Mapped[str | None] = mapped_column(String(50))
@@ -131,6 +119,4 @@ class Appointment(AuditMixin, Base):
     internal_notes: Mapped[str | None] = mapped_column(Text)  # Staff-only notes
 
     # Booked by
-    booked_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    booked_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)

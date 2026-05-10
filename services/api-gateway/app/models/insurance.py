@@ -1,7 +1,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,7 +37,9 @@ class InsuranceScheme(AuditMixin, Base):
     address: Mapped[str | None] = mapped_column(Text)
     contract_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     contract_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    coverage_details: Mapped[dict | None] = mapped_column(JSONB)  # {inpatient, outpatient, dental, optical, maternity, limits}
+    coverage_details: Mapped[dict | None] = mapped_column(
+        JSONB
+    )  # {inpatient, outpatient, dental, optical, maternity, limits}
     rebate_percentage: Mapped[int | None] = mapped_column(Integer)  # 0-100
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
@@ -44,12 +54,8 @@ class PatientInsurance(AuditMixin, Base):
         Index("ix_patient_insurance_facility_status", "facility_id", "is_active"),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    scheme_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("insurance_schemes.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    scheme_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("insurance_schemes.id"), nullable=False)
     member_number: Mapped[str] = mapped_column(String(50), nullable=False)
     principal_name: Mapped[str | None] = mapped_column(String(200))
     relationship: Mapped[str | None] = mapped_column(String(30))  # self, spouse, child, parent
@@ -69,18 +75,10 @@ class InsuranceClaim(AuditMixin, Base):
     )
 
     claim_number: Mapped[str] = mapped_column(String(50), nullable=False)  # CLM-YYYYMMDD-XXXX
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    scheme_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("insurance_schemes.id"), nullable=False
-    )
-    invoice_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("invoices.id")
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    scheme_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("insurance_schemes.id"), nullable=False)
+    invoice_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("invoices.id"))
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
     member_number: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Amounts in KES cents
@@ -92,9 +90,7 @@ class InsuranceClaim(AuditMixin, Base):
     status: Mapped[str] = mapped_column(
         String(30), default="draft", nullable=False
     )  # draft, submitted, processing, approved, partially_approved, rejected, paid
-    claim_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    claim_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     submitted_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     processed_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     paid_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -111,17 +107,11 @@ class PreAuthorization(AuditMixin, Base):
     """Pre-authorization request for insurance."""
 
     __tablename__ = "pre_authorizations"
-    __table_args__ = (
-        Index("ix_pre_auth_status", "facility_id", "status"),
-    )
+    __table_args__ = (Index("ix_pre_auth_status", "facility_id", "status"),)
 
     auth_number: Mapped[str] = mapped_column(String(50), nullable=False)  # PA-YYYYMMDD-XXXX
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    scheme_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("insurance_schemes.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    scheme_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("insurance_schemes.id"), nullable=False)
     member_number: Mapped[str] = mapped_column(String(50), nullable=False)
     service_description: Mapped[str] = mapped_column(Text, nullable=False)
     estimated_cost: Mapped[int] = mapped_column(Integer, nullable=False)  # KES cents
@@ -130,9 +120,7 @@ class PreAuthorization(AuditMixin, Base):
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False
     )  # pending, approved, declined, expired
-    request_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    request_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     response_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notes: Mapped[str | None] = mapped_column(Text)

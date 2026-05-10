@@ -13,9 +13,7 @@ logger = structlog.get_logger(__name__)
 
 # Africa's Talking API endpoint
 _AT_SMS_URL: Final[str] = "https://api.africastalking.com/version1/messaging"
-_AT_SANDBOX_URL: Final[str] = (
-    "https://api.sandbox.africastalking.com/version1/messaging"
-)
+_AT_SANDBOX_URL: Final[str] = "https://api.sandbox.africastalking.com/version1/messaging"
 
 
 class SMSProvider(abc.ABC):
@@ -89,9 +87,7 @@ class AfricasTalkingProvider(SMSProvider):
 
             if response.status_code == 201:
                 data = response.json()
-                recipients = (
-                    data.get("SMSMessageData", {}).get("Recipients", [])
-                )
+                recipients = data.get("SMSMessageData", {}).get("Recipients", [])
                 if recipients:
                     status_code = recipients[0].get("statusCode", 0)
                     if status_code in (100, 101):

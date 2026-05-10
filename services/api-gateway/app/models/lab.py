@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -19,21 +19,13 @@ class LabOrder(AuditMixin, Base):
         Index("ix_lab_orders_status", "facility_id", "status"),
     )
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    ordered_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    ordered_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Order
     order_number: Mapped[str] = mapped_column(String(50), nullable=False)
-    priority: Mapped[str] = mapped_column(
-        String(20), default="routine", nullable=False
-    )  # stat, urgent, routine
+    priority: Mapped[str] = mapped_column(String(20), default="routine", nullable=False)  # stat, urgent, routine
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -69,18 +61,10 @@ class LabResult(AuditMixin, Base):
         Index("ix_lab_results_test_code", "test_code"),
     )
 
-    order_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("lab_orders.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    performed_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
-    verified_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    order_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lab_orders.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    performed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
+    verified_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
 
     # Test
     test_code: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -93,9 +77,7 @@ class LabResult(AuditMixin, Base):
     result_numeric: Mapped[float | None] = mapped_column(Float)
     result_unit: Mapped[str | None] = mapped_column(String(50))
     reference_range: Mapped[str | None] = mapped_column(String(100))
-    interpretation: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # normal, abnormal, critical, inconclusive
+    interpretation: Mapped[str | None] = mapped_column(String(20))  # normal, abnormal, critical, inconclusive
 
     # Flags
     is_critical: Mapped[bool] = mapped_column(default=False, nullable=False)

@@ -45,12 +45,8 @@ class PayrollLeaveRequest(AuditMixin, Base):
 
     __tablename__ = "payroll_leave_requests"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
-    leave_type_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("leave_types.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    leave_type_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("leave_types.id"), nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     days_requested: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -61,9 +57,7 @@ class PayrollLeaveRequest(AuditMixin, Base):
     approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     rejection_reason: Mapped[str | None] = mapped_column(Text)
-    payroll_deduction: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
+    payroll_deduction: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     payroll_period_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
 
@@ -72,14 +66,10 @@ class EmployeeDeduction(AuditMixin, Base):
 
     __tablename__ = "employee_deductions"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    frequency: Mapped[str] = mapped_column(
-        String(20), default="monthly", nullable=False
-    )  # monthly|one_time
+    frequency: Mapped[str] = mapped_column(String(20), default="monthly", nullable=False)  # monthly|one_time
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date | None] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -91,17 +81,13 @@ class DisciplinaryCase(AuditMixin, Base):
 
     __tablename__ = "disciplinary_cases"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     allegation: Mapped[str] = mapped_column(Text, nullable=False)
     investigation_notes: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False
     )  # pending|hearing|resolved|appealed
-    outcome: Mapped[str | None] = mapped_column(
-        String(30)
-    )  # warning|final_warning|suspension|dismissal
+    outcome: Mapped[str | None] = mapped_column(String(30))  # warning|final_warning|suspension|dismissal
     hearing_date: Mapped[date | None] = mapped_column(Date)
     approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
@@ -111,13 +97,9 @@ class GrievanceCase(AuditMixin, Base):
 
     __tablename__ = "grievance_cases"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(20), default="open", nullable=False
-    )  # open|investigating|resolved
+    status: Mapped[str] = mapped_column(String(20), default="open", nullable=False)  # open|investigating|resolved
     resolution: Mapped[str | None] = mapped_column(Text)
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -131,12 +113,8 @@ class TrainingProgram(AuditMixin, Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     internal: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    cost: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    cpd_hours: Mapped[Decimal] = mapped_column(
-        Numeric(5, 2), default=Decimal("0"), nullable=False
-    )
+    cost: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    cpd_hours: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=Decimal("0"), nullable=False)
     start_date: Mapped[date | None] = mapped_column(Date)
     end_date: Mapped[date | None] = mapped_column(Date)
 
@@ -149,9 +127,7 @@ class TrainingAttendance(AuditMixin, Base):
     training_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("training_programs.id"), nullable=False
     )
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), default="nominated", nullable=False
     )  # nominated|attended|completed|failed
@@ -165,9 +141,7 @@ class PerformanceReview(AuditMixin, Base):
 
     __tablename__ = "performance_reviews"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     period_label: Mapped[str] = mapped_column(String(50), nullable=False)
     self_assessment: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
     manager_review: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
@@ -184,26 +158,14 @@ class ExitChecklist(AuditMixin, Base):
 
     __tablename__ = "exit_checklists"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     last_day: Mapped[date] = mapped_column(Date, nullable=False)
-    notice_pay: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    gratuity: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    leave_encashment: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    final_pay: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
+    notice_pay: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    gratuity: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    leave_encashment: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    final_pay: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
     checklist_status: Mapped[dict] = mapped_column(  # type: ignore[type-arg]
         JSONB, default=dict, nullable=False
     )
     processed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    status: Mapped[str] = mapped_column(
-        String(20), default="in_progress", nullable=False
-    )  # in_progress|complete
+    status: Mapped[str] = mapped_column(String(20), default="in_progress", nullable=False)  # in_progress|complete

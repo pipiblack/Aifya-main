@@ -3,7 +3,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Pharmacy Item / Inventory schemas ──────────────────────────────────────
 
 
@@ -16,7 +15,8 @@ class PharmacyItemCreate(BaseModel):
     atc_code: str | None = Field(None, max_length=20)
     is_keml: bool = False
     dosage_form: str | None = Field(
-        None, pattern=r"^(tablet|capsule|syrup|suspension|injection|cream|ointment|drops|inhaler|suppository|sachet|solution|powder)$"
+        None,
+        pattern=r"^(tablet|capsule|syrup|suspension|injection|cream|ointment|drops|inhaler|suppository|sachet|solution|powder)$",
     )
     strength: str | None = Field(None, max_length=50)
     batch_number: str | None = Field(None, max_length=50)
@@ -116,9 +116,7 @@ class DispenseRequest(BaseModel):
     dosage_instructions: str | None = Field(None, max_length=1000)
     counseling_done: bool = False
     counseling_notes: str | None = Field(None, max_length=2000)
-    payment_method: str | None = Field(
-        None, pattern=r"^(cash|mpesa|insurance|exemption)$"
-    )
+    payment_method: str | None = Field(None, pattern=r"^(cash|mpesa|insurance|exemption)$")
 
 
 class DispensingResponse(BaseModel):

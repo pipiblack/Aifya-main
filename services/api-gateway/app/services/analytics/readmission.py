@@ -9,18 +9,22 @@ and follow-up scheduling.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.diagnosis import Diagnosis
 from app.models.encounter import Encounter
 from app.models.patient import Patient
 from app.models.prescription import Prescription
 from app.services.analytics.models import ReadmissionRisk
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -128,7 +132,9 @@ async def predict_readmission_risk(
 
     # --- Factor: 3+ chronic conditions ---
     chronic_count_result = await db.execute(
-        select(func.count()).select_from(Diagnosis).where(
+        select(func.count())
+        .select_from(Diagnosis)
+        .where(
             Diagnosis.facility_id == facility_id,
             Diagnosis.patient_id == patient_id,
             Diagnosis.is_chronic.is_(True),
@@ -143,7 +149,9 @@ async def predict_readmission_risk(
 
     # --- Factor: Prior admission in last 30 days ---
     prior_admission_result = await db.execute(
-        select(func.count()).select_from(Encounter).where(
+        select(func.count())
+        .select_from(Encounter)
+        .where(
             Encounter.facility_id == facility_id,
             Encounter.patient_id == patient_id,
             Encounter.encounter_type == "ipd",
@@ -158,7 +166,9 @@ async def predict_readmission_risk(
 
     # --- Factor: ED visit in last 30 days ---
     ed_visit_result = await db.execute(
-        select(func.count()).select_from(Encounter).where(
+        select(func.count())
+        .select_from(Encounter)
+        .where(
             Encounter.facility_id == facility_id,
             Encounter.patient_id == patient_id,
             Encounter.encounter_type == "emergency",
@@ -173,7 +183,9 @@ async def predict_readmission_risk(
 
     # --- Factor: 5+ active medications ---
     med_count_result = await db.execute(
-        select(func.count()).select_from(Prescription).where(
+        select(func.count())
+        .select_from(Prescription)
+        .where(
             Prescription.facility_id == facility_id,
             Prescription.patient_id == patient_id,
             Prescription.status.in_(["pending", "dispensed", "partially_dispensed"]),
@@ -188,12 +200,15 @@ async def predict_readmission_risk(
 
     # --- Factor: Length of stay > 7 days (most recent IPD encounter) ---
     recent_ipd_result = await db.execute(
-        select(Encounter).where(
+        select(Encounter)
+        .where(
             Encounter.facility_id == facility_id,
             Encounter.patient_id == patient_id,
             Encounter.encounter_type == "ipd",
             Encounter.is_deleted.is_(False),
-        ).order_by(Encounter.admission_date.desc()).limit(1)
+        )
+        .order_by(Encounter.admission_date.desc())
+        .limit(1)
     )
     recent_ipd = recent_ipd_result.scalar_one_or_none()
     if recent_ipd and recent_ipd.admission_date:
@@ -209,7 +224,9 @@ async def predict_readmission_risk(
         from app.models.appointment import Appointment
 
         future_appt_result = await db.execute(
-            select(func.count()).select_from(Appointment).where(
+            select(func.count())
+            .select_from(Appointment)
+            .where(
                 Appointment.facility_id == facility_id,
                 Appointment.patient_id == patient_id,
                 Appointment.appointment_date >= date.today(),

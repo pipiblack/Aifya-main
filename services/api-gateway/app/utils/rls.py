@@ -55,9 +55,7 @@ def generate_rls_teardown_sql() -> str:
     statements: list[str] = []
 
     for table in RLS_TABLES:
-        statements.append(
-            f"DROP POLICY IF EXISTS {table}_facility_isolation ON {table};"
-        )
+        statements.append(f"DROP POLICY IF EXISTS {table}_facility_isolation ON {table};")
         statements.append(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;")
 
     return "\n".join(statements)

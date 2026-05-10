@@ -42,15 +42,9 @@ class FacilityLicense(Base):
         Index("ix_facility_licenses_expires", "expires_at"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False
-    )
-    license_key: Mapped[str] = mapped_column(
-        String(64), nullable=False
-    )  # HMAC-signed key: AIFYA-TIER-XXXXXXXX-XXXX
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    license_key: Mapped[str] = mapped_column(String(64), nullable=False)  # HMAC-signed key: AIFYA-TIER-XXXXXXXX-XXXX
 
     # Tier: community | professional | enterprise | government
     tier: Mapped[str] = mapped_column(String(30), nullable=False, default="community")
@@ -70,25 +64,19 @@ class FacilityLicense(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="KES")
 
     # Validity
-    issued_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     grace_period_days: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     # Heartbeat tracking — last time this facility phoned home
     last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    heartbeat_interval_hours: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=24
-    )
+    heartbeat_interval_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=24)
 
     # Metadata
     issued_by: Mapped[str | None] = mapped_column(String(255))  # admin who issued
     notes: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
@@ -107,15 +95,9 @@ class UsageTelemetry(Base):
         Index("ix_usage_telemetry_date", "recorded_date"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False
-    )
-    recorded_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    recorded_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     # Aggregate usage counts — no PII
     active_users: Mapped[int] = mapped_column(Integer, default=0)
@@ -139,9 +121,7 @@ class UsageTelemetry(Base):
     app_version: Mapped[str | None] = mapped_column(String(30))
     db_version: Mapped[str | None] = mapped_column(String(100))  # alembic revision
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class AppUpdate(Base):
@@ -157,13 +137,9 @@ class AppUpdate(Base):
         Index("ix_app_updates_published", "published_at"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     version: Mapped[str] = mapped_column(String(30), nullable=False)  # semver: 1.2.3
-    channel: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="stable"
-    )  # stable | beta | canary
+    channel: Mapped[str] = mapped_column(String(20), nullable=False, default="stable")  # stable | beta | canary
     min_tier: Mapped[str] = mapped_column(
         String(30), nullable=False, default="community"
     )  # minimum tier that gets this update
@@ -185,9 +161,7 @@ class AppUpdate(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class FacilityUpdateStatus(Base):
@@ -197,27 +171,17 @@ class FacilityUpdateStatus(Base):
 
     __tablename__ = "facility_update_status"
 
-    __table_args__ = (
-        UniqueConstraint("facility_id", name="uq_facility_update_status_facility"),
-    )
+    __table_args__ = (UniqueConstraint("facility_id", name="uq_facility_update_status_facility"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    facility_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    facility_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     current_version: Mapped[str] = mapped_column(String(30), nullable=False)
     last_update_check: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    update_channel: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="stable"
-    )
+    update_channel: Mapped[str] = mapped_column(String(20), nullable=False, default="stable")
     auto_update: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

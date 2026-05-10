@@ -1,7 +1,16 @@
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, Time, func
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    Time,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,13 +25,9 @@ class StaffProfile(AuditMixin, Base):
     """
 
     __tablename__ = "staff_profiles"
-    __table_args__ = (
-        Index("ix_staff_profiles_staff", "facility_id", "staff_id", unique=True),
-    )
+    __table_args__ = (Index("ix_staff_profiles_staff", "facility_id", "staff_id", unique=True),)
 
-    staff_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    staff_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Personal
     date_of_birth: Mapped[date | None] = mapped_column(Date)
@@ -55,12 +60,8 @@ class StaffProfile(AuditMixin, Base):
     allowances: Mapped[dict | None] = mapped_column(JSONB)  # {housing, transport, risk}
 
     # Qualifications
-    qualifications: Mapped[dict | None] = mapped_column(
-        JSONB
-    )  # [{degree, institution, year}]
-    certifications: Mapped[dict | None] = mapped_column(
-        JSONB
-    )  # [{name, issuer, expiry}]
+    qualifications: Mapped[dict | None] = mapped_column(JSONB)  # [{degree, institution, year}]
+    certifications: Mapped[dict | None] = mapped_column(JSONB)  # [{name, issuer, expiry}]
 
     # Leave balances (days)
     annual_leave_balance: Mapped[int] = mapped_column(Integer, default=21, nullable=False)
@@ -80,9 +81,7 @@ class Shift(AuditMixin, Base):
     """
 
     __tablename__ = "shifts"
-    __table_args__ = (
-        Index("ix_shifts_facility_code", "facility_id", "code", unique=True),
-    )
+    __table_args__ = (Index("ix_shifts_facility_code", "facility_id", "code", unique=True),)
 
     code: Mapped[str] = mapped_column(String(20), nullable=False)  # MORNING, EVENING, NIGHT
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -90,9 +89,7 @@ class Shift(AuditMixin, Base):
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     duration_hours: Mapped[int] = mapped_column(Integer, nullable=False)  # 8, 12
     is_night_shift: Mapped[bool] = mapped_column(default=False, nullable=False)
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
 
@@ -109,15 +106,9 @@ class ShiftAssignment(AuditMixin, Base):
         Index("ix_shift_assignments_staff", "facility_id", "staff_id"),
     )
 
-    staff_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    shift_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shifts.id"), nullable=False
-    )
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
+    staff_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    shift_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("shifts.id"), nullable=False)
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
 
     assignment_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(
@@ -125,9 +116,7 @@ class ShiftAssignment(AuditMixin, Base):
     )  # assigned, confirmed, completed, swapped, cancelled
 
     # Swap tracking
-    swapped_with_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    swapped_with_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     swap_reason: Mapped[str | None] = mapped_column(Text)
 
     notes: Mapped[str | None] = mapped_column(Text)
@@ -145,9 +134,7 @@ class LeaveRequest(AuditMixin, Base):
         Index("ix_leave_requests_status", "facility_id", "status"),
     )
 
-    staff_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    staff_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
     leave_type: Mapped[str] = mapped_column(
         String(20), nullable=False
     )  # annual, sick, maternity, paternity, compassionate, study, unpaid
@@ -167,9 +154,7 @@ class LeaveRequest(AuditMixin, Base):
     rejection_reason: Mapped[str | None] = mapped_column(Text)
 
     # Handover
-    handover_to: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    handover_to: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
     handover_notes: Mapped[str | None] = mapped_column(Text)
 
     # Supporting docs
@@ -184,16 +169,10 @@ class Attendance(AuditMixin, Base):
     """
 
     __tablename__ = "attendance"
-    __table_args__ = (
-        Index("ix_attendance_staff_date", "facility_id", "staff_id", "attendance_date"),
-    )
+    __table_args__ = (Index("ix_attendance_staff_date", "facility_id", "staff_id", "attendance_date"),)
 
-    staff_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    shift_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shifts.id")
-    )
+    staff_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    shift_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("shifts.id"))
 
     attendance_date: Mapped[date] = mapped_column(Date, nullable=False)
     clock_in: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

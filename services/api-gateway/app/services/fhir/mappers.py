@@ -17,7 +17,6 @@ from app.services.fhir.models import (
     FHIRCoding,
     FHIRCondition,
     FHIRContactPoint,
-    FHIRDiagnosticReport,
     FHIRDosageInstruction,
     FHIREncounter,
     FHIRHumanName,
@@ -35,7 +34,7 @@ from app.services.fhir.models import (
 if TYPE_CHECKING:
     from app.models.diagnosis import Diagnosis
     from app.models.encounter import Encounter
-    from app.models.lab import LabOrder, LabResult
+    from app.models.lab import LabResult
     from app.models.patient import Patient
     from app.models.prescription import Prescription
     from app.models.vital import VitalSign
@@ -109,13 +108,9 @@ def patient_to_fhir(patient: Patient) -> FHIRPatient:
 
     telecom: list[FHIRContactPoint] = []
     if patient.phone:
-        telecom.append(
-            FHIRContactPoint(system="phone", value=patient.phone, use="mobile")
-        )
+        telecom.append(FHIRContactPoint(system="phone", value=patient.phone, use="mobile"))
     if hasattr(patient, "email") and patient.email:
-        telecom.append(
-            FHIRContactPoint(system="email", value=patient.email, use="home")
-        )
+        telecom.append(FHIRContactPoint(system="email", value=patient.email, use="home"))
 
     address: list[FHIRAddress] = []
     if hasattr(patient, "county") and patient.county:
@@ -138,8 +133,7 @@ def patient_to_fhir(patient: Patient) -> FHIRPatient:
             FHIRHumanName(
                 use="official",
                 family=patient.last_name,
-                given=[patient.first_name]
-                + ([patient.middle_name] if getattr(patient, "middle_name", None) else []),
+                given=[patient.first_name] + ([patient.middle_name] if getattr(patient, "middle_name", None) else []),
                 text=f"{patient.first_name} {patient.last_name}",
             )
         ],
@@ -174,11 +168,13 @@ def encounter_to_fhir(encounter: Encounter) -> FHIREncounter:
         id=str(encounter.id),
         meta=FHIRMeta(versionId="1", lastUpdated=str(encounter.updated_at) if encounter.updated_at else None),
         status=fhir_status,
-        **{"class": FHIRCoding(
-            system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
-            code=class_code,
-            display=class_display,
-        )},
+        **{
+            "class": FHIRCoding(
+                system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                code=class_code,
+                display=class_display,
+            )
+        },
         subject=FHIRReference(reference=f"Patient/{encounter.patient_id}"),
         period=FHIRPeriod(start=period_start),
         reasonCode=reason_codes,

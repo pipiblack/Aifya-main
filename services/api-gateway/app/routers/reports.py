@@ -77,9 +77,7 @@ async def get_dashboard_trends(
     @returns Trend data
     """
     service = ReportsService(db)
-    return await service.get_dashboard_trends(
-        facility_id=current_user.facility_id, days=days
-    )
+    return await service.get_dashboard_trends(facility_id=current_user.facility_id, days=days)
 
 
 @router.get("/dashboard/top-diagnoses", response_model=list[TopDiagnosis])
@@ -144,9 +142,7 @@ async def list_templates(
 async def create_template(
     data: ReportTemplateCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> ReportTemplateResponse:
     """
     Create a report template.
@@ -221,9 +217,7 @@ async def generate_report(
             generated_by=current_user.user_id,
         )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return GeneratedReportResponse.model_validate(report)
 
 

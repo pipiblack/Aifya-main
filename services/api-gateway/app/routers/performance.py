@@ -6,20 +6,21 @@ Exposes facility-wide KPIs computed on demand from existing operational tables.
 from __future__ import annotations
 
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import CurrentUser, get_current_user
 from app.database import get_db
 from app.services.performance.metrics import (
-    FacilityKpis,
-    KpiTrendPoint,
     compare_periods,
     get_facility_kpis,
     get_metric_trend,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -157,7 +158,5 @@ async def get_comparison(
     @returns Current and prior period KPIs with delta percentages
     """
     today = date.today()
-    result = await compare_periods(
-        db, current_user.facility_id, end=today, compare_to=compare_to
-    )
+    result = await compare_periods(db, current_user.facility_id, end=today, compare_to=compare_to)
     return PeriodComparisonResponse(**result)

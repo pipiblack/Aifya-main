@@ -75,9 +75,7 @@ async def get_queue(
 async def register_visit(
     data: EmergencyVisitCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "nurse", "receptionist")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "nurse", "receptionist")),
 ) -> EmergencyVisitResponse:
     """
     Register a new emergency visit.
@@ -134,9 +132,7 @@ async def triage_visit(
     visit_id: uuid.UUID,
     data: TriageRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "nurse")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "nurse")),
 ) -> EmergencyVisitResponse:
     """
     Perform SATS triage on an emergency visit.
@@ -170,9 +166,7 @@ async def assign_doctor(
     visit_id: uuid.UUID,
     data: AssignDoctorRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "nurse")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "nurse")),
 ) -> EmergencyVisitResponse:
     """
     Assign a doctor to an emergency visit.
@@ -206,9 +200,7 @@ async def record_disposition(
     visit_id: uuid.UUID,
     data: DispositionRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor")),
 ) -> EmergencyVisitResponse:
     """
     Record disposition for an emergency visit.

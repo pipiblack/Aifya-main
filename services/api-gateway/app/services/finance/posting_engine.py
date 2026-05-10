@@ -19,9 +19,9 @@ from __future__ import annotations
 import uuid
 from datetime import date as date_type
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import (
     Account,
@@ -33,6 +33,8 @@ from app.models.finance import (
     TransactionEntry,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 # ── Exceptions ───────────────────────────────────────────────────────────────
 
@@ -68,9 +70,7 @@ def _q(amount: Decimal) -> Decimal:
     return amount.quantize(_QUANT)
 
 
-async def _get_period_for_date(
-    db: AsyncSession, facility_id: uuid.UUID, posting_date: date_type
-) -> AccountingPeriod:
+async def _get_period_for_date(db: AsyncSession, facility_id: uuid.UUID, posting_date: date_type) -> AccountingPeriod:
     """
     Get the accounting period that contains ``posting_date``.
 
@@ -91,13 +91,9 @@ async def _get_period_for_date(
     )
     period = result.scalar_one_or_none()
     if period is None:
-        raise NoOpenPeriodError(
-            f"No accounting period exists for date {posting_date}"
-        )
+        raise NoOpenPeriodError(f"No accounting period exists for date {posting_date}")
     if period.status != "open":
-        raise PeriodLockedError(
-            f"Period '{period.name}' is {period.status} — postings rejected"
-        )
+        raise PeriodLockedError(f"Period '{period.name}' is {period.status} — postings rejected")
     return period
 
 
@@ -125,9 +121,7 @@ async def _check_idempotency(
     record = result.scalar_one_or_none()
     if record is None:
         return None
-    txn_result = await db.execute(
-        select(Transaction).where(Transaction.id == record.transaction_id)
-    )
+    txn_result = await db.execute(select(Transaction).where(Transaction.id == record.transaction_id))
     return txn_result.scalar_one_or_none()
 
 
@@ -192,9 +186,7 @@ async def post_transaction(
     )
     rules = list(rules_result.scalars().all())
     if not rules:
-        raise PostingRuleNotFoundError(
-            f"No active posting rule for event_type '{event_type}'"
-        )
+        raise PostingRuleNotFoundError(f"No active posting rule for event_type '{event_type}'")
 
     # ── 4. Lock referenced accounts (concurrency control) ───────────────
     account_ids: set[uuid.UUID] = set()
@@ -215,13 +207,9 @@ async def post_transaction(
 
     # ── 5. Create transaction header ────────────────────────────────────
     department_id_raw = metadata.get("department_id")
-    department_id: uuid.UUID | None = (
-        uuid.UUID(str(department_id_raw)) if department_id_raw else None
-    )
+    department_id: uuid.UUID | None = uuid.UUID(str(department_id_raw)) if department_id_raw else None
     reference_id_raw = metadata.get("reference_id")
-    reference_id: uuid.UUID | None = (
-        uuid.UUID(str(reference_id_raw)) if reference_id_raw else None
-    )
+    reference_id: uuid.UUID | None = uuid.UUID(str(reference_id_raw)) if reference_id_raw else None
 
     transaction = Transaction(
         id=uuid.uuid4(),
@@ -272,8 +260,7 @@ async def post_transaction(
     # ── 7. Hard double-entry validation ────────────────────────────────
     if _q(total_debit) != _q(total_credit):
         raise UnbalancedTransactionError(
-            f"Debits ({total_debit}) != Credits ({total_credit}) "
-            f"for event_type='{event_type}'"
+            f"Debits ({total_debit}) != Credits ({total_credit}) for event_type='{event_type}'"
         )
 
     # ── 8. Audit log ────────────────────────────────────────────────────
@@ -369,9 +356,7 @@ async def post_compound_transaction(
     code_to_account: dict[str, Account] = {a.code: a for a in accounts_result.scalars().all()}
     missing = codes - set(code_to_account.keys())
     if missing:
-        raise FinanceError(
-            f"Account codes not found in facility {facility_id}: {sorted(missing)}"
-        )
+        raise FinanceError(f"Account codes not found in facility {facility_id}: {sorted(missing)}")
 
     # ── Validate balance and amount ───────────────────────────────────────
     total_debit = Decimal("0")
@@ -387,22 +372,16 @@ async def post_compound_transaction(
         total_credit += credit
 
     if _q(total_debit) != _q(total_credit):
-        raise UnbalancedTransactionError(
-            f"Compound journal unbalanced: debits={total_debit} credits={total_credit}"
-        )
+        raise UnbalancedTransactionError(f"Compound journal unbalanced: debits={total_debit} credits={total_credit}")
 
     if total_debit == 0:
         raise FinanceError("Compound journal totals are zero")
 
     # ── Create transaction header ─────────────────────────────────────────
     department_id_raw = metadata.get("department_id")
-    department_id: uuid.UUID | None = (
-        uuid.UUID(str(department_id_raw)) if department_id_raw else None
-    )
+    department_id: uuid.UUID | None = uuid.UUID(str(department_id_raw)) if department_id_raw else None
     reference_id_raw = metadata.get("reference_id")
-    reference_id: uuid.UUID | None = (
-        uuid.UUID(str(reference_id_raw)) if reference_id_raw else None
-    )
+    reference_id: uuid.UUID | None = uuid.UUID(str(reference_id_raw)) if reference_id_raw else None
     event_type = metadata.get("event_type", "compound_journal")
 
     transaction = Transaction(
@@ -429,9 +408,7 @@ async def post_compound_transaction(
         if debit == 0 and credit == 0:
             continue  # skip zero-amount lines
         entry_dept_raw = entry.get("department_id", department_id_raw)
-        entry_dept = (
-            uuid.UUID(str(entry_dept_raw)) if entry_dept_raw else department_id
-        )
+        entry_dept = uuid.UUID(str(entry_dept_raw)) if entry_dept_raw else department_id
         account = code_to_account[str(entry["account_code"])]
         db.add(
             TransactionEntry(
@@ -554,9 +531,7 @@ async def reverse_transaction(
         total_credit += new_credit
 
     if _q(total_debit) != _q(total_credit):
-        raise UnbalancedTransactionError(
-            f"Reversal unbalanced: debits={total_debit} credits={total_credit}"
-        )
+        raise UnbalancedTransactionError(f"Reversal unbalanced: debits={total_debit} credits={total_credit}")
 
     db.add(
         FinanceAuditLog(

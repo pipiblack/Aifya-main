@@ -8,10 +8,8 @@ DHIS2 instance configurations across Kenya's health system.
 
 from __future__ import annotations
 
-import uuid
-from datetime import date
+from typing import TYPE_CHECKING
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.services.dhis2.client import (
@@ -19,7 +17,6 @@ from app.services.dhis2.client import (
     DHIS2Config,
     DHIS2DataValue,
     DHIS2DataValueSet,
-    DHIS2SubmissionResult,
 )
 from app.services.dhis2.moh_forms import (
     generate_moh_705a,
@@ -29,6 +26,12 @@ from app.services.dhis2.moh_forms import (
     generate_moh_713,
     generate_moh_718,
 )
+
+if TYPE_CHECKING:
+    import uuid
+    from datetime import date
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 

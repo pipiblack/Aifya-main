@@ -81,9 +81,7 @@ class PrescriptionService:
             interactions=interactions if interactions else None,
             created_by=prescriber_id,
             updated_by=prescriber_id,
-            **data.model_dump(
-                exclude={"encounter_id", "patient_id"}
-            ),
+            **data.model_dump(exclude={"encounter_id", "patient_id"}),
         )
 
         if has_critical:
@@ -116,9 +114,7 @@ class PrescriptionService:
 
         return prescription, interactions, False
 
-    async def get_encounter_prescriptions(
-        self, encounter_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> list[Prescription]:
+    async def get_encounter_prescriptions(self, encounter_id: uuid.UUID, facility_id: uuid.UUID) -> list[Prescription]:
         """
         Get all prescriptions for an encounter.
 

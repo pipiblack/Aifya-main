@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -201,7 +201,7 @@ class AppointmentService:
         @param booked_by: Staff UUID
         @returns Created appointment
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
 
         count_result = await self.db.execute(
@@ -401,7 +401,7 @@ class AppointmentService:
         if data.status:
             appt.status = data.status
             if data.status == "cancelled":
-                appt.cancelled_at = datetime.now(timezone.utc)
+                appt.cancelled_at = datetime.now(UTC)
                 appt.cancelled_by = updated_by
                 appt.cancellation_reason = data.cancellation_reason
 
@@ -429,7 +429,7 @@ class AppointmentService:
             return None
 
         appt.status = "checked_in"
-        appt.checked_in_at = datetime.now(timezone.utc)
+        appt.checked_in_at = datetime.now(UTC)
         appt.checked_in_by = checked_in_by
         appt.updated_by = checked_in_by
 
@@ -454,9 +454,7 @@ class AppointmentService:
 
     # ── Summary ───────────────────────────────────────────────────────────
 
-    async def get_summary(
-        self, facility_id: uuid.UUID
-    ) -> AppointmentSummary:
+    async def get_summary(self, facility_id: uuid.UUID) -> AppointmentSummary:
         """
         Get appointment dashboard summary for today.
 

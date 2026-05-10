@@ -48,10 +48,7 @@ _EN_PRESCRIPTION_ALERT = DefaultTemplate(
     category=MessageCategory.prescription_alert,
     channel=MessageChannel.sms,
     language="en",
-    body_template=(
-        "Dear {patient_name}, your prescription is ready for collection at "
-        "{facility_name} pharmacy."
-    ),
+    body_template=("Dear {patient_name}, your prescription is ready for collection at {facility_name} pharmacy."),
 )
 
 _EN_ANC_REMINDER = DefaultTemplate(
@@ -59,10 +56,7 @@ _EN_ANC_REMINDER = DefaultTemplate(
     category=MessageCategory.anc_reminder,
     channel=MessageChannel.sms,
     language="en",
-    body_template=(
-        "Dear {patient_name}, your next ANC visit is on {date}. "
-        "Please bring your ANC booklet."
-    ),
+    body_template=("Dear {patient_name}, your next ANC visit is on {date}. Please bring your ANC booklet."),
 )
 
 _EN_IMMUNIZATION_REMINDER = DefaultTemplate(
@@ -71,8 +65,7 @@ _EN_IMMUNIZATION_REMINDER = DefaultTemplate(
     channel=MessageChannel.sms,
     language="en",
     body_template=(
-        "Dear {patient_name}, {child_name}'s {vaccine_name} vaccination is "
-        "due on {date} at {facility_name}."
+        "Dear {patient_name}, {child_name}'s {vaccine_name} vaccination is due on {date} at {facility_name}."
     ),
 )
 
@@ -81,10 +74,7 @@ _EN_FOLLOW_UP = DefaultTemplate(
     category=MessageCategory.follow_up,
     channel=MessageChannel.sms,
     language="en",
-    body_template=(
-        "Dear {patient_name}, you have a follow-up appointment on {date} "
-        "at {facility_name}."
-    ),
+    body_template=("Dear {patient_name}, you have a follow-up appointment on {date} at {facility_name}."),
 )
 
 _EN_DISCHARGE = DefaultTemplate(
@@ -129,10 +119,7 @@ _SW_PRESCRIPTION_ALERT = DefaultTemplate(
     category=MessageCategory.prescription_alert,
     channel=MessageChannel.sms,
     language="sw",
-    body_template=(
-        "Mpendwa {patient_name}, dawa yako iko tayari kuchukuliwa katika "
-        "famasi ya {facility_name}."
-    ),
+    body_template=("Mpendwa {patient_name}, dawa yako iko tayari kuchukuliwa katika famasi ya {facility_name}."),
 )
 
 _SW_ANC_REMINDER = DefaultTemplate(
@@ -162,10 +149,7 @@ _SW_FOLLOW_UP = DefaultTemplate(
     category=MessageCategory.follow_up,
     channel=MessageChannel.sms,
     language="sw",
-    body_template=(
-        "Mpendwa {patient_name}, una miadi ya kurudi tarehe {date} katika "
-        "{facility_name}."
-    ),
+    body_template=("Mpendwa {patient_name}, una miadi ya kurudi tarehe {date} katika {facility_name}."),
 )
 
 _SW_DISCHARGE = DefaultTemplate(

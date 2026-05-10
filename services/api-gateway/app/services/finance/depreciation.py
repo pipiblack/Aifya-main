@@ -8,12 +8,10 @@ through the standard ``post_transaction`` engine using the ``depreciation`` even
 
 from __future__ import annotations
 
-import uuid
-from datetime import date as date_type
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import (
     AccountingPeriod,
@@ -21,6 +19,11 @@ from app.models.finance import (
 )
 from app.services.finance.posting_engine import post_transaction
 
+if TYPE_CHECKING:
+    import uuid
+    from datetime import date as date_type
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _ZERO = Decimal("0")
 _QUANT = Decimal("0.01")

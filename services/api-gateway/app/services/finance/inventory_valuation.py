@@ -4,14 +4,17 @@ Inventory valuation — FIFO consumption + weighted-average cost.
 
 from __future__ import annotations
 
-import uuid
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import InventoryLot
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _ZERO = Decimal("0")
 _QUANT = Decimal("0.0001")  # 4dp for unit cost
@@ -68,9 +71,7 @@ async def post_inventory_usage(
         qty_remaining -= take
 
     if qty_remaining > 0:
-        raise ValueError(
-            f"Insufficient stock for item {item_id}: short by {qty_remaining}"
-        )
+        raise ValueError(f"Insufficient stock for item {item_id}: short by {qty_remaining}")
 
     await db.flush()
     return _q_amt(total_cost)

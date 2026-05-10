@@ -23,6 +23,7 @@ class DHIS2Config(BaseModel):
     @param password: DHIS2 API password
     @param org_unit_id: DHIS2 organization unit ID for this facility
     """
+
     base_url: str
     username: str
     password: str
@@ -37,6 +38,7 @@ class DHIS2DataValue(BaseModel):
     @param categoryOptionCombo: Category option combo UID (for disaggregation)
     @param value: The value to submit
     """
+
     dataElement: str
     categoryOptionCombo: str = ""
     value: str
@@ -51,6 +53,7 @@ class DHIS2DataValueSet(BaseModel):
     @param orgUnit: Organization unit UID
     @param dataValues: List of data values
     """
+
     dataSet: str
     period: str
     orgUnit: str
@@ -66,6 +69,7 @@ class DHIS2SubmissionResult(BaseModel):
     @param import_count: Counts of imported/updated/ignored values
     @param description: Descriptive message
     """
+
     success: bool
     status: str
     import_count: dict[str, int] = {}

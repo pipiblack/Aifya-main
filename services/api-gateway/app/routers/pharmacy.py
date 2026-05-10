@@ -40,9 +40,7 @@ async def get_pharmacy_queue(
     @returns Pharmacy queue (pending prescriptions)
     """
     service = PharmacyService(db)
-    items, total = await service.get_pending_prescriptions(
-        current_user.facility_id
-    )
+    items, total = await service.get_pending_prescriptions(current_user.facility_id)
     return PharmacyQueueResponse(items=items, total=total)
 
 
@@ -57,9 +55,7 @@ async def get_pharmacy_queue(
 async def dispense_prescription(
     data: DispenseRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("pharmacist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("pharmacist", "admin", "facility_admin")),
     x_idempotency_key: str | None = Header(None),
 ) -> DispensingResponse:
     """
@@ -134,9 +130,7 @@ async def list_inventory(
 async def create_inventory_item(
     data: PharmacyItemCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("pharmacist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("pharmacist", "admin", "facility_admin")),
 ) -> PharmacyItemResponse:
     """
     Add a new item to pharmacy inventory.
@@ -163,9 +157,7 @@ async def update_inventory_item(
     item_id: uuid.UUID,
     data: PharmacyItemUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("pharmacist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("pharmacist", "admin", "facility_admin")),
 ) -> PharmacyItemResponse:
     """
     Update a pharmacy inventory item.
@@ -202,9 +194,7 @@ async def update_inventory_item(
 async def receive_stock(
     data: StockReceiptRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("pharmacist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("pharmacist", "admin", "facility_admin")),
 ) -> StockTransactionResponse:
     """
     Receive new stock into pharmacy inventory.
@@ -237,9 +227,7 @@ async def receive_stock(
 async def adjust_stock(
     data: StockAdjustmentRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("pharmacist", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("pharmacist", "admin", "facility_admin")),
 ) -> StockTransactionResponse:
     """
     Adjust stock (loss, damage, correction, transfer).

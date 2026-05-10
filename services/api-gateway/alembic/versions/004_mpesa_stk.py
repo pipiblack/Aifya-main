@@ -8,9 +8,10 @@ Adds the mpesa_stk_requests table for tracking M-Pesa STK Push payments
 through their full lifecycle (initiation → callback → reconciliation).
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision = "004"
 down_revision = "003"

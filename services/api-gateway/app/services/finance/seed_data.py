@@ -9,13 +9,16 @@ revenue streams, and operating expenses.
 
 from __future__ import annotations
 
-import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import Account, PostingRule
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 # Code, Name, Type, Cashflow Category
 DEFAULT_ACCOUNTS: list[tuple[str, str, str, str]] = [
@@ -97,9 +100,7 @@ async def seed_default_chart_of_accounts(
     @param user_id: Creator
     @returns Map {code: account_id} for all default accounts
     """
-    existing_result = await db.execute(
-        select(Account).where(Account.facility_id == facility_id)
-    )
+    existing_result = await db.execute(select(Account).where(Account.facility_id == facility_id))
     existing_by_code = {a.code: a for a in existing_result.scalars().all()}
 
     code_to_id: dict[str, uuid.UUID] = {}
@@ -139,16 +140,10 @@ async def seed_default_posting_rules(
     @param user_id: Creator
     @returns List of created PostingRule rows
     """
-    accounts_result = await db.execute(
-        select(Account).where(Account.facility_id == facility_id)
-    )
-    by_code: dict[str, Account] = {
-        a.code: a for a in accounts_result.scalars().all()
-    }
+    accounts_result = await db.execute(select(Account).where(Account.facility_id == facility_id))
+    by_code: dict[str, Account] = {a.code: a for a in accounts_result.scalars().all()}
 
-    existing_result = await db.execute(
-        select(PostingRule).where(PostingRule.facility_id == facility_id)
-    )
+    existing_result = await db.execute(select(PostingRule).where(PostingRule.facility_id == facility_id))
     existing_event_types = {r.event_type for r in existing_result.scalars().all()}
 
     created: list[PostingRule] = []

@@ -7,13 +7,11 @@ All endpoints are mounted under ``/api/v1/finance/`` and gated by the
 
 from __future__ import annotations
 
-import uuid
-from datetime import date as date_type
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import CurrentUser, get_current_user, require_roles
 from app.auth.license_check import require_module
@@ -99,6 +97,11 @@ from app.services.finance.reports import (
     get_trial_balance,
 )
 
+if TYPE_CHECKING:
+    import uuid
+    from datetime import date as date_type
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(require_module("finance"))])
 
@@ -321,9 +324,7 @@ async def list_transactions(
 
     @returns Paginated list
     """
-    base = select(Transaction).where(
-        Transaction.facility_id == current_user.facility_id
-    )
+    base = select(Transaction).where(Transaction.facility_id == current_user.facility_id)
     if start_date:
         base = base.where(Transaction.date >= start_date)
     if end_date:
@@ -342,13 +343,8 @@ async def list_transactions(
         .limit(page_size)
     )
     result = await db.execute(stmt)
-    items = [
-        TransactionResponse.model_validate(t)
-        for t in result.scalars().all()
-    ]
-    return TransactionListResponse(
-        items=items, total=total, page=page, page_size=page_size
-    )
+    items = [TransactionResponse.model_validate(t) for t in result.scalars().all()]
+    return TransactionListResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/transactions/{transaction_id}", response_model=TransactionDetail)
@@ -418,9 +414,7 @@ async def report_general_ledger(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> GeneralLedgerResponse:
     """General ledger for one account."""
-    return await get_general_ledger(
-        db, current_user.facility_id, account_id, start, end
-    )
+    return await get_general_ledger(db, current_user.facility_id, account_id, start, end)
 
 
 @router.get("/reports/trial-balance", response_model=TrialBalanceResponse)
@@ -431,9 +425,7 @@ async def report_trial_balance(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Trial balance — debits should equal credits."""
-    return await get_trial_balance(
-        db, current_user.facility_id, period_id, as_of
-    )
+    return await get_trial_balance(db, current_user.facility_id, period_id, as_of)
 
 
 @router.get("/reports/profit-loss", response_model=ProfitLossResponse)
@@ -445,9 +437,7 @@ async def report_profit_loss(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> ProfitLossResponse:
     """P&L for the date range."""
-    return await get_profit_loss(
-        db, current_user.facility_id, start, end, department_id
-    )
+    return await get_profit_loss(db, current_user.facility_id, start, end, department_id)
 
 
 @router.get("/reports/balance-sheet", response_model=BalanceSheetResponse)
@@ -469,9 +459,7 @@ async def report_cash_flow(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> CashFlowResponse:
     """Cash flow statement."""
-    return await get_cash_flow(
-        db, current_user.facility_id, start, end, method
-    )
+    return await get_cash_flow(db, current_user.facility_id, start, end, method)
 
 
 @router.get("/reports/ar-aging", response_model=ARAgingResponse)
@@ -484,9 +472,7 @@ async def report_ar_aging(
     return await get_ar_aging(db, current_user.facility_id, as_of_date)
 
 
-@router.get(
-    "/reports/budget-vs-actual", response_model=BudgetVsActualResponse
-)
+@router.get("/reports/budget-vs-actual", response_model=BudgetVsActualResponse)
 async def report_budget_vs_actual(
     period_id: uuid.UUID = Query(...),
     db: AsyncSession = Depends(get_db),
@@ -513,9 +499,7 @@ async def list_periods(
         )
         .order_by(AccountingPeriod.start_date.desc())
     )
-    return [
-        PeriodResponse.model_validate(p) for p in result.scalars().all()
-    ]
+    return [PeriodResponse.model_validate(p) for p in result.scalars().all()]
 
 
 @router.post(
@@ -551,17 +535,13 @@ async def close_a_period(
     """Close (not lock) a period."""
     _ = data
     try:
-        period = await close_period(
-            db, current_user.facility_id, period_id, current_user.user_id
-        )
+        period = await close_period(db, current_user.facility_id, period_id, current_user.user_id)
     except PeriodLockedError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     return PeriodResponse.model_validate(period)
 
 
-@router.post(
-    "/periods/{period_id}/year-end-close", response_model=PeriodResponse
-)
+@router.post("/periods/{period_id}/year-end-close", response_model=PeriodResponse)
 async def year_end_close(
     period_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -569,15 +549,11 @@ async def year_end_close(
 ) -> PeriodResponse:
     """Sweep income/expense to retained earnings and lock the period."""
     try:
-        await run_year_end_close(
-            db, current_user.facility_id, period_id, current_user.user_id
-        )
+        await run_year_end_close(db, current_user.facility_id, period_id, current_user.user_id)
     except (PeriodLockedError, UnbalancedTransactionError) as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
-    result = await db.execute(
-        select(AccountingPeriod).where(AccountingPeriod.id == period_id)
-    )
+    result = await db.execute(select(AccountingPeriod).where(AccountingPeriod.id == period_id))
     period = result.scalar_one()
     return PeriodResponse.model_validate(period)
 
@@ -660,9 +636,7 @@ async def list_bank_statements(
         stmt = stmt.where(BankStatement.status == status_filter)
     stmt = stmt.order_by(BankStatement.transaction_date.desc())
     result = await db.execute(stmt)
-    return [
-        BankStatementResponse.model_validate(s) for s in result.scalars().all()
-    ]
+    return [BankStatementResponse.model_validate(s) for s in result.scalars().all()]
 
 
 @router.post(
@@ -696,14 +670,10 @@ async def auto_match_statements(
     current_user: CurrentUser = Depends(require_roles(*_FINANCE_ROLES)),
 ) -> dict[str, int]:
     """Auto-match unmatched statements against GL cash entries."""
-    return await auto_match(
-        db, current_user.facility_id, account_id, current_user.user_id
-    )
+    return await auto_match(db, current_user.facility_id, account_id, current_user.user_id)
 
 
-@router.get(
-    "/reconciliation/{account_id}", response_model=ReconciliationResponse
-)
+@router.get("/reconciliation/{account_id}", response_model=ReconciliationResponse)
 async def reconciliation_report(
     account_id: uuid.UUID,
     period_id: uuid.UUID | None = Query(None),
@@ -711,9 +681,7 @@ async def reconciliation_report(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> ReconciliationResponse:
     """Reconciliation summary for a cash account."""
-    return await get_reconciliation_report(
-        db, current_user.facility_id, account_id, period_id
-    )
+    return await get_reconciliation_report(db, current_user.facility_id, account_id, period_id)
 
 
 # ── Fixed Assets ─────────────────────────────────────────────────────────────
@@ -731,9 +699,7 @@ async def list_fixed_assets(
             FixedAsset.is_deleted == False,  # noqa: E712
         )
     )
-    return [
-        FixedAssetResponse.model_validate(a) for a in result.scalars().all()
-    ]
+    return [FixedAssetResponse.model_validate(a) for a in result.scalars().all()]
 
 
 @router.post(
@@ -770,9 +736,7 @@ async def create_fixed_asset(
     return FixedAssetResponse.model_validate(asset)
 
 
-@router.post(
-    "/depreciation/run", response_model=DepreciationRunResponse
-)
+@router.post("/depreciation/run", response_model=DepreciationRunResponse)
 async def run_depreciation(
     period_id: uuid.UUID = Query(...),
     db: AsyncSession = Depends(get_db),
@@ -803,9 +767,7 @@ async def list_tax_rates(
             TaxRate.is_deleted == False,  # noqa: E712
         )
     )
-    return [
-        TaxRateResponse.model_validate(t) for t in result.scalars().all()
-    ]
+    return [TaxRateResponse.model_validate(t) for t in result.scalars().all()]
 
 
 @router.post(
@@ -898,10 +860,7 @@ async def list_recurring(
             RecurringTemplate.is_deleted == False,  # noqa: E712
         )
     )
-    return [
-        RecurringTemplateResponse.model_validate(t)
-        for t in result.scalars().all()
-    ]
+    return [RecurringTemplateResponse.model_validate(t) for t in result.scalars().all()]
 
 
 @router.post(
@@ -936,9 +895,7 @@ async def create_recurring(
     return RecurringTemplateResponse.model_validate(tpl)
 
 
-@router.post(
-    "/recurring/{template_id}/post-now", response_model=TransactionResponse
-)
+@router.post("/recurring/{template_id}/post-now", response_model=TransactionResponse)
 async def post_recurring_template_now(
     template_id: uuid.UUID,
     posting_date: date_type | None = Query(None),
@@ -968,7 +925,5 @@ async def trigger_recurring_processing(
     current_user: CurrentUser = Depends(require_roles(*_FINANCE_ROLES)),
 ) -> list[TransactionResponse]:
     """Process all due recurring templates that don't require approval."""
-    posted = await process_due_recurring(
-        db, facility_id=current_user.facility_id, user_id=current_user.user_id
-    )
+    posted = await process_due_recurring(db, facility_id=current_user.facility_id, user_id=current_user.user_id)
     return [TransactionResponse.model_validate(t) for t in posted]

@@ -8,14 +8,18 @@ until stock depletion.
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.analytics.models import StockoutPrediction
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 

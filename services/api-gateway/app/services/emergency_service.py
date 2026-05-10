@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,7 +49,7 @@ class EmergencyService:
         @param created_by: Staff UUID
         @returns Created emergency visit
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count_result = await self.db.execute(
             select(func.count(EmergencyVisit.id)).where(
@@ -113,7 +113,7 @@ class EmergencyService:
         if not visit:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         visit.triage_category = data.triage_category
         visit.triage_color = TRIAGE_COLORS.get(data.triage_category, "yellow")
         visit.triage_score = data.triage_score
@@ -155,7 +155,7 @@ class EmergencyService:
 
         visit.assigned_doctor_id = data.doctor_id
         visit.status = "in_treatment"
-        visit.treatment_started_at = datetime.now(timezone.utc)
+        visit.treatment_started_at = datetime.now(UTC)
         visit.updated_by = assigned_by
         await self.db.flush()
         await self.db.refresh(visit)
@@ -181,7 +181,7 @@ class EmergencyService:
         if not visit:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         visit.disposition = data.disposition
         visit.disposition_time = now
         visit.disposition_notes = data.disposition_notes
@@ -246,9 +246,7 @@ class EmergencyService:
         if status:
             query = query.where(EmergencyVisit.status == status)
         else:
-            query = query.where(
-                EmergencyVisit.status.in_(["arrived", "triaged", "in_treatment", "observation"])
-            )
+            query = query.where(EmergencyVisit.status.in_(["arrived", "triaged", "in_treatment", "observation"]))
 
         # Priority order: red first, then by arrival time
         triage_order = func.array_position(
@@ -284,9 +282,7 @@ class EmergencyService:
             )
         return items
 
-    async def get_visit(
-        self, visit_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> EmergencyVisit | None:
+    async def get_visit(self, visit_id: uuid.UUID, facility_id: uuid.UUID) -> EmergencyVisit | None:
         """
         Get a single emergency visit.
 
@@ -334,7 +330,8 @@ class EmergencyService:
         )
         trauma = await self.db.execute(
             select(func.count(EmergencyVisit.id)).where(
-                *base, EmergencyVisit.is_trauma == True  # noqa: E712
+                *base,
+                EmergencyVisit.is_trauma == True,  # noqa: E712
             )
         )
 
@@ -350,9 +347,7 @@ class EmergencyService:
             trauma_cases=trauma.scalar() or 0,
         )
 
-    async def _get_visit(
-        self, visit_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> EmergencyVisit | None:
+    async def _get_visit(self, visit_id: uuid.UUID, facility_id: uuid.UUID) -> EmergencyVisit | None:
         """Get a single visit by ID."""
         result = await self.db.execute(
             select(EmergencyVisit).where(

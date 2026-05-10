@@ -12,7 +12,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-
 # ── Chart of Accounts ────────────────────────────────────────────────────────
 
 
@@ -22,9 +21,7 @@ class AccountCreate(BaseModel):
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=200)
     type: str = Field(..., pattern=r"^(asset|liability|equity|income|expense)$")
-    cashflow_category: str = Field(
-        default="none", pattern=r"^(operating|investing|financing|none)$"
-    )
+    cashflow_category: str = Field(default="none", pattern=r"^(operating|investing|financing|none)$")
     parent_id: uuid.UUID | None = None
     description: str | None = Field(None, max_length=2000)
 
@@ -33,9 +30,7 @@ class AccountUpdate(BaseModel):
     """Schema for editing account metadata. Type/code never editable if entries exist."""
 
     name: str | None = Field(None, min_length=1, max_length=200)
-    cashflow_category: str | None = Field(
-        None, pattern=r"^(operating|investing|financing|none)$"
-    )
+    cashflow_category: str | None = Field(None, pattern=r"^(operating|investing|financing|none)$")
     parent_id: uuid.UUID | None = None
     description: str | None = Field(None, max_length=2000)
     is_active: bool | None = None

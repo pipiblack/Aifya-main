@@ -12,12 +12,14 @@ from __future__ import annotations
 
 import os
 import re
-import uuid
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import httpx
 from pydantic import BaseModel
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    import uuid
 
 logger = get_logger(__name__)
 

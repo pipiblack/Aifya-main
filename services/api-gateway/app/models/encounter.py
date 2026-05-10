@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 from app.models.base import AuditMixin
@@ -22,27 +22,17 @@ class Encounter(AuditMixin, Base):
         Index("ix_encounters_facility_date", "facility_id", "encounter_date"),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
     encounter_type: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # opd, ipd, emergency, mch, dental, surgical, follow_up
 
-    encounter_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    encounter_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Department and provider
-    department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
-    attending_doctor_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
-    nurse_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
+    attending_doctor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
+    nurse_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
 
     # Queue / triage
     queue_number: Mapped[int | None] = mapped_column(Integer)
@@ -60,9 +50,7 @@ class Encounter(AuditMixin, Base):
     chief_complaint: Mapped[str | None] = mapped_column(Text)
 
     # Disposition
-    disposition: Mapped[str | None] = mapped_column(
-        String(30)
-    )  # discharged, admitted, referred, follow_up, deceased
+    disposition: Mapped[str | None] = mapped_column(String(30))  # discharged, admitted, referred, follow_up, deceased
 
     # IPD-specific
     bed_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -92,19 +80,11 @@ class ClinicalNote(AuditMixin, Base):
     """
 
     __tablename__ = "clinical_notes"
-    __table_args__ = (
-        Index("ix_clinical_notes_encounter", "facility_id", "encounter_id"),
-    )
+    __table_args__ = (Index("ix_clinical_notes_encounter", "facility_id", "encounter_id"),)
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    author_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    author_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     note_type: Mapped[str] = mapped_column(
         String(30), nullable=False
@@ -123,13 +103,9 @@ class ClinicalNote(AuditMixin, Base):
     is_ai_generated: Mapped[bool] = mapped_column(default=False, nullable=False)
     ai_model_version: Mapped[str | None] = mapped_column(String(50))
     clinician_approved: Mapped[bool] = mapped_column(default=False, nullable=False)
-    clinician_approved_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
+    clinician_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     clinician_approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
     # Addendum
     is_addendum: Mapped[bool] = mapped_column(default=False, nullable=False)
-    parent_note_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("clinical_notes.id")
-    )
+    parent_note_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("clinical_notes.id"))

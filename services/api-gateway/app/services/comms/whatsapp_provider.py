@@ -47,10 +47,7 @@ class WhatsAppCloudProvider(WhatsAppProvider):
     def __init__(self) -> None:
         self._access_token: str = os.environ.get("WA_ACCESS_TOKEN", "")
         self._phone_number_id: str = os.environ.get("WA_PHONE_NUMBER_ID", "")
-        self._base_url: str = (
-            f"https://graph.facebook.com/{_WA_API_VERSION}"
-            f"/{self._phone_number_id}/messages"
-        )
+        self._base_url: str = f"https://graph.facebook.com/{_WA_API_VERSION}/{self._phone_number_id}/messages"
 
     async def send_message(
         self,
@@ -113,11 +110,7 @@ class WhatsAppCloudProvider(WhatsAppProvider):
 
             if response.status_code in (200, 201):
                 data = response.json()
-                wa_message_id = (
-                    data.get("messages", [{}])[0].get("id")
-                    if data.get("messages")
-                    else None
-                )
+                wa_message_id = data.get("messages", [{}])[0].get("id") if data.get("messages") else None
                 logger.info(
                     "whatsapp_sent",
                     phone=phone,

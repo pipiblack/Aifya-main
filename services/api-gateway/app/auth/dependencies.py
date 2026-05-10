@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass
 
-from fastapi import Cookie, Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
@@ -40,10 +40,7 @@ async def get_current_user(
     """
     # Try Authorization header first, then httpOnly cookie
     token: str | None = None
-    if credentials is not None:
-        token = credentials.credentials
-    else:
-        token = request.cookies.get("access_token")
+    token = credentials.credentials if credentials is not None else request.cookies.get("access_token")
 
     if token is None:
         raise HTTPException(

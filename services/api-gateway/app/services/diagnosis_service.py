@@ -62,9 +62,7 @@ class DiagnosisService:
 
         return diagnosis
 
-    async def get_encounter_diagnoses(
-        self, encounter_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> list[Diagnosis]:
+    async def get_encounter_diagnoses(self, encounter_id: uuid.UUID, facility_id: uuid.UUID) -> list[Diagnosis]:
         """
         Get all diagnoses for an encounter.
 

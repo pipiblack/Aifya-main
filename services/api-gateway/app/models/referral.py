@@ -24,28 +24,16 @@ class Referral(AuditMixin, Base):
     )
 
     referral_number: Mapped[str] = mapped_column(String(50), nullable=False)  # REF-YYYYMMDD-XXXX
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
 
     # Type
-    referral_type: Mapped[str] = mapped_column(
-        String(20), default="internal", nullable=False
-    )  # internal, external
-    direction: Mapped[str] = mapped_column(
-        String(20), default="outgoing", nullable=False
-    )  # outgoing, incoming
+    referral_type: Mapped[str] = mapped_column(String(20), default="internal", nullable=False)  # internal, external
+    direction: Mapped[str] = mapped_column(String(20), default="outgoing", nullable=False)  # outgoing, incoming
 
     # Referring side
-    referring_doctor_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id")
-    )
-    referring_department_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id")
-    )
+    referring_doctor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"))
+    referring_department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("departments.id"))
     referring_facility_name: Mapped[str | None] = mapped_column(String(200))
 
     # Receiving side
@@ -58,14 +46,10 @@ class Referral(AuditMixin, Base):
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     clinical_notes: Mapped[str | None] = mapped_column(Text)
     diagnosis: Mapped[str | None] = mapped_column(String(500))
-    urgency: Mapped[str] = mapped_column(
-        String(20), default="routine", nullable=False
-    )  # emergency, urgent, routine
+    urgency: Mapped[str] = mapped_column(String(20), default="routine", nullable=False)  # emergency, urgent, routine
 
     # Status
-    referral_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    referral_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), default="draft", nullable=False
     )  # draft, sent, received, accepted, declined, completed, cancelled

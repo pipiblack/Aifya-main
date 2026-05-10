@@ -1,7 +1,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,9 +21,7 @@ class OperatingTheatre(AuditMixin, Base):
     """Operating theatre / surgical room."""
 
     __tablename__ = "operating_theatres"
-    __table_args__ = (
-        Index("ix_operating_theatres_facility", "facility_id"),
-    )
+    __table_args__ = (Index("ix_operating_theatres_facility", "facility_id"),)
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     code: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -43,22 +49,14 @@ class SurgicalCase(AuditMixin, Base):
     )
 
     case_number: Mapped[str] = mapped_column(String(50), nullable=False)  # SC-YYYYMMDD-XXXX
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
-    theatre_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("operating_theatres.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
+    theatre_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("operating_theatres.id"))
 
     # Scheduling
     scheduled_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     estimated_duration_min: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
-    priority: Mapped[str] = mapped_column(
-        String(20), default="elective", nullable=False
-    )  # emergency, urgent, elective
+    priority: Mapped[str] = mapped_column(String(20), default="elective", nullable=False)  # emergency, urgent, elective
 
     # Procedure
     procedure_name: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -73,9 +71,7 @@ class SurgicalCase(AuditMixin, Base):
     anaesthetist_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
     # Surgical team
-    lead_surgeon_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    lead_surgeon_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
     assistant_surgeon_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     scrub_nurse_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     circulating_nurse_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))

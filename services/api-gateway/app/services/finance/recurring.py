@@ -8,14 +8,19 @@ through ``post_transaction`` using the template's event_type and advances
 
 from __future__ import annotations
 
-import uuid
-from datetime import date as date_type, datetime, timezone
+from datetime import UTC, datetime
+from datetime import date as date_type
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.finance import RecurringTemplate, Transaction
 from app.services.finance.posting_engine import post_transaction
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def _advance_date(start: date_type, frequency: str) -> date_type:
@@ -92,7 +97,7 @@ async def process_due_recurring(
             },
             user_id=user_id,
         )
-        tpl.last_posted_at = datetime.now(timezone.utc)
+        tpl.last_posted_at = datetime.now(UTC)
         tpl.next_post_date = _advance_date(tpl.next_post_date, tpl.frequency)
         tpl.updated_by = user_id
         posted.append(txn)
@@ -141,7 +146,7 @@ async def post_recurring_now(
         },
         user_id=user_id,
     )
-    tpl.last_posted_at = datetime.now(timezone.utc)
+    tpl.last_posted_at = datetime.now(UTC)
     tpl.next_post_date = _advance_date(posting_date, tpl.frequency)
     tpl.updated_by = user_id
     await db.flush()

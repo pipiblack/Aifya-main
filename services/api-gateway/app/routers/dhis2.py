@@ -3,7 +3,6 @@ DHIS2 / MOH Reporting router.
 Provides endpoints for generating MOH forms and managing DHIS2 integration.
 """
 
-import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
@@ -29,6 +28,7 @@ class MOHReportRequest(BaseModel):
     @param date_from: Report period start date
     @param date_to: Report period end date
     """
+
     form_code: str
     date_from: date
     date_to: date
@@ -43,6 +43,7 @@ class DHIS2SyncRequest(BaseModel):
     @param date_to: Report period end date
     @param dhis2_dataset_id: Optional DHIS2 dataset UID override
     """
+
     form_code: str
     date_from: date
     date_to: date
@@ -56,6 +57,7 @@ class DHIS2ConnectionTest(BaseModel):
     @param connected: Whether connection succeeded
     @param message: Status message
     """
+
     connected: bool
     message: str
 

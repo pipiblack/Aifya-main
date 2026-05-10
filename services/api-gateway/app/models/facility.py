@@ -16,20 +16,14 @@ class Facility(Base):
 
     __tablename__ = "facilities"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     facility_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # hospital, clinic, dispensary, health_centre
-    keph_level: Mapped[str | None] = mapped_column(
-        String(10)
-    )  # Kenya Essential Package for Health level (2-6)
-    mfl_code: Mapped[str | None] = mapped_column(
-        String(20), unique=True
-    )  # Kenya Master Facility List code
+    keph_level: Mapped[str | None] = mapped_column(String(10))  # Kenya Essential Package for Health level (2-6)
+    mfl_code: Mapped[str | None] = mapped_column(String(20), unique=True)  # Kenya Master Facility List code
 
     # Location
     county: Mapped[str | None] = mapped_column(String(100))
@@ -48,21 +42,15 @@ class Facility(Base):
     logo_url: Mapped[str | None] = mapped_column(String(500))
 
     # Settings
-    timezone: Mapped[str] = mapped_column(
-        String(50), default="Africa/Nairobi", nullable=False
-    )
-    currency: Mapped[str] = mapped_column(
-        String(3), default="KES", nullable=False
-    )
+    timezone: Mapped[str] = mapped_column(String(50), default="Africa/Nairobi", nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="KES", nullable=False)
     settings: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
 
     # DHIS2 integration
     dhis2_org_unit_id: Mapped[str | None] = mapped_column(String(50))
 
     # Audit
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

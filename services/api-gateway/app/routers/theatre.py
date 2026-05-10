@@ -64,9 +64,7 @@ async def list_theatres(
 async def create_theatre(
     data: TheatreCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> TheatreResponse:
     """
     Create an operating theatre.
@@ -117,9 +115,7 @@ async def list_cases(
 async def schedule_case(
     data: SurgicalCaseCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor")),
 ) -> SurgicalCaseResponse:
     """
     Schedule a surgical case.
@@ -164,9 +160,7 @@ async def update_case_status(
     case_id: uuid.UUID,
     new_status: str = Query(..., alias="status"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor", "nurse")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor", "nurse")),
 ) -> SurgicalCaseResponse:
     """
     Update surgical case status.
@@ -194,9 +188,7 @@ async def record_operative_notes(
     case_id: uuid.UUID,
     data: OperativeNotesRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor")),
 ) -> SurgicalCaseResponse:
     """
     Record operative notes for a surgical case.

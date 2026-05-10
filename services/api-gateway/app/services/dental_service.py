@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -91,9 +91,7 @@ class DentalService:
 
     # ── Visits ───────────────────────────────────────────────────────────
 
-    async def create_visit(
-        self, data: DentalVisitCreate, facility_id: uuid.UUID, created_by: uuid.UUID
-    ) -> DentalVisit:
+    async def create_visit(self, data: DentalVisitCreate, facility_id: uuid.UUID, created_by: uuid.UUID) -> DentalVisit:
         """
         Create a dental visit.
 
@@ -102,7 +100,7 @@ class DentalService:
         @param created_by: Staff UUID
         @returns Created visit
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count = await self.db.execute(
             select(func.count(DentalVisit.id)).where(
@@ -211,7 +209,7 @@ class DentalService:
         @param created_by: Staff UUID
         @returns Created plan
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count = await self.db.execute(
             select(func.count(DentalTreatmentPlan.id)).where(

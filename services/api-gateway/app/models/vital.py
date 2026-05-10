@@ -22,18 +22,10 @@ class VitalSign(AuditMixin, Base):
         Index("ix_vitals_recorded_at", "facility_id", "recorded_at"),
     )
 
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    recorded_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
-    recorded_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    encounter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    recorded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Blood pressure
     systolic_bp: Mapped[int | None] = mapped_column(Integer)  # mmHg
@@ -44,9 +36,7 @@ class VitalSign(AuditMixin, Base):
 
     # Temperature
     temperature: Mapped[float | None] = mapped_column(Float)  # Celsius
-    temperature_site: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # oral, axillary, rectal, tympanic, temporal
+    temperature_site: Mapped[str | None] = mapped_column(String(20))  # oral, axillary, rectal, tympanic, temporal
 
     # Respiratory
     respiratory_rate: Mapped[int | None] = mapped_column(Integer)  # breaths/min
@@ -66,9 +56,7 @@ class VitalSign(AuditMixin, Base):
 
     # Blood glucose
     blood_glucose: Mapped[float | None] = mapped_column(Float)  # mmol/L
-    glucose_timing: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # fasting, random, post_prandial
+    glucose_timing: Mapped[str | None] = mapped_column(String(20))  # fasting, random, post_prandial
 
     # GCS (Glasgow Coma Scale) for emergency
     gcs_eye: Mapped[int | None] = mapped_column(Integer)  # 1-4
@@ -77,9 +65,7 @@ class VitalSign(AuditMixin, Base):
 
     # Alert flags (set by service layer based on critical thresholds)
     is_critical: Mapped[bool] = mapped_column(default=False, nullable=False)
-    critical_alerts: Mapped[str | None] = mapped_column(
-        String(500)
-    )  # Comma-separated alert descriptions
+    critical_alerts: Mapped[str | None] = mapped_column(String(500))  # Comma-separated alert descriptions
 
     # FHIR
     fhir_id: Mapped[str | None] = mapped_column(String(100))

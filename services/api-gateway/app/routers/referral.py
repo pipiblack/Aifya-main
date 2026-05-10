@@ -65,9 +65,7 @@ async def list_referrals(
 async def create_referral(
     data: ReferralCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor")),
 ) -> ReferralResponse:
     """
     Create a referral.
@@ -138,9 +136,7 @@ async def get_referral_pdf(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": (
-                f'inline; filename="referral-{referral_id}.pdf"'
-            ),
+            "Content-Disposition": (f'inline; filename="referral-{referral_id}.pdf"'),
         },
     )
 
@@ -150,9 +146,7 @@ async def update_referral_status(
     referral_id: uuid.UUID,
     data: ReferralUpdateStatus,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "doctor")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "doctor")),
 ) -> ReferralResponse:
     """
     Update referral status.

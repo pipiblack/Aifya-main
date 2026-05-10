@@ -1,7 +1,16 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import (
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,12 +32,8 @@ class ANCProfile(AuditMixin, Base):
         Index("ix_anc_profiles_edd", "facility_id", "expected_delivery_date"),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
 
     # Registration
     anc_number: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -43,17 +48,13 @@ class ANCProfile(AuditMixin, Base):
     gestation_at_first_visit: Mapped[int | None] = mapped_column(Integer)  # Weeks
 
     # Risk factors
-    risk_level: Mapped[str] = mapped_column(
-        String(20), default="low", nullable=False
-    )  # low, moderate, high
+    risk_level: Mapped[str] = mapped_column(String(20), default="low", nullable=False)  # low, moderate, high
     risk_factors: Mapped[dict | None] = mapped_column(JSONB)  # type: ignore[type-arg]
     # e.g. ["previous_cs", "hypertension", "diabetes", "hiv_positive", "age_over_35", "rh_negative"]
 
     # Medical history
     blood_group: Mapped[str | None] = mapped_column(String(10))  # A+, A-, B+, B-, AB+, AB-, O+, O-
-    hiv_status: Mapped[str | None] = mapped_column(
-        String(20)
-    )  # positive, negative, unknown, declined
+    hiv_status: Mapped[str | None] = mapped_column(String(20))  # positive, negative, unknown, declined
     hiv_test_date: Mapped[date | None] = mapped_column(Date)
     on_art: Mapped[bool] = mapped_column(default=False, nullable=False)
     vdrl_status: Mapped[str | None] = mapped_column(String(20))  # reactive, non_reactive
@@ -85,22 +86,12 @@ class ANCVisit(AuditMixin, Base):
     """
 
     __tablename__ = "anc_visits"
-    __table_args__ = (
-        Index("ix_anc_visits_profile", "facility_id", "anc_profile_id"),
-    )
+    __table_args__ = (Index("ix_anc_visits_profile", "facility_id", "anc_profile_id"),)
 
-    anc_profile_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("anc_profiles.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
-    provider_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    anc_profile_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("anc_profiles.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
+    provider_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Visit details
     visit_number: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -121,9 +112,7 @@ class ANCVisit(AuditMixin, Base):
     # Obstetric exam
     fundal_height_cm: Mapped[float | None] = mapped_column(Float)
     fetal_heart_rate: Mapped[int | None] = mapped_column(Integer)
-    fetal_presentation: Mapped[str | None] = mapped_column(
-        String(30)
-    )  # cephalic, breech, transverse, oblique
+    fetal_presentation: Mapped[str | None] = mapped_column(String(30))  # cephalic, breech, transverse, oblique
     fetal_movement: Mapped[str | None] = mapped_column(String(20))  # present, absent, reduced
     oedema: Mapped[str | None] = mapped_column(String(20))  # none, mild, moderate, severe
 
@@ -166,18 +155,10 @@ class DeliveryRecord(AuditMixin, Base):
         Index("ix_delivery_records_patient", "facility_id", "patient_id"),
     )
 
-    anc_profile_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("anc_profiles.id"), nullable=False
-    )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id")
-    )
-    delivered_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    anc_profile_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("anc_profiles.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"))
+    delivered_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Delivery details
     delivery_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -191,14 +172,14 @@ class DeliveryRecord(AuditMixin, Base):
     )  # facility, home, bba (born before arrival), other
 
     # Mother outcome
-    maternal_outcome: Mapped[str] = mapped_column(
-        String(20), default="alive", nullable=False
-    )  # alive, deceased
+    maternal_outcome: Mapped[str] = mapped_column(String(20), default="alive", nullable=False)  # alive, deceased
     maternal_complications: Mapped[str | None] = mapped_column(Text)
     # e.g. PPH, eclampsia, obstructed_labour, sepsis, ruptured_uterus
     blood_loss_ml: Mapped[int | None] = mapped_column(Integer)
     episiotomy: Mapped[bool] = mapped_column(default=False, nullable=False)
-    tears: Mapped[str | None] = mapped_column(String(20))  # none, first_degree, second_degree, third_degree, fourth_degree
+    tears: Mapped[str | None] = mapped_column(
+        String(20)
+    )  # none, first_degree, second_degree, third_degree, fourth_degree
 
     # Baby outcome
     baby_outcome: Mapped[str] = mapped_column(
@@ -238,15 +219,9 @@ class ChildRecord(AuditMixin, Base):
         Index("ix_child_records_mother", "facility_id", "mother_patient_id"),
     )
 
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    mother_patient_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id")
-    )
-    delivery_record_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("delivery_records.id")
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    mother_patient_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"))
+    delivery_record_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("delivery_records.id"))
 
     # Registration
     child_number: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -264,9 +239,7 @@ class ChildRecord(AuditMixin, Base):
     pcr_result: Mapped[str | None] = mapped_column(String(20))  # positive, negative, pending
 
     # Feeding
-    feeding_method: Mapped[str | None] = mapped_column(
-        String(30)
-    )  # exclusive_breastfeeding, mixed, replacement
+    feeding_method: Mapped[str | None] = mapped_column(String(30))  # exclusive_breastfeeding, mixed, replacement
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -291,12 +264,8 @@ class Immunization(AuditMixin, Base):
     child_record_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("child_records.id"), nullable=False
     )
-    patient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
-    )
-    administered_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False
-    )
+    patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    administered_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False)
 
     # Vaccine
     vaccine_code: Mapped[str] = mapped_column(String(30), nullable=False)

@@ -9,13 +9,12 @@ import hashlib
 import hmac
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.facility import Facility
 from app.models.licensing import (
     AppUpdate,
     FacilityLicense,
@@ -24,6 +23,7 @@ from app.models.licensing import (
 )
 from app.models.patient import Patient
 from app.schemas.licensing import (
+    TIER_ENTITLEMENTS,
     AppUpdateCreate,
     DataExportRequest,
     HeartbeatRequest,
@@ -31,7 +31,6 @@ from app.schemas.licensing import (
     LicenseUpgrade,
     LicenseValidation,
     TelemetryPayload,
-    TIER_ENTITLEMENTS,
 )
 
 
@@ -45,9 +44,7 @@ def _generate_license_key(tier: str) -> str:
     prefix = f"AIFYA-{tier.upper()}"
     random_part = secrets.token_hex(8).upper()
     raw = f"{prefix}-{random_part}"
-    sig = hmac.new(
-        settings.secret_key.encode(), raw.encode(), hashlib.sha256
-    ).hexdigest()[:8].upper()
+    sig = hmac.new(settings.secret_key.encode(), raw.encode(), hashlib.sha256).hexdigest()[:8].upper()
     return f"{raw}-{sig}"
 
 
@@ -62,9 +59,7 @@ def _verify_license_key(key: str) -> bool:
     if len(parts) != 2:
         return False
     raw, sig = parts
-    expected = hmac.new(
-        settings.secret_key.encode(), raw.encode(), hashlib.sha256
-    ).hexdigest()[:8].upper()
+    expected = hmac.new(settings.secret_key.encode(), raw.encode(), hashlib.sha256).hexdigest()[:8].upper()
     return hmac.compare_digest(sig, expected)
 
 
@@ -106,12 +101,9 @@ class LicensingService:
             enabled_modules=entitlements["enabled_modules"],
             feature_flags=entitlements["feature_flags"],
             billing_cycle=data.billing_cycle,
-            price_cents=entitlements[
-                "price_annual_kes" if data.billing_cycle == "annual" else "price_monthly_kes"
-            ],
-            expires_at=data.expires_at or (
-                datetime.now(timezone.utc) + timedelta(days=365 if data.billing_cycle == "annual" else 30)
-            ),
+            price_cents=entitlements["price_annual_kes" if data.billing_cycle == "annual" else "price_monthly_kes"],
+            expires_at=data.expires_at
+            or (datetime.now(UTC) + timedelta(days=365 if data.billing_cycle == "annual" else 30)),
             issued_by=data.issued_by,
             notes=data.notes,
         )
@@ -160,7 +152,7 @@ class LicensingService:
                 days_remaining=None,
             )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         is_expired = license_obj.expires_at and license_obj.expires_at < now
 
         # Grace period: still works but with warning
@@ -211,9 +203,7 @@ class LicensingService:
             ),
         )
 
-    async def upgrade_license(
-        self, facility_id: uuid.UUID, data: LicenseUpgrade, upgraded_by: str
-    ) -> FacilityLicense:
+    async def upgrade_license(self, facility_id: uuid.UUID, data: LicenseUpgrade, upgraded_by: str) -> FacilityLicense:
         """
         Upgrade a facility to a higher tier.
 
@@ -274,7 +264,7 @@ class LicensingService:
             )
 
         # Update heartbeat timestamp
-        license_obj.last_heartbeat_at = datetime.now(timezone.utc)
+        license_obj.last_heartbeat_at = datetime.now(UTC)
         await self.db.flush()
 
         # Update facility version tracking
@@ -290,9 +280,7 @@ class LicensingService:
 
         return validation
 
-    async def record_telemetry(
-        self, facility_id: uuid.UUID, data: TelemetryPayload
-    ) -> None:
+    async def record_telemetry(self, facility_id: uuid.UUID, data: TelemetryPayload) -> None:
         """
         Record daily usage telemetry from a facility.
 
@@ -301,7 +289,7 @@ class LicensingService:
         """
         telemetry = UsageTelemetry(
             facility_id=facility_id,
-            recorded_date=datetime.now(timezone.utc),
+            recorded_date=datetime.now(UTC),
             active_users=data.active_users,
             total_patients=data.total_patients,
             encounters_today=data.encounters_today,
@@ -322,9 +310,7 @@ class LicensingService:
 
     # ─── Updates ──────────────────────────────────────────────────────────
 
-    async def check_for_updates(
-        self, facility_id: uuid.UUID, current_version: str
-    ) -> dict:
+    async def check_for_updates(self, facility_id: uuid.UUID, current_version: str) -> dict:
         """
         Check if updates are available for a facility.
 
@@ -377,7 +363,7 @@ class LicensingService:
             db_migration_required=data.db_migration_required,
             min_version=data.min_version,
             is_published=True,
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
         )
         self.db.add(update)
         await self.db.flush()
@@ -386,9 +372,7 @@ class LicensingService:
 
     # ─── Entitlement Checks ───────────────────────────────────────────────
 
-    async def check_module_access(
-        self, facility_id: uuid.UUID, module: str
-    ) -> bool:
+    async def check_module_access(self, facility_id: uuid.UUID, module: str) -> bool:
         """
         Check if a facility has access to a specific module.
 
@@ -399,9 +383,7 @@ class LicensingService:
         validation = await self.validate_license(facility_id)
         return module in validation.enabled_modules
 
-    async def check_feature_flag(
-        self, facility_id: uuid.UUID, flag: str
-    ) -> bool:
+    async def check_feature_flag(self, facility_id: uuid.UUID, flag: str) -> bool:
         """
         Check if a feature flag is enabled for a facility.
 
@@ -440,9 +422,7 @@ class LicensingService:
 
     # ─── Data Export (Tier-Gated) ─────────────────────────────────────────
 
-    async def validate_export_access(
-        self, facility_id: uuid.UUID, request: DataExportRequest
-    ) -> tuple[bool, str]:
+    async def validate_export_access(self, facility_id: uuid.UUID, request: DataExportRequest) -> tuple[bool, str]:
         """
         Validate if facility can export data based on tier.
 
@@ -472,7 +452,7 @@ class LicensingService:
 
         @returns Summary dict with tier breakdown, MRR, health metrics
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Count by tier
         tier_counts = await self.db.execute(
@@ -560,17 +540,13 @@ class LicensingService:
         )
         return result.scalar_one_or_none()
 
-    async def _update_facility_version(
-        self, facility_id: uuid.UUID, version: str
-    ) -> None:
+    async def _update_facility_version(self, facility_id: uuid.UUID, version: str) -> None:
         """Update facility's current version tracking."""
         result = await self.db.execute(
-            select(FacilityUpdateStatus).where(
-                FacilityUpdateStatus.facility_id == facility_id
-            )
+            select(FacilityUpdateStatus).where(FacilityUpdateStatus.facility_id == facility_id)
         )
         status_obj = result.scalar_one_or_none()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if status_obj:
             status_obj.current_version = version

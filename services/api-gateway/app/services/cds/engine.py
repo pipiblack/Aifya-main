@@ -15,9 +15,7 @@ from app.models.diagnosis import Diagnosis
 from app.models.lab import LabOrder, LabResult
 from app.models.patient import Patient
 from app.models.prescription import Prescription
-from app.models.vital import VitalSign
 from app.services.cds.clinical_rules import (
-    check_duplicate_orders,
     check_lab_trends,
     check_sepsis_risk,
     check_vitals_age_adjusted,
@@ -34,7 +32,6 @@ from app.services.cds.models import (
     AlertAction,
     CDSAlert,
     CDSEvaluationResponse,
-    SepsisScore,
 )
 
 logger = get_logger(__name__)
@@ -216,24 +213,31 @@ async def evaluate_vitals(
 
     # 2. Sepsis screening
     has_infection = any(
-        dx.icd10_code and dx.icd10_code.upper().startswith(("A", "B", "J"))
-        for dx in ctx.get("active_diagnoses", [])
+        dx.icd10_code and dx.icd10_code.upper().startswith(("A", "B", "J")) for dx in ctx.get("active_diagnoses", [])
     )
 
     recent_labs: list[dict[str, Any]] = []
-    lab_stmt = select(LabResult).join(LabOrder).where(
-        LabOrder.patient_id == patient_id,
-        LabOrder.facility_id == facility_id,
-        LabResult.test_code == "WBC",
-        LabResult.status == "final",
-    ).order_by(LabResult.resulted_at.desc()).limit(1)
+    lab_stmt = (
+        select(LabResult)
+        .join(LabOrder)
+        .where(
+            LabOrder.patient_id == patient_id,
+            LabOrder.facility_id == facility_id,
+            LabResult.test_code == "WBC",
+            LabResult.status == "final",
+        )
+        .order_by(LabResult.resulted_at.desc())
+        .limit(1)
+    )
     lab_result = await db.execute(lab_stmt)
     wbc_result = lab_result.scalar_one_or_none()
     if wbc_result:
-        recent_labs.append({
-            "test_code": wbc_result.test_code,
-            "result_numeric": wbc_result.result_numeric,
-        })
+        recent_labs.append(
+            {
+                "test_code": wbc_result.test_code,
+                "result_numeric": wbc_result.result_numeric,
+            }
+        )
 
     sepsis_alerts, sepsis_score = check_sepsis_risk(vitals, recent_labs, has_infection)
     all_alerts.extend(sepsis_alerts)

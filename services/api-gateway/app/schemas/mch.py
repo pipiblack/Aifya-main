@@ -3,7 +3,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── ANC Profile ──────────────────────────────────────────────────────────────
 
 
@@ -18,13 +17,9 @@ class ANCProfileCreate(BaseModel):
     lmp_date: date | None = None
     expected_delivery_date: date | None = None
     blood_group: str | None = Field(None, pattern=r"^(A|B|AB|O)[+-]$")
-    hiv_status: str | None = Field(
-        None, pattern=r"^(positive|negative|unknown|declined)$"
-    )
+    hiv_status: str | None = Field(None, pattern=r"^(positive|negative|unknown|declined)$")
     on_art: bool = False
-    risk_level: str = Field(
-        default="low", pattern=r"^(low|moderate|high)$"
-    )
+    risk_level: str = Field(default="low", pattern=r"^(low|moderate|high)$")
     risk_factors: list[str] | None = None
     notes: str | None = Field(None, max_length=2000)
 
@@ -107,35 +102,21 @@ class ANCVisitCreate(BaseModel):
     temperature: float | None = Field(None, ge=30.0, le=45.0)
 
     # Urine
-    urine_protein: str | None = Field(
-        None, pattern=r"^(nil|trace|1\+|2\+|3\+|4\+)$"
-    )
-    urine_glucose: str | None = Field(
-        None, pattern=r"^(nil|trace|1\+|2\+|3\+|4\+)$"
-    )
+    urine_protein: str | None = Field(None, pattern=r"^(nil|trace|1\+|2\+|3\+|4\+)$")
+    urine_glucose: str | None = Field(None, pattern=r"^(nil|trace|1\+|2\+|3\+|4\+)$")
 
     # Obstetric exam
     fundal_height_cm: float | None = Field(None, ge=0, le=50)
     fetal_heart_rate: int | None = Field(None, ge=60, le=220)
-    fetal_presentation: str | None = Field(
-        None, pattern=r"^(cephalic|breech|transverse|oblique)$"
-    )
-    fetal_movement: str | None = Field(
-        None, pattern=r"^(present|absent|reduced)$"
-    )
-    oedema: str | None = Field(
-        None, pattern=r"^(none|mild|moderate|severe)$"
-    )
+    fetal_presentation: str | None = Field(None, pattern=r"^(cephalic|breech|transverse|oblique)$")
+    fetal_movement: str | None = Field(None, pattern=r"^(present|absent|reduced)$")
+    oedema: str | None = Field(None, pattern=r"^(none|mild|moderate|severe)$")
     hb_level: float | None = Field(None, ge=1.0, le=25.0)
 
     # Interventions
     iron_folate_given: bool = False
-    tetanus_dose: str | None = Field(
-        None, pattern=r"^(TT1|TT2|TT3|TT4|TT5)$"
-    )
-    ipt_malaria_dose: str | None = Field(
-        None, pattern=r"^(IPT1|IPT2|IPT3)$"
-    )
+    tetanus_dose: str | None = Field(None, pattern=r"^(TT1|TT2|TT3|TT4|TT5)$")
+    ipt_malaria_dose: str | None = Field(None, pattern=r"^(IPT1|IPT2|IPT3)$")
     deworming_given: bool = False
     llins_given: bool = False
 
@@ -216,9 +197,7 @@ class DeliveryRecordCreate(BaseModel):
     )
 
     # Mother outcome
-    maternal_outcome: str = Field(
-        default="alive", pattern=r"^(alive|deceased)$"
-    )
+    maternal_outcome: str = Field(default="alive", pattern=r"^(alive|deceased)$")
     maternal_complications: str | None = Field(None, max_length=2000)
     blood_loss_ml: int | None = Field(None, ge=0)
     episiotomy: bool = False
@@ -232,9 +211,7 @@ class DeliveryRecordCreate(BaseModel):
         ...,
         pattern=r"^(live_birth|fresh_stillbirth|macerated_stillbirth)$",
     )
-    baby_sex: str | None = Field(
-        None, pattern=r"^(male|female|ambiguous)$"
-    )
+    baby_sex: str | None = Field(None, pattern=r"^(male|female|ambiguous)$")
     birth_weight_grams: int | None = Field(None, ge=200, le=7000)
     apgar_1min: int | None = Field(None, ge=0, le=10)
     apgar_5min: int | None = Field(None, ge=0, le=10)
@@ -379,9 +356,7 @@ class ImmunizationCreate(BaseModel):
         None,
         pattern=r"^(left_thigh|right_thigh|left_arm|right_arm|oral)$",
     )
-    route: str | None = Field(
-        None, pattern=r"^(im|sc|oral|id)$"
-    )
+    route: str | None = Field(None, pattern=r"^(im|sc|oral|id)$")
     adverse_event: bool = False
     adverse_event_description: str | None = Field(None, max_length=1000)
     notes: str | None = Field(None, max_length=1000)

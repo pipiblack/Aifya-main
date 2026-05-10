@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,11 +76,13 @@ class TheatreService:
         @returns List of theatres
         """
         result = await self.db.execute(
-            select(OperatingTheatre).where(
+            select(OperatingTheatre)
+            .where(
                 OperatingTheatre.facility_id == facility_id,
                 OperatingTheatre.is_deleted == False,  # noqa: E712
                 OperatingTheatre.is_active == True,  # noqa: E712
-            ).order_by(OperatingTheatre.code.asc())
+            )
+            .order_by(OperatingTheatre.code.asc())
         )
         return list(result.scalars().all())
 
@@ -100,7 +102,7 @@ class TheatreService:
         @param created_by: Staff UUID
         @returns Created surgical case
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
         count_result = await self.db.execute(
             select(func.count(SurgicalCase.id)).where(
@@ -200,9 +202,7 @@ class TheatreService:
             for c, pf, pl, tn, sf, sl in rows
         ]
 
-    async def get_case(
-        self, case_id: uuid.UUID, facility_id: uuid.UUID
-    ) -> SurgicalCase | None:
+    async def get_case(self, case_id: uuid.UUID, facility_id: uuid.UUID) -> SurgicalCase | None:
         """
         Get a single surgical case.
 
@@ -239,7 +239,7 @@ class TheatreService:
         if not case:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         case.status = new_status
 
         timestamp_map = {
@@ -350,9 +350,7 @@ class TheatreService:
             SurgicalCase.is_deleted == False,  # noqa: E712
             func.date(SurgicalCase.scheduled_date) == today,
         ]
-        scheduled = await self.db.execute(
-            select(func.count(SurgicalCase.id)).where(*case_base)
-        )
+        scheduled = await self.db.execute(select(func.count(SurgicalCase.id)).where(*case_base))
         completed = await self.db.execute(
             select(func.count(SurgicalCase.id)).where(*case_base, SurgicalCase.status == "completed")
         )

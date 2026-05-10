@@ -8,10 +8,9 @@ analytics dashboard.
 
 from __future__ import annotations
 
-import uuid
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import CurrentUser, get_current_user
 from app.auth.license_check import require_module
@@ -30,6 +29,11 @@ from app.services.analytics.no_show import predict_no_show
 from app.services.analytics.readmission import predict_readmission_risk
 from app.services.analytics.revenue import forecast_revenue
 from app.services.analytics.stockout import predict_stockouts
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(require_module("analytics"))])
 
@@ -79,9 +83,7 @@ async def get_bed_forecast(
     @param current_user: Authenticated user from JWT
     @returns List of daily BedDemandForecast predictions
     """
-    return await forecast_bed_demand(
-        db, current_user.facility_id, department=department, days_ahead=days_ahead
-    )
+    return await forecast_bed_demand(db, current_user.facility_id, department=department, days_ahead=days_ahead)
 
 
 @router.get(

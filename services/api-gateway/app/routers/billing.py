@@ -72,9 +72,7 @@ async def list_invoices(
         page=page,
         page_size=page_size,
     )
-    return InvoiceListResponse(
-        items=items, total=total, page=page, page_size=page_size
-    )
+    return InvoiceListResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 # ── Create Invoice ────────────────────────────────────────────────────────────
@@ -88,9 +86,7 @@ async def list_invoices(
 async def create_invoice(
     data: InvoiceCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("billing_clerk", "cashier", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("billing_clerk", "cashier", "admin", "facility_admin")),
     x_idempotency_key: str | None = Header(None),
 ) -> InvoiceResponse:
     """
@@ -156,9 +152,7 @@ async def get_invoice_detail(
 async def finalize_invoice(
     invoice_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("billing_clerk", "cashier", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("billing_clerk", "cashier", "admin", "facility_admin")),
 ) -> InvoiceResponse:
     """
     Finalize a draft invoice (locks for payment collection).
@@ -200,9 +194,7 @@ async def record_payment(
     invoice_id: uuid.UUID,
     data: PaymentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("billing_clerk", "cashier", "admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("billing_clerk", "cashier", "admin", "facility_admin")),
     x_idempotency_key: str | None = Header(None),
 ) -> PaymentResponse:
     """
@@ -242,9 +234,7 @@ async def waive_invoice(
     invoice_id: uuid.UUID,
     data: InvoiceWaiveRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> InvoiceResponse:
     """
     Waive remaining balance on an invoice (exemption/charity).

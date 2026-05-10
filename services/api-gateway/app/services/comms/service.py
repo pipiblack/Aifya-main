@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import structlog
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.comms.models import (
     BulkMessageRequest,
@@ -24,8 +24,11 @@ from app.services.comms.models import (
     SendMessageRequest,
 )
 from app.services.comms.sms_provider import SMSProvider, get_sms_provider
-from app.services.comms.templates import DEFAULT_TEMPLATES, DefaultTemplate
+from app.services.comms.templates import DEFAULT_TEMPLATES
 from app.services.comms.whatsapp_provider import WhatsAppProvider, get_whatsapp_provider
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -63,10 +66,7 @@ def normalize_kenyan_phone(raw: str) -> str:
     if match:
         return f"+254{match.group(1)}"
 
-    raise ValueError(
-        f"Cannot normalize phone number '{raw}'. "
-        "Expected Kenyan format: 07xx, 01xx, +254xxx, or 254xxx."
-    )
+    raise ValueError(f"Cannot normalize phone number '{raw}'. Expected Kenyan format: 07xx, 01xx, +254xxx, or 254xxx.")
 
 
 # ── Template Rendering ─────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ class CommunicationService:
         """Seed in-memory template store from built-in defaults."""
         for dt in DEFAULT_TEMPLATES:
             tid = uuid.uuid5(uuid.NAMESPACE_DNS, dt.name)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self._templates[tid] = MessageTemplate(
                 id=tid,
                 name=dt.name,
@@ -184,10 +184,7 @@ class CommunicationService:
         """
         # Consent check (Kenya DPA)
         if not self._check_consent(request.patient_id, facility_id, request.category):
-            raise ValueError(
-                "Patient has not given communication consent or has opted out "
-                "of this message category."
-            )
+            raise ValueError("Patient has not given communication consent or has opted out of this message category.")
 
         # Normalize phone
         normalized_phone = normalize_kenyan_phone(recipient_phone)
@@ -205,11 +202,9 @@ class CommunicationService:
         elif request.body:
             body = request.body
         else:
-            raise ValueError(
-                "Either template_id with params or body must be provided."
-            )
+            raise ValueError("Either template_id with params or body must be provided.")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         msg_id = uuid.uuid4()
 
         # Scheduled messages are queued for later
@@ -272,7 +267,7 @@ class CommunicationService:
         results: list[PatientMessage] = []
 
         for pid in patient_ids:
-            send_req = SendMessageRequest(
+            SendMessageRequest(
                 patient_id=pid,
                 channel=request.channel,
                 category=request.category,
@@ -287,7 +282,7 @@ class CommunicationService:
                     patient_id=str(pid),
                     category=request.category,
                 )
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 msg = PatientMessage(
                     id=uuid.uuid4(),
                     patient_id=pid,
@@ -358,10 +353,7 @@ class CommunicationService:
         @param channel: Optional channel filter
         @returns Paginated message list
         """
-        msgs = [
-            m for m in self._messages.values()
-            if m.facility_id == facility_id
-        ]
+        msgs = [m for m in self._messages.values() if m.facility_id == facility_id]
 
         if patient_id is not None:
             msgs = [m for m in msgs if m.patient_id == patient_id]
@@ -453,7 +445,7 @@ class CommunicationService:
         """
         key = (patient_id, facility_id)
         if key not in self._preferences:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             self._preferences[key] = CommunicationPreference(
                 id=uuid.uuid4(),
                 patient_id=patient_id,
@@ -481,7 +473,7 @@ class CommunicationService:
         @returns Updated CommunicationPreference
         """
         pref = await self.get_patient_preferences(patient_id, facility_id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         updated_fields: dict[str, object] = {"updated_at": now}
         if data.preferred_channel is not None:
@@ -514,9 +506,7 @@ class CommunicationService:
         @param category: Optional category filter
         @returns List of MessageTemplate
         """
-        all_templates = list(self._templates.values()) + list(
-            self._custom_templates.values()
-        )
+        all_templates = list(self._templates.values()) + list(self._custom_templates.values())
         if language:
             all_templates = [t for t in all_templates if t.language == language]
         if channel:
@@ -537,7 +527,7 @@ class CommunicationService:
         @param data: Template creation data
         @returns Created MessageTemplate
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         tid = uuid.uuid4()
         template = MessageTemplate(
             id=tid,
@@ -575,7 +565,7 @@ class CommunicationService:
                 continue
 
             success = await self._deliver(msg.channel, msg.recipient_phone, msg.body)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             updated_fields: dict[str, object] = {
                 "retry_count": msg.retry_count + 1,
@@ -587,9 +577,7 @@ class CommunicationService:
                 updated_fields["error_message"] = None
                 retried += 1
             else:
-                updated_fields["error_message"] = (
-                    f"Retry {msg.retry_count + 1} failed"
-                )
+                updated_fields["error_message"] = f"Retry {msg.retry_count + 1} failed"
 
             self._messages[msg.id] = msg.model_copy(update=updated_fields)
 

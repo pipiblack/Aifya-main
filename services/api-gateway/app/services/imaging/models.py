@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 class ImagingAnalysisType(StrEnum):
     """Supported AI imaging analysis types."""
+
     CHEST_XRAY_TB = "chest_xray_tb"
     RETINAL_SCAN = "retinal_scan"
     CHEST_XRAY_GENERAL = "chest_xray_general"
@@ -19,6 +20,7 @@ class ImagingAnalysisType(StrEnum):
 
 class FindingSeverity(StrEnum):
     """Severity of an imaging finding."""
+
     NORMAL = "normal"
     MILD = "mild"
     MODERATE = "moderate"
@@ -37,6 +39,7 @@ class ImagingFinding(BaseModel):
     @param location: Anatomical location if applicable
     @param icd10_code: Suggested ICD-10 code
     """
+
     label: str
     description: str
     confidence: float
@@ -55,6 +58,7 @@ class ImagingAnalysisRequest(BaseModel):
     @param patient_age: Patient age for age-adjusted analysis
     @param patient_sex: Patient sex for sex-adjusted analysis
     """
+
     imaging_order_id: str
     analysis_type: ImagingAnalysisType
     image_url: str
@@ -75,6 +79,7 @@ class ImagingAnalysisResult(BaseModel):
     @param model_version: AI model version used
     @param requires_clinician_review: Always True per CLAUDE.md — AI never auto-commits
     """
+
     imaging_order_id: str
     analysis_type: ImagingAnalysisType
     findings: list[ImagingFinding]
@@ -95,6 +100,7 @@ class ChestXrayTBResult(BaseModel):
     @param cavitation_detected: Whether cavitation is present
     @param recommendation: Follow-up recommendation
     """
+
     tb_probability: float
     classification: str
     affected_zones: list[str]
@@ -113,6 +119,7 @@ class RetinalScanResult(BaseModel):
     @param findings: List of retinal findings
     @param recommendation: Ophthalmology referral recommendation
     """
+
     diabetic_retinopathy_grade: int
     diabetic_retinopathy_label: str
     macular_edema_detected: bool

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
+if TYPE_CHECKING:
+    import uuid
+    from datetime import datetime
 
 # ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -54,13 +56,9 @@ class MessageTemplate(BaseModel):
     name: str
     category: MessageCategory
     channel: MessageChannel
-    body_template: str = Field(
-        description="Message body with {placeholder} variables"
-    )
+    body_template: str = Field(description="Message body with {placeholder} variables")
     is_active: bool = True
-    language: str = Field(
-        default="en", description="ISO 639-1 language code (en or sw)"
-    )
+    language: str = Field(default="en", description="ISO 639-1 language code (en or sw)")
     created_at: datetime
     updated_at: datetime | None = None
 
@@ -137,18 +135,14 @@ class BulkMessageFilter(BaseModel):
     """Filter criteria for selecting patients for bulk messaging."""
 
     department_id: uuid.UUID | None = None
-    appointment_date: str | None = Field(
-        default=None, description="ISO 8601 date string"
-    )
+    appointment_date: str | None = Field(default=None, description="ISO 8601 date string")
     category_filter: MessageCategory | None = None
 
 
 class BulkMessageRequest(BaseModel):
     """Request body for sending bulk messages."""
 
-    patient_ids: list[uuid.UUID] | None = Field(
-        default=None, description="Explicit list of patient IDs"
-    )
+    patient_ids: list[uuid.UUID] | None = Field(default=None, description="Explicit list of patient IDs")
     filter_criteria: BulkMessageFilter | None = Field(
         default=None,
         description="Filter criteria for selecting patients (used when patient_ids is empty)",

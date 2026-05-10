@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import calendar
 import logging
-import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import or_, select
 
 from app.models.payroll import (
     Employee,
@@ -40,6 +39,10 @@ from app.services.payroll.statutory import (
     calc_shif,
 )
 
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 _logger = logging.getLogger(__name__)
 _ZERO = Decimal("0")
@@ -67,9 +70,7 @@ def _working_days(year: int, month: int) -> int:
     return count or 22
 
 
-async def _load_paye_bands(
-    db: AsyncSession, facility_id: uuid.UUID, target: date
-) -> list[PAYEBandSpec]:
+async def _load_paye_bands(db: AsyncSession, facility_id: uuid.UUID, target: date) -> list[PAYEBandSpec]:
     """Effective PAYE bands for the period (facility override beats global)."""
     stmt = (
         select(PAYEBand)
@@ -101,9 +102,7 @@ async def _load_paye_bands(
     ]
 
 
-async def _load_nssf_tiers(
-    db: AsyncSession, facility_id: uuid.UUID, target: date
-) -> list[NSSFTierSpec]:
+async def _load_nssf_tiers(db: AsyncSession, facility_id: uuid.UUID, target: date) -> list[NSSFTierSpec]:
     """Effective NSSF tiers for the period."""
     stmt = (
         select(NSSFTier)
@@ -224,9 +223,8 @@ async def _sum_other_deductions(
     total = _ZERO
     breakdown: dict[str, str] = {}
     for d in rows:
-        if d.frequency == "one_time":
-            if not (period_start <= d.start_date <= period_end):
-                continue
+        if d.frequency == "one_time" and not (period_start <= d.start_date <= period_end):
+            continue
         amount = Decimal(d.amount)
         total += amount
         breakdown[d.name] = str(amount)
@@ -280,44 +278,45 @@ async def run_monthly_payroll(
         raise ValueError("month must be 1..12")
 
     period_start, period_end = _period_bounds(month, year)
-    working_days = _working_days(year, month)
+    _working_days(year, month)
 
     # Reject duplicate active runs for this period
     dup = (
-        await db.execute(
-            select(PayrollRun).where(
-                PayrollRun.is_deleted.is_(False),
-                PayrollRun.facility_id == facility_id,
-                PayrollRun.month == month,
-                PayrollRun.year == year,
-                PayrollRun.status.in_(["approved", "posted", "locked"]),
+        (
+            await db.execute(
+                select(PayrollRun).where(
+                    PayrollRun.is_deleted.is_(False),
+                    PayrollRun.facility_id == facility_id,
+                    PayrollRun.month == month,
+                    PayrollRun.year == year,
+                    PayrollRun.status.in_(["approved", "posted", "locked"]),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
     if dup is not None:
-        raise ValueError(
-            f"An active payroll run already exists for {year}-{month:02d}"
-        )
+        raise ValueError(f"An active payroll run already exists for {year}-{month:02d}")
 
     # Load rate tables once
     paye_bands = await _load_paye_bands(db, facility_id, period_end)
     nssf_tiers = await _load_nssf_tiers(db, facility_id, period_end)
-    shif_rate = await _load_rate_value(
-        db, facility_id, "shif", "SHIF", period_end, "rate"
-    ) or Decimal("0.0275")
-    hl_rate = await _load_rate_value(
-        db, facility_id, "housing_levy", "Housing Levy", period_end, "rate"
-    ) or Decimal("0.015")
-    personal_relief = await _load_rate_value(
-        db, facility_id, "relief", "Personal Relief", period_end, "fixed_amount"
-    ) or _PERSONAL_RELIEF_DEFAULT
+    shif_rate = await _load_rate_value(db, facility_id, "shif", "SHIF", period_end, "rate") or Decimal("0.0275")
+    hl_rate = await _load_rate_value(db, facility_id, "housing_levy", "Housing Levy", period_end, "rate") or Decimal(
+        "0.015"
+    )
+    personal_relief = (
+        await _load_rate_value(db, facility_id, "relief", "Personal Relief", period_end, "fixed_amount")
+        or _PERSONAL_RELIEF_DEFAULT
+    )
 
     run = PayrollRun(
         facility_id=facility_id,
         month=month,
         year=year,
         status="draft",
-        run_date=datetime.now(timezone.utc),
+        run_date=datetime.now(UTC),
         created_by=user_id,
         updated_by=user_id,
     )
@@ -326,19 +325,23 @@ async def run_monthly_payroll(
 
     # Active employees as of period_end (hire_date <= period_end, not terminated before period_start)
     employees = (
-        await db.execute(
-            select(Employee).where(
-                Employee.is_deleted.is_(False),
-                Employee.facility_id == facility_id,
-                Employee.is_active.is_(True),
-                Employee.hire_date <= period_end,
-                or_(
-                    Employee.termination_date.is_(None),
-                    Employee.termination_date >= period_start,
-                ),
+        (
+            await db.execute(
+                select(Employee).where(
+                    Employee.is_deleted.is_(False),
+                    Employee.facility_id == facility_id,
+                    Employee.is_active.is_(True),
+                    Employee.hire_date <= period_end,
+                    or_(
+                        Employee.termination_date.is_(None),
+                        Employee.termination_date >= period_start,
+                    ),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     totals = {
         "gross": _ZERO,
@@ -410,12 +413,8 @@ async def run_monthly_payroll(
             paye = _ZERO
 
         # Step 11: other deductions = recurring + unpaid leave
-        other_total, other_breakdown = await _sum_other_deductions(
-            db, facility_id, emp.id, period_start, period_end
-        )
-        unpaid_leave = await _sum_unpaid_leave(
-            db, facility_id, emp.id, period_start, period_end
-        )
+        other_total, other_breakdown = await _sum_other_deductions(db, facility_id, emp.id, period_start, period_end)
+        unpaid_leave = await _sum_unpaid_leave(db, facility_id, emp.id, period_start, period_end)
         if unpaid_leave > _ZERO:
             other_total += unpaid_leave
             other_breakdown["Unpaid Leave"] = str(unpaid_leave)

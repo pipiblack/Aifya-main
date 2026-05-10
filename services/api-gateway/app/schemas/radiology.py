@@ -3,7 +3,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-
 # ── Imaging Order schemas ─────────────────────────────────────────────────
 
 
@@ -17,21 +16,15 @@ class ImagingOrderCreate(BaseModel):
         pattern=r"^(xray|ultrasound|ct|mri|fluoroscopy|mammography|ecg|echo)$",
     )
     body_part: str = Field(..., min_length=1, max_length=100)
-    laterality: str | None = Field(
-        None, pattern=r"^(left|right|bilateral|na)$"
-    )
+    laterality: str | None = Field(None, pattern=r"^(left|right|bilateral|na)$")
     views_requested: str | None = Field(None, max_length=200)
     study_description: str = Field(..., min_length=1, max_length=300)
-    priority: str = Field(
-        default="routine", pattern=r"^(stat|urgent|routine)$"
-    )
+    priority: str = Field(default="routine", pattern=r"^(stat|urgent|routine)$")
     clinical_indication: str | None = Field(None, max_length=2000)
     clinical_history: str | None = Field(None, max_length=2000)
     contrast_required: bool = False
     contrast_type: str | None = Field(None, max_length=100)
-    pregnancy_status: str | None = Field(
-        None, pattern=r"^(not_pregnant|pregnant|unknown|na)$"
-    )
+    pregnancy_status: str | None = Field(None, pattern=r"^(not_pregnant|pregnant|unknown|na)$")
     allergies_noted: str | None = Field(None, max_length=500)
 
 

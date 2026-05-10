@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +47,7 @@ class RadiologyService:
         @param ordered_by: Staff UUID who ordered
         @returns Created imaging order
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_part = now.strftime("%Y%m%d")
 
         # Count today's orders for sequential numbering
@@ -319,7 +319,7 @@ class RadiologyService:
 
         order.status = "in_progress"
         order.performed_by = staff_id
-        order.performed_at = datetime.now(timezone.utc)
+        order.performed_at = datetime.now(UTC)
         if data.accession_number:
             order.accession_number = data.accession_number
         order.updated_by = staff_id
@@ -393,7 +393,7 @@ class RadiologyService:
         imaging_result.is_critical = data.is_critical
         imaging_result.notes = data.notes
         imaging_result.reported_by = reported_by
-        imaging_result.reported_at = datetime.now(timezone.utc)
+        imaging_result.reported_at = datetime.now(UTC)
         imaging_result.status = "preliminary"
         imaging_result.updated_by = reported_by
 
@@ -449,16 +449,14 @@ class RadiologyService:
 
         imaging_result.status = "final"
         imaging_result.verified_by = verified_by
-        imaging_result.verified_at = datetime.now(timezone.utc)
+        imaging_result.verified_at = datetime.now(UTC)
         if data.notes:
             existing_notes = imaging_result.notes or ""
             imaging_result.notes = f"{existing_notes}\n[Verification] {data.notes}".strip()
         imaging_result.updated_by = verified_by
 
         # Mark order as completed
-        order_result = await self.db.execute(
-            select(ImagingOrder).where(ImagingOrder.id == imaging_result.order_id)
-        )
+        order_result = await self.db.execute(select(ImagingOrder).where(ImagingOrder.id == imaging_result.order_id))
         order = order_result.scalar_one_or_none()
         if order:
             order.status = "completed"
@@ -516,7 +514,7 @@ class RadiologyService:
 
         imaging_result.critical_notified = True
         imaging_result.critical_notified_to = notified_to
-        imaging_result.critical_notified_at = datetime.now(timezone.utc)
+        imaging_result.critical_notified_at = datetime.now(UTC)
         imaging_result.updated_by = notified_by
 
         await self.db.flush()
@@ -541,16 +539,14 @@ class RadiologyService:
 
     # ── Summary ───────────────────────────────────────────────────────────
 
-    async def get_summary(
-        self, facility_id: uuid.UUID
-    ) -> RadiologySummary:
+    async def get_summary(self, facility_id: uuid.UUID) -> RadiologySummary:
         """
         Get radiology department dashboard summary.
 
         @param facility_id: Facility UUID
         @returns Summary stats
         """
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(UTC).date()
 
         # Total orders today
         total_today = await self.db.execute(

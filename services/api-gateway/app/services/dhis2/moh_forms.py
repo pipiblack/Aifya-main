@@ -13,11 +13,9 @@ All queries scoped by facility_id for multi-tenant safety.
 
 from __future__ import annotations
 
-import uuid
-from datetime import date
+from typing import TYPE_CHECKING
 
 from sqlalchemy import case, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.diagnosis import Diagnosis
 from app.models.encounter import Encounter
@@ -26,6 +24,11 @@ from app.models.lab import LabOrder, LabResult
 from app.models.mch import ANCProfile, DeliveryRecord, Immunization
 from app.models.patient import Patient
 
+if TYPE_CHECKING:
+    import uuid
+    from datetime import date
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 # ── MOH 705A — Outpatient Morbidity Summary ─────────────────────────────────
 
@@ -50,9 +53,7 @@ async def generate_moh_705a(
             Diagnosis.icd10_code,
             Diagnosis.description,
             # Age bands: <1, 1-4, 5-9, 10-14, 15-19, 20-59, 60+
-            func.sum(
-                case((Patient.date_of_birth > func.current_date() - 365, 1), else_=0)
-            ).label("under_1"),
+            func.sum(case((Patient.date_of_birth > func.current_date() - 365, 1), else_=0)).label("under_1"),
             func.sum(
                 case(
                     (
@@ -243,7 +244,10 @@ async def generate_moh_710(
         "title": "Immunization Report",
         "period": {"from": str(date_from), "to": str(date_to)},
         "rows": data,
-        "summary": {"total_doses": sum(r.doses_given for r in rows), "unique_vaccines": len({r.vaccine_name for r in rows})},
+        "summary": {
+            "total_doses": sum(r.doses_given for r in rows),
+            "unique_vaccines": len({r.vaccine_name for r in rows}),
+        },
     }
 
 

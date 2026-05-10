@@ -5,13 +5,13 @@ Defines alert severity, categories, and the CDS alert structure.
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     """CDS alert severity levels — determines UI treatment and blocking behavior."""
 
     CRITICAL = "critical"
@@ -21,7 +21,7 @@ class AlertSeverity(str, Enum):
     INFO = "info"
 
 
-class AlertCategory(str, Enum):
+class AlertCategory(StrEnum):
     """Classification of CDS alerts for routing and display."""
 
     DRUG_INTERACTION = "drug_interaction"
@@ -44,7 +44,7 @@ class AlertCategory(str, Enum):
     FORMULARY_CHECK = "formulary_check"
 
 
-class AlertAction(str, Enum):
+class AlertAction(StrEnum):
     """Recommended action for the clinician."""
 
     BLOCK = "block"
@@ -100,9 +100,7 @@ class CDSEvaluationRequest(BaseModel):
     patient_id: uuid.UUID
     encounter_id: uuid.UUID
     facility_id: uuid.UUID
-    trigger: str = Field(
-        ..., examples=["prescription_create", "vitals_record", "lab_result"]
-    )
+    trigger: str = Field(..., examples=["prescription_create", "vitals_record", "lab_result"])
     context: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(from_attributes=True)

@@ -93,9 +93,7 @@ async def create_trial(
     @returns Created trial
     """
     service = ClinicalTrialService(db)
-    trial = await service.create_trial(
-        data=data, facility_id=current_user.facility_id, created_by=current_user.user_id
-    )
+    trial = await service.create_trial(data=data, facility_id=current_user.facility_id, created_by=current_user.user_id)
     return TrialResponse.model_validate(trial)
 
 
@@ -152,9 +150,7 @@ async def update_trial_status(
     trial_id: uuid.UUID,
     data: TrialStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "principal_investigator")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "principal_investigator")),
 ) -> TrialResponse:
     """
     Update trial status.
@@ -509,9 +505,7 @@ async def submit_sae_report(
     ae_id: uuid.UUID,
     data: SAEReportSubmit,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "principal_investigator")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "principal_investigator")),
 ) -> AdverseEventResponse:
     """
     Submit SAE report to sponsor/IRB. MUST be within 24 hours.

@@ -53,9 +53,7 @@ class Employee(AuditMixin, Base):
     # payslip generator currently masks this field as "*** ENCRYPTED ***"
     # rather than rendering the value.
     bank_account: Mapped[str | None] = mapped_column(Text)
-    disability_exemption: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
-    )
+    disability_exemption: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     phone: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str | None] = mapped_column(String(255))
     notes: Mapped[str | None] = mapped_column(Text)
@@ -66,16 +64,10 @@ class EmployeeSalary(AuditMixin, Base):
 
     __tablename__ = "employee_salaries"
 
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
     basic_salary: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    house_allowance: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    transport_allowance: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
+    house_allowance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    transport_allowance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     other_allowances: Mapped[dict] = mapped_column(  # type: ignore[type-arg]
         JSONB, default=dict, nullable=False
     )
@@ -93,39 +85,19 @@ class PayrollRun(AuditMixin, Base):
     period_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     month: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(20), default="draft", nullable=False
-    )  # draft|approved|posted|locked
-    run_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)  # draft|approved|posted|locked
+    run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     gl_transaction_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    total_gross: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_paye: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_nssf: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_shif: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_hl: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_net: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_employer_nssf: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
-    total_employer_hl: Mapped[Decimal] = mapped_column(
-        Numeric(14, 2), default=Decimal("0"), nullable=False
-    )
+    total_gross: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_paye: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_nssf: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_shif: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_hl: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_net: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_employer_nssf: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
+    total_employer_hl: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0"), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
 
 
@@ -134,66 +106,30 @@ class PayrollLineItem(AuditMixin, Base):
 
     __tablename__ = "payroll_line_items"
 
-    payroll_run_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("payroll_runs.id"), nullable=False
-    )
-    employee_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False
-    )
-    basic_salary: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    house_allowance: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    transport_allowance: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
+    payroll_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("payroll_runs.id"), nullable=False)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), nullable=False)
+    basic_salary: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    house_allowance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    transport_allowance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     other_allowances: Mapped[dict] = mapped_column(  # type: ignore[type-arg]
         JSONB, default=dict, nullable=False
     )
-    gross_salary: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    nssf_employee: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    shif: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    housing_levy: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    taxable_pay: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    paye_gross: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    personal_relief: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    insurance_relief: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    paye: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
+    gross_salary: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    nssf_employee: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    shif: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    housing_levy: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    taxable_pay: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    paye_gross: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    personal_relief: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    insurance_relief: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    paye: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     other_deductions: Mapped[dict] = mapped_column(  # type: ignore[type-arg]
         JSONB, default=dict, nullable=False
     )
-    total_deductions: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    net_salary: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    employer_nssf: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
-    employer_housing_levy: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0"), nullable=False
-    )
+    total_deductions: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    net_salary: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    employer_nssf: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
+    employer_housing_levy: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
 
 
@@ -209,9 +145,7 @@ class StatutoryRate(AuditMixin, Base):
         UUID(as_uuid=True), index=True, nullable=True
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    category: Mapped[str] = mapped_column(
-        String(30), nullable=False
-    )  # paye|nssf|shif|housing_levy|relief
+    category: Mapped[str] = mapped_column(String(30), nullable=False)  # paye|nssf|shif|housing_levy|relief
     rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 6))
     fixed_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     fixed_cap: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))

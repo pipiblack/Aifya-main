@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -228,9 +228,7 @@ class BillingService:
         if patient_id:
             stmt = stmt.where(Invoice.patient_id == patient_id)
 
-        stmt = stmt.order_by(Invoice.created_at.desc()).offset(
-            (page - 1) * page_size
-        ).limit(page_size)
+        stmt = stmt.order_by(Invoice.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
 
         result = await self.db.execute(stmt)
         rows = result.all()
@@ -284,14 +282,12 @@ class BillingService:
             raise ValueError(f"Cannot finalize invoice with status: {invoice.status}")
 
         invoice.status = "finalized"
-        invoice.finalized_at = datetime.now(timezone.utc)
+        invoice.finalized_at = datetime.now(UTC)
         invoice.finalized_by = finalized_by
         invoice.updated_by = finalized_by
 
         # Update encounter billing status
-        enc_result = await self.db.execute(
-            select(Encounter).where(Encounter.id == invoice.encounter_id)
-        )
+        enc_result = await self.db.execute(select(Encounter).where(Encounter.id == invoice.encounter_id))
         encounter = enc_result.scalar_one_or_none()
         if encounter:
             encounter.billing_status = "billed"
@@ -347,9 +343,7 @@ class BillingService:
         if invoice.status in ("cancelled", "waived"):
             raise ValueError(f"Cannot pay invoice with status: {invoice.status}")
         if data.amount_cents > invoice.balance_cents:
-            raise ValueError(
-                f"Payment amount ({data.amount_cents}) exceeds balance ({invoice.balance_cents})"
-            )
+            raise ValueError(f"Payment amount ({data.amount_cents}) exceeds balance ({invoice.balance_cents})")
 
         payment = Payment(
             facility_id=facility_id,
@@ -378,9 +372,7 @@ class BillingService:
 
         # Update encounter billing status if fully paid
         if invoice.status == "paid":
-            enc_result = await self.db.execute(
-                select(Encounter).where(Encounter.id == invoice.encounter_id)
-            )
+            enc_result = await self.db.execute(select(Encounter).where(Encounter.id == invoice.encounter_id))
             encounter = enc_result.scalar_one_or_none()
             if encounter:
                 encounter.billing_status = "paid"
@@ -442,9 +434,7 @@ class BillingService:
         invoice.updated_by = waived_by
 
         # Update encounter
-        enc_result = await self.db.execute(
-            select(Encounter).where(Encounter.id == invoice.encounter_id)
-        )
+        enc_result = await self.db.execute(select(Encounter).where(Encounter.id == invoice.encounter_id))
         encounter = enc_result.scalar_one_or_none()
         if encounter:
             encounter.billing_status = "waived"
@@ -491,15 +481,11 @@ class BillingService:
             draft_count=sum(1 for i in invoices if i.status == "draft"),
             finalized_count=sum(1 for i in invoices if i.status == "finalized"),
             paid_count=sum(1 for i in invoices if i.status == "paid"),
-            partially_paid_count=sum(
-                1 for i in invoices if i.status == "partially_paid"
-            ),
+            partially_paid_count=sum(1 for i in invoices if i.status == "partially_paid"),
             total_billed_cents=sum(i.total_cents for i in invoices),
             total_paid_cents=sum(i.paid_cents for i in invoices),
             total_outstanding_cents=sum(
-                i.balance_cents
-                for i in invoices
-                if i.status not in ("cancelled", "waived", "paid")
+                i.balance_cents for i in invoices if i.status not in ("cancelled", "waived", "paid")
             ),
         )
 
@@ -507,7 +493,7 @@ class BillingService:
 
     async def _next_invoice_number(self, facility_id: uuid.UUID) -> str:
         """Generate the next invoice number (INV-YYYYMMDD-XXXX)."""
-        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        today = datetime.now(UTC).strftime("%Y%m%d")
         prefix = f"INV-{today}-"
 
         result = await self.db.execute(

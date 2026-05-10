@@ -3,7 +3,6 @@ Clinical CDS rules for vitals, lab results, sepsis screening,
 duplicate orders, and trend analysis.
 """
 
-import uuid
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -111,58 +110,66 @@ def check_vitals_age_adjusted(
         hr_high = thresholds.get("heart_rate_high", {}).get("value")
         hr_low = thresholds.get("heart_rate_low", {}).get("value")
         if hr_high and hr > hr_high:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.HIGH,
-                category=AlertCategory.VITAL_CRITICAL,
-                action=AlertAction.WARN,
-                title=f"Pediatric Tachycardia: HR {hr} bpm ({age_group})",
-                message=f"Heart rate {hr} exceeds {age_group} threshold of {hr_high}. Evaluate for fever, pain, dehydration, or cardiac cause.",
-                source_rule="pediatric_vital_hr_high",
-                affected_items=["heart_rate"],
-                evidence={"value": hr, "threshold": hr_high, "age_group": age_group},
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.HIGH,
+                    category=AlertCategory.VITAL_CRITICAL,
+                    action=AlertAction.WARN,
+                    title=f"Pediatric Tachycardia: HR {hr} bpm ({age_group})",
+                    message=f"Heart rate {hr} exceeds {age_group} threshold of {hr_high}. Evaluate for fever, pain, dehydration, or cardiac cause.",
+                    source_rule="pediatric_vital_hr_high",
+                    affected_items=["heart_rate"],
+                    evidence={"value": hr, "threshold": hr_high, "age_group": age_group},
+                )
+            )
         if hr_low and hr < hr_low:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.CRITICAL,
-                category=AlertCategory.VITAL_CRITICAL,
-                action=AlertAction.WARN,
-                title=f"Pediatric Bradycardia: HR {hr} bpm ({age_group})",
-                message=f"Heart rate {hr} below {age_group} threshold of {hr_low}. Immediate evaluation needed.",
-                source_rule="pediatric_vital_hr_low",
-                affected_items=["heart_rate"],
-                evidence={"value": hr, "threshold": hr_low, "age_group": age_group},
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.VITAL_CRITICAL,
+                    action=AlertAction.WARN,
+                    title=f"Pediatric Bradycardia: HR {hr} bpm ({age_group})",
+                    message=f"Heart rate {hr} below {age_group} threshold of {hr_low}. Immediate evaluation needed.",
+                    source_rule="pediatric_vital_hr_low",
+                    affected_items=["heart_rate"],
+                    evidence={"value": hr, "threshold": hr_low, "age_group": age_group},
+                )
+            )
 
     rr = vitals.get("respiratory_rate")
     if rr is not None:
         rr_high = thresholds.get("respiratory_rate_high", {}).get("value")
-        rr_low = thresholds.get("respiratory_rate_low", {}).get("value")
+        thresholds.get("respiratory_rate_low", {}).get("value")
         if rr_high and rr > rr_high:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.HIGH,
-                category=AlertCategory.VITAL_CRITICAL,
-                action=AlertAction.WARN,
-                title=f"Pediatric Tachypnea: RR {rr} ({age_group})",
-                message=f"Respiratory rate {rr} exceeds {age_group} threshold of {rr_high}.",
-                source_rule="pediatric_vital_rr_high",
-                affected_items=["respiratory_rate"],
-                evidence={"value": rr, "threshold": rr_high, "age_group": age_group},
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.HIGH,
+                    category=AlertCategory.VITAL_CRITICAL,
+                    action=AlertAction.WARN,
+                    title=f"Pediatric Tachypnea: RR {rr} ({age_group})",
+                    message=f"Respiratory rate {rr} exceeds {age_group} threshold of {rr_high}.",
+                    source_rule="pediatric_vital_rr_high",
+                    affected_items=["respiratory_rate"],
+                    evidence={"value": rr, "threshold": rr_high, "age_group": age_group},
+                )
+            )
 
     sbp = vitals.get("systolic_bp")
     if sbp is not None:
         sbp_low = thresholds.get("systolic_bp_low", {}).get("value")
         if sbp_low and sbp < sbp_low:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.CRITICAL,
-                category=AlertCategory.VITAL_CRITICAL,
-                action=AlertAction.WARN,
-                title=f"Pediatric Hypotension: SBP {sbp} mmHg ({age_group})",
-                message=f"Systolic BP {sbp} below {age_group} threshold of {sbp_low}. Consider fluid resuscitation.",
-                source_rule="pediatric_vital_sbp_low",
-                affected_items=["systolic_bp"],
-                evidence={"value": sbp, "threshold": sbp_low, "age_group": age_group},
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.VITAL_CRITICAL,
+                    action=AlertAction.WARN,
+                    title=f"Pediatric Hypotension: SBP {sbp} mmHg ({age_group})",
+                    message=f"Systolic BP {sbp} below {age_group} threshold of {sbp_low}. Consider fluid resuscitation.",
+                    source_rule="pediatric_vital_sbp_low",
+                    affected_items=["systolic_bp"],
+                    evidence={"value": sbp, "threshold": sbp_low, "age_group": age_group},
+                )
+            )
 
     return alerts
 
@@ -276,38 +283,42 @@ def check_sepsis_risk(
     )
 
     if risk_level in ("high", "critical"):
-        alerts.append(CDSAlert(
-            severity=AlertSeverity.CRITICAL if risk_level == "critical" else AlertSeverity.HIGH,
-            category=AlertCategory.SEPSIS_RISK,
-            action=AlertAction.WARN,
-            title=f"Sepsis Risk: {risk_level.upper()} (qSOFA={qsofa}, SIRS={sirs})",
-            message=(
-                f"qSOFA score {qsofa}/3, SIRS criteria {sirs}/4. "
-                f"{'Suspected infection present. ' if has_suspected_infection else ''}"
-                f"Consider blood cultures, lactate, and early antibiotics per Surviving Sepsis Guidelines."
-            ),
-            source_rule="sepsis_screening",
-            affected_items=["sepsis"],
-            evidence={
-                "qsofa": qsofa,
-                "sirs": sirs,
-                "components": components,
-                "suspected_infection": has_suspected_infection,
-            },
-            overridable=True,
-            requires_reason=True,
-        ))
+        alerts.append(
+            CDSAlert(
+                severity=AlertSeverity.CRITICAL if risk_level == "critical" else AlertSeverity.HIGH,
+                category=AlertCategory.SEPSIS_RISK,
+                action=AlertAction.WARN,
+                title=f"Sepsis Risk: {risk_level.upper()} (qSOFA={qsofa}, SIRS={sirs})",
+                message=(
+                    f"qSOFA score {qsofa}/3, SIRS criteria {sirs}/4. "
+                    f"{'Suspected infection present. ' if has_suspected_infection else ''}"
+                    f"Consider blood cultures, lactate, and early antibiotics per Surviving Sepsis Guidelines."
+                ),
+                source_rule="sepsis_screening",
+                affected_items=["sepsis"],
+                evidence={
+                    "qsofa": qsofa,
+                    "sirs": sirs,
+                    "components": components,
+                    "suspected_infection": has_suspected_infection,
+                },
+                overridable=True,
+                requires_reason=True,
+            )
+        )
     elif risk_level == "moderate":
-        alerts.append(CDSAlert(
-            severity=AlertSeverity.MODERATE,
-            category=AlertCategory.SEPSIS_RISK,
-            action=AlertAction.INFORM,
-            title=f"Sepsis Screening: Moderate risk (qSOFA={qsofa}, SIRS={sirs})",
-            message="Some sepsis criteria met. Monitor closely and reassess if clinical status changes.",
-            source_rule="sepsis_screening",
-            affected_items=["sepsis"],
-            evidence={"qsofa": qsofa, "sirs": sirs, "components": components},
-        ))
+        alerts.append(
+            CDSAlert(
+                severity=AlertSeverity.MODERATE,
+                category=AlertCategory.SEPSIS_RISK,
+                action=AlertAction.INFORM,
+                title=f"Sepsis Screening: Moderate risk (qSOFA={qsofa}, SIRS={sirs})",
+                message="Some sepsis criteria met. Monitor closely and reassess if clinical status changes.",
+                source_rule="sepsis_screening",
+                affected_items=["sepsis"],
+                evidence={"qsofa": qsofa, "sirs": sirs, "components": components},
+            )
+        )
 
     return alerts, score
 
@@ -357,37 +368,41 @@ def check_lab_trends(
         direction = "increased" if current_value > prev_value else "decreased"
         info = significant_changes[test_code]
 
-        alerts.append(CDSAlert(
-            severity=AlertSeverity.HIGH,
-            category=AlertCategory.LAB_TREND,
-            action=AlertAction.WARN,
-            title=f"Lab Trend: {test_code} {direction} {pct_change:.0f}%",
-            message=f"{test_code} {direction} from {prev_value} to {current_value} ({pct_change:.0f}% change). {info['desc']}",
-            source_rule="lab_trend_analysis",
-            affected_items=[test_code],
-            evidence={
-                "current": current_value,
-                "previous": prev_value,
-                "pct_change": round(pct_change, 1),
-                "direction": direction,
-                "threshold": info["threshold"],
-            },
-        ))
+        alerts.append(
+            CDSAlert(
+                severity=AlertSeverity.HIGH,
+                category=AlertCategory.LAB_TREND,
+                action=AlertAction.WARN,
+                title=f"Lab Trend: {test_code} {direction} {pct_change:.0f}%",
+                message=f"{test_code} {direction} from {prev_value} to {current_value} ({pct_change:.0f}% change). {info['desc']}",
+                source_rule="lab_trend_analysis",
+                affected_items=[test_code],
+                evidence={
+                    "current": current_value,
+                    "previous": prev_value,
+                    "pct_change": round(pct_change, 1),
+                    "direction": direction,
+                    "threshold": info["threshold"],
+                },
+            )
+        )
 
     # Check for organ dysfunction patterns
     if len(recent) >= 3:
         values = [current_value] + [r["result_numeric"] for r in recent[:2]]
         if test_code == "CREAT" and all(v > values[-1] for v in values[:-1]):
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.HIGH,
-                category=AlertCategory.LAB_ORGAN_DYSFUNCTION,
-                action=AlertAction.WARN,
-                title=f"Progressive Renal Decline: {test_code} trending up",
-                message=f"Creatinine has progressively increased over last 3 results: {list(reversed(values))}. Evaluate for AKI staging.",
-                source_rule="progressive_organ_decline",
-                affected_items=[test_code],
-                evidence={"values": list(reversed(values))},
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.HIGH,
+                    category=AlertCategory.LAB_ORGAN_DYSFUNCTION,
+                    action=AlertAction.WARN,
+                    title=f"Progressive Renal Decline: {test_code} trending up",
+                    message=f"Creatinine has progressively increased over last 3 results: {list(reversed(values))}. Evaluate for AKI staging.",
+                    source_rule="progressive_organ_decline",
+                    affected_items=[test_code],
+                    evidence={"values": list(reversed(values))},
+                )
+            )
 
     return alerts
 
@@ -431,19 +446,21 @@ def check_duplicate_orders(
 
         duplicates = set(test_codes) & set(existing_tests)
         if duplicates:
-            alerts.append(CDSAlert(
-                severity=AlertSeverity.MODERATE,
-                category=AlertCategory.DUPLICATE_ORDER,
-                action=AlertAction.WARN,
-                title=f"Duplicate {order_type} order: {', '.join(duplicates)}",
-                message=f"Tests {', '.join(duplicates)} were already ordered within the last {window_hours}h (Order: {order.get('order_number', 'unknown')}).",
-                source_rule="duplicate_order_check",
-                affected_items=list(duplicates),
-                evidence={
-                    "existing_order": order.get("order_number"),
-                    "window_hours": window_hours,
-                },
-                overridable=True,
-            ))
+            alerts.append(
+                CDSAlert(
+                    severity=AlertSeverity.MODERATE,
+                    category=AlertCategory.DUPLICATE_ORDER,
+                    action=AlertAction.WARN,
+                    title=f"Duplicate {order_type} order: {', '.join(duplicates)}",
+                    message=f"Tests {', '.join(duplicates)} were already ordered within the last {window_hours}h (Order: {order.get('order_number', 'unknown')}).",
+                    source_rule="duplicate_order_check",
+                    affected_items=list(duplicates),
+                    evidence={
+                        "existing_order": order.get("order_number"),
+                        "window_hours": window_hours,
+                    },
+                    overridable=True,
+                )
+            )
 
     return alerts

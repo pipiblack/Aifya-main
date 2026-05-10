@@ -9,11 +9,10 @@ Complies with Kenya Data Protection Act (DPA) and ODPC requirements.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from structlog import get_logger
 
 from app.models.diagnosis import Diagnosis
@@ -22,13 +21,16 @@ from app.models.ipd import Admission
 from app.models.lab import LabOrder
 from app.models.mch import DeliveryRecord, Immunization
 from app.services.federated.models import (
-    AggregationPeriod,
     AnonymizedFacilityReport,
-    CountyDashboard,
     DiseaseSurveillanceEntry,
     OutbreakAlert,
     SurveillanceAlertLevel,
 )
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 
@@ -247,15 +249,17 @@ class FederatedAnalyticsService:
                         "Monitor closely over next reporting period."
                     )
 
-                alerts.append(OutbreakAlert(
-                    condition=disease_name,
-                    icd10_code=icd10_prefix,
-                    alert_level=level,
-                    current_cases=current_count,
-                    expected_cases=int(expected),
-                    excess_ratio=round(ratio, 2),
-                    recommendation=recommendation,
-                ))
+                alerts.append(
+                    OutbreakAlert(
+                        condition=disease_name,
+                        icd10_code=icd10_prefix,
+                        alert_level=level,
+                        current_cases=current_count,
+                        expected_cases=int(expected),
+                        excess_ratio=round(ratio, 2),
+                        recommendation=recommendation,
+                    )
+                )
 
         return sorted(alerts, key=lambda a: a.excess_ratio, reverse=True)
 
@@ -328,13 +332,15 @@ class FederatedAnalyticsService:
             else:
                 alert = SurveillanceAlertLevel.NORMAL
 
-            entries.append(DiseaseSurveillanceEntry(
-                condition=row.description or row.icd10_code or "Unknown",
-                icd10_code=row.icd10_code,
-                case_count=row.count,
-                previous_period_count=prev_count,
-                percent_change=round(pct_change, 1),
-                alert_level=alert,
-            ))
+            entries.append(
+                DiseaseSurveillanceEntry(
+                    condition=row.description or row.icd10_code or "Unknown",
+                    icd10_code=row.icd10_code,
+                    case_count=row.count,
+                    previous_period_count=prev_count,
+                    percent_change=round(pct_change, 1),
+                    alert_level=alert,
+                )
+            )
 
         return entries

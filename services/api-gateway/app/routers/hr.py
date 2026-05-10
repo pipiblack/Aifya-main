@@ -22,7 +22,6 @@ from app.schemas.hr import (
     ShiftAssignmentResponse,
     ShiftCreate,
     ShiftResponse,
-    StaffDirectoryItem,
     StaffDirectoryResponse,
     StaffProfileCreate,
     StaffProfileResponse,
@@ -89,9 +88,7 @@ async def get_staff_directory(
 async def get_staff_profile(
     staff_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> StaffProfileResponse:
     """
     Get extended staff profile.
@@ -119,9 +116,7 @@ async def upsert_staff_profile(
     staff_id: uuid.UUID,
     data: StaffProfileCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> StaffProfileResponse:
     """
     Create or update a staff profile.
@@ -166,9 +161,7 @@ async def list_shifts(
 async def create_shift(
     data: ShiftCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> ShiftResponse:
     """
     Create a shift definition.
@@ -226,9 +219,7 @@ async def list_shift_assignments(
 async def create_shift_assignment(
     data: ShiftAssignmentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin", "nurse")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin", "nurse")),
 ) -> ShiftAssignmentResponse:
     """
     Assign a staff member to a shift.
@@ -307,9 +298,7 @@ async def process_leave_request(
     leave_id: uuid.UUID,
     data: LeaveApprovalRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(
-        require_roles("admin", "facility_admin")
-    ),
+    current_user: CurrentUser = Depends(require_roles("admin", "facility_admin")),
 ) -> LeaveRequestResponse:
     """
     Approve or reject a leave request.

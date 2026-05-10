@@ -17,13 +17,9 @@ class ReferralTemplate(AuditMixin, Base):
     """
 
     __tablename__ = "referral_templates"
-    __table_args__ = (
-        Index("ix_referral_templates_specialty", "facility_id", "specialty"),
-    )
+    __table_args__ = (Index("ix_referral_templates_specialty", "facility_id", "specialty"),)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     specialty: Mapped[str] = mapped_column(String(100), nullable=False)
     template_text: Mapped[str] = mapped_column(Text, nullable=False)
-    is_default: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

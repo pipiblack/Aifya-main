@@ -7,7 +7,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # ─── Tier Definitions ─────────────────────────────────────────────────────────
 
 SubscriptionTier = Literal["community", "professional", "enterprise", "government"]
@@ -24,7 +23,8 @@ COMMUNITY_MODULES = [
 ]
 
 # Professional adds clinical depth
-PROFESSIONAL_MODULES = COMMUNITY_MODULES + [
+PROFESSIONAL_MODULES = [
+    *COMMUNITY_MODULES,
     "ipd",
     "pharmacy",
     "laboratory",
@@ -42,7 +42,8 @@ PROFESSIONAL_MODULES = COMMUNITY_MODULES + [
 ]
 
 # Enterprise adds AI + analytics + integrations
-ENTERPRISE_MODULES = PROFESSIONAL_MODULES + [
+ENTERPRISE_MODULES = [
+    *PROFESSIONAL_MODULES,
     "scribe_ai",
     "claimflow_ai",
     "clinical_trials",
@@ -54,7 +55,8 @@ ENTERPRISE_MODULES = PROFESSIONAL_MODULES + [
 ]
 
 # Government = Enterprise + county-level features
-GOVERNMENT_MODULES = ENTERPRISE_MODULES + [
+GOVERNMENT_MODULES = [
+    *ENTERPRISE_MODULES,
     "multi_facility",
     "county_dashboard",
     "aggregate_reporting",
@@ -143,6 +145,7 @@ TIER_ENTITLEMENTS: dict[str, dict] = {
 
 # ─── License Schemas ──────────────────────────────────────────────────────────
 
+
 class LicenseCreate(BaseModel):
     """Create a new license for a facility."""
 
@@ -163,9 +166,7 @@ class LicenseResponse(BaseModel):
 
     id: str
     facility_id: str
-    license_key_prefix: str = Field(
-        description="Masked license key showing only the first 8 characters"
-    )
+    license_key_prefix: str = Field(description="Masked license key showing only the first 8 characters")
     tier: str
     max_users: int
     max_patients: int
@@ -233,6 +234,7 @@ class HeartbeatRequest(BaseModel):
 
 # ─── Telemetry Schemas ────────────────────────────────────────────────────────
 
+
 class TelemetryPayload(BaseModel):
     """Daily usage telemetry from facility — no PII."""
 
@@ -260,6 +262,7 @@ class TelemetryResponse(BaseModel):
 
 
 # ─── Update Schemas ───────────────────────────────────────────────────────────
+
 
 class UpdateCheckResponse(BaseModel):
     """Response to update check — tells facility if update available."""
@@ -312,6 +315,7 @@ class AppUpdateResponse(BaseModel):
 
 
 # ─── Admin Schemas ────────────────────────────────────────────────────────────
+
 
 class FacilityLicenseSummary(BaseModel):
     """Admin view of facility licenses."""

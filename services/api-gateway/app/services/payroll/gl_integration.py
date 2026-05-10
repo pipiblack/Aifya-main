@@ -7,14 +7,15 @@ a warning and leaves `payroll_run.gl_transaction_id = None`.
 from __future__ import annotations
 
 import logging
-import uuid
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
+if TYPE_CHECKING:
+    import uuid
 
-from app.models.payroll import PayrollRun
+    from sqlalchemy.ext.asyncio import AsyncSession
 
+    from app.models.payroll import PayrollRun
 
 _logger = logging.getLogger(__name__)
 _ZERO = Decimal("0")
@@ -67,7 +68,9 @@ async def post_payroll_to_gl(
     @returns Parent GL transaction id or None
     """
     try:
-        from app.services.finance import post_compound_transaction  # type: ignore[attr-defined]
+        from app.services.finance import (
+            post_compound_transaction,  # type: ignore[attr-defined]
+        )
     except ImportError:
         _logger.warning(
             "payroll.gl.unavailable",

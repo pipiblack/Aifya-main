@@ -9,17 +9,14 @@ PostgreSQL-only features (FOR UPDATE, JSONB) degrade gracefully on SQLite.
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 
 import pytest
 import pytest_asyncio
 
 from app.models.finance import (
-    Account,
     AccountingPeriod,
-    PostingRule,
-    Transaction,
 )
 from app.services.finance import (
     PeriodLockedError,

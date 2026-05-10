@@ -7,9 +7,10 @@ Create Date: 2026-05-07
 Adds sms_campaigns and sms_delivery_log tables for bulk SMS sending.
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision = "005"
 down_revision = "004"

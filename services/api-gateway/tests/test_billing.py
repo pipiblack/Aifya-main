@@ -244,9 +244,7 @@ async def test_record_payment(client: AsyncClient) -> None:
     _patient_id, _encounter_id, invoice_id = await _create_invoice(client)
 
     # Finalize first
-    finalize_resp = await client.post(
-        f"/api/v1/billing/invoices/{invoice_id}/finalize"
-    )
+    finalize_resp = await client.post(f"/api/v1/billing/invoices/{invoice_id}/finalize")
     assert finalize_resp.status_code == 200
     total_cents: int = finalize_resp.json()["total_cents"]
 
@@ -282,9 +280,7 @@ async def test_record_partial_payment(client: AsyncClient) -> None:
     _patient_id, _encounter_id, invoice_id = await _create_invoice(client)
 
     # Finalize first
-    finalize_resp = await client.post(
-        f"/api/v1/billing/invoices/{invoice_id}/finalize"
-    )
+    finalize_resp = await client.post(f"/api/v1/billing/invoices/{invoice_id}/finalize")
     assert finalize_resp.status_code == 200
     total_cents: int = finalize_resp.json()["total_cents"]
     partial_amount: int = total_cents // 2

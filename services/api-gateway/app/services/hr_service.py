@@ -1,9 +1,8 @@
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
 
 from app.models.hr import Attendance, LeaveRequest, Shift, ShiftAssignment, StaffProfile
 from app.models.staff import Department, Staff
@@ -179,9 +178,7 @@ class HRService:
         await self.db.refresh(shift)
         return shift
 
-    async def get_shifts(
-        self, facility_id: uuid.UUID
-    ) -> list[Shift]:
+    async def get_shifts(self, facility_id: uuid.UUID) -> list[Shift]:
         """
         Get all active shift definitions.
 
@@ -262,9 +259,7 @@ class HRService:
         if department_id:
             query = query.where(ShiftAssignment.department_id == department_id)
 
-        query = query.order_by(
-            ShiftAssignment.assignment_date.asc(), Shift.start_time.asc()
-        )
+        query = query.order_by(ShiftAssignment.assignment_date.asc(), Shift.start_time.asc())
         result = await self.db.execute(query)
         rows = result.all()
 
@@ -378,7 +373,7 @@ class HRService:
         if not leave:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if data.action == "approve":
             leave.status = "approved"
@@ -417,7 +412,7 @@ class HRService:
         @param facility_id: Facility UUID
         @returns Attendance record
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         today = date.today()
 
         attendance = Attendance(
@@ -463,16 +458,14 @@ class HRService:
         if not attendance:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         attendance.clock_out = now
         if data.notes:
             attendance.notes = data.notes
 
         # Calculate overtime if shift is assigned
         if attendance.shift_id and attendance.clock_in:
-            shift_result = await self.db.execute(
-                select(Shift).where(Shift.id == attendance.shift_id)
-            )
+            shift_result = await self.db.execute(select(Shift).where(Shift.id == attendance.shift_id))
             shift = shift_result.scalar_one_or_none()
             if shift:
                 worked_minutes = int((now - attendance.clock_in).total_seconds() / 60)
