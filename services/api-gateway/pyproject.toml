@@ -79,6 +79,11 @@ extend-immutable-calls = [
 # in argument defaults — that's the FastAPI DI pattern, not a B008 bug.
 "app/routers/**/*.py" = ["B008"]
 "app/auth/**/*.py" = ["B008"]
+# SQLAlchemy ORM and Pydantic models need date/datetime/uuid imports at runtime
+# (they're used in `Mapped[date]` / annotation-driven validators) — TC003 would
+# break the models by moving them under TYPE_CHECKING.
+"app/models/**/*.py" = ["TC001", "TC002", "TC003"]
+"app/schemas/**/*.py" = ["TC001", "TC002", "TC003"]
 # DHIS2, FHIR, M-Pesa, SHA payloads use mixedCase per their respective spec —
 # matching the spec is intentional in interop code.
 "app/services/dhis2/**/*.py" = ["N815"]

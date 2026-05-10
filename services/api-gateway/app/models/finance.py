@@ -12,11 +12,8 @@ All tables are multi-tenant (facility_id) and inherit ``AuditMixin``
 from __future__ import annotations
 
 import uuid
+from datetime import date, datetime  # runtime imports needed by SQLAlchemy Mapped[...]
 from decimal import Decimal
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
