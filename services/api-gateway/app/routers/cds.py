@@ -4,7 +4,7 @@ Exposes endpoints for evaluating prescription, vitals, and lab result
 CDS rules. All endpoints require authentication and the 'encounters' module.
 """
 
-from typing import TYPE_CHECKING
+import uuid
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,9 +26,6 @@ from app.services.cds.engine import (
     evaluate_vitals,
 )
 from app.services.cds.models import CDSAlert, CDSEvaluationResponse
-
-if TYPE_CHECKING:
-    import uuid
 
 logger = get_logger(__name__)
 

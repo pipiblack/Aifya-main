@@ -74,6 +74,9 @@ async def _get_period_for_date(db: AsyncSession, facility_id: uuid.UUID, posting
     """
     Get the accounting period that contains ``posting_date``.
 
+    Year-end (``year_end=True``) periods overlap monthly periods and are
+    only used by the year-end close workflow, so they are excluded here.
+
     @param db: Database session
     @param facility_id: Facility scope
     @param posting_date: Date of the posting
@@ -86,6 +89,7 @@ async def _get_period_for_date(db: AsyncSession, facility_id: uuid.UUID, posting
             AccountingPeriod.facility_id == facility_id,
             AccountingPeriod.start_date <= posting_date,
             AccountingPeriod.end_date >= posting_date,
+            AccountingPeriod.year_end == False,  # noqa: E712 — exclude FY wrappers
             AccountingPeriod.is_deleted == False,  # noqa: E712
         )
     )

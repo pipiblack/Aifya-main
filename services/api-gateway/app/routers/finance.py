@@ -7,6 +7,8 @@ All endpoints are mounted under ``/api/v1/finance/`` and gated by the
 
 from __future__ import annotations
 
+import uuid
+from datetime import date as date_type
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -98,9 +100,6 @@ from app.services.finance.reports import (
 )
 
 if TYPE_CHECKING:
-    import uuid
-    from datetime import date as date_type
-
     from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(require_module("finance"))])

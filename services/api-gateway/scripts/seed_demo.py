@@ -812,6 +812,8 @@ async def seed_accounting_periods(db: AsyncSession, facility_id: uuid.UUID) -> d
             created += 1
 
         # Fiscal year period (overlaps monthly — used for year-end close).
+        # Status is "closed" so it does NOT shadow monthly periods during
+        # routine posting; only year-end close logic flips it open.
         fy_name = f"FY{y}"
         if fy_name not in existing_names:
             fy = AccountingPeriod(
@@ -820,7 +822,7 @@ async def seed_accounting_periods(db: AsyncSession, facility_id: uuid.UUID) -> d
                 name=fy_name,
                 start_date=date(y, 1, 1),
                 end_date=date(y, 12, 31),
-                status="open",
+                status="closed",
                 year_end=True,
             )
             db.add(fy)

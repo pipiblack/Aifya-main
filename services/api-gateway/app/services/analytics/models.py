@@ -7,13 +7,10 @@ including readmission risk, bed demand, no-show, stockout, and revenue forecasti
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import uuid
+from datetime import date
 
 from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    import uuid
-    from datetime import date
 
 
 class ReadmissionRisk(BaseModel):

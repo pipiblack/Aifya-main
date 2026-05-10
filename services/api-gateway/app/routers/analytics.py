@@ -8,6 +8,7 @@ analytics dashboard.
 
 from __future__ import annotations
 
+import uuid
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
@@ -31,8 +32,6 @@ from app.services.analytics.revenue import forecast_revenue
 from app.services.analytics.stockout import predict_stockouts
 
 if TYPE_CHECKING:
-    import uuid
-
     from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(dependencies=[Depends(require_module("analytics"))])

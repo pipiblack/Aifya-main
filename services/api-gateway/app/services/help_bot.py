@@ -12,14 +12,12 @@ from __future__ import annotations
 
 import os
 import re
-from typing import TYPE_CHECKING, Final
+import uuid  # noqa: F401 — used in Pydantic models below
+from typing import Final
 
 import httpx
 from pydantic import BaseModel
 from structlog import get_logger
-
-if TYPE_CHECKING:
-    import uuid
 
 logger = get_logger(__name__)
 
