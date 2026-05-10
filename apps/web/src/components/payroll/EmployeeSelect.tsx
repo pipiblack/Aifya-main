@@ -35,7 +35,7 @@ export function EmployeeSelect({
     page_size: 50,
   });
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
 
   const selected = useMemo(
     () => items.find((e) => e.id === value),

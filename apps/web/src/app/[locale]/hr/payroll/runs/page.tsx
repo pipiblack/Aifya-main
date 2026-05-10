@@ -39,7 +39,7 @@ export default function PayrollRunsListPage() {
   const t = useTranslations("payroll");
   const tc = useTranslations("common");
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const [yearFilter, setYearFilter] = useState<number | undefined>(
     now.getFullYear(),
   );
