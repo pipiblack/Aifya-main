@@ -1,0 +1,234 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+# Cancel superseded runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+  GO_VERSION: "1.22"
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────
+  # Frontend — Next.js 15 / React 19 / TypeScript / Vitest
+  # ────────────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend (lint + typecheck + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: cd apps/web && pnpm lint
+
+      - name: Type check
+        run: cd apps/web && pnpm typecheck
+
+      - name: Unit tests
+        run: cd apps/web && pnpm test
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Backend — FastAPI / SQLAlchemy 2 / Pydantic 2 / pytest
+  # ────────────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend (lint + typecheck + test)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aifya_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: aifya_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: services/api-gateway
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff mypy pytest pytest-asyncio pytest-cov httpx
+
+      - name: Ruff lint
+        working-directory: services/api-gateway
+        run: ruff check .
+
+      - name: Ruff format check
+        working-directory: services/api-gateway
+        run: ruff format --check .
+
+      - name: Mypy type check
+        working-directory: services/api-gateway
+        run: mypy app
+        continue-on-error: true # Allow soft-fail until full typing migration
+
+      - name: pytest
+        working-directory: services/api-gateway
+        env:
+          DEBUG: "true"
+          SECRET_KEY: ci_secret_for_testing_only_not_real_use_at_all
+          DATABASE_URL: postgresql+asyncpg://aifya_user:ci_password@localhost:5432/aifya_test
+          REDIS_URL: redis://localhost:6379/0
+          KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+          KEYCLOAK_URL: http://localhost:8080
+        run: pytest -v --cov=app --cov-report=term-missing
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Go services — billing-service, sync-service
+  # ────────────────────────────────────────────────────────────────────────
+  go-services:
+    name: Go services (vet + test)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [billing-service, sync-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: services/${{ matrix.service }}/go.sum
+
+      - name: Download dependencies
+        working-directory: services/${{ matrix.service }}
+        run: go mod download
+
+      - name: Vet
+        working-directory: services/${{ matrix.service }}
+        run: go vet ./...
+
+      - name: Build
+        working-directory: services/${{ matrix.service }}
+        run: go build ./...
+
+      - name: Test
+        working-directory: services/${{ matrix.service }}
+        run: go test -race -coverprofile=coverage.out ./...
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Migrations — verify alembic chain integrity
+  # ────────────────────────────────────────────────────────────────────────
+  migrations:
+    name: Alembic migration check
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aifya_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: aifya_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: services/api-gateway
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run migrations forward
+        working-directory: services/api-gateway
+        env:
+          DEBUG: "true"
+          SECRET_KEY: ci_secret_for_testing_only_not_real_use_at_all
+          DATABASE_URL: postgresql+asyncpg://aifya_user:ci_password@localhost:5432/aifya_test
+        run: alembic upgrade head
+
+      - name: Run migrations backward then forward (round trip)
+        working-directory: services/api-gateway
+        env:
+          DEBUG: "true"
+          SECRET_KEY: ci_secret_for_testing_only_not_real_use_at_all
+          DATABASE_URL: postgresql+asyncpg://aifya_user:ci_password@localhost:5432/aifya_test
+        run: |
+          alembic downgrade -1
+          alembic upgrade head
+
+  # ────────────────────────────────────────────────────────────────────────
+  # Secrets scan — block accidental credential commits
+  # ────────────────────────────────────────────────────────────────────────
+  secrets-scan:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ────────────────────────────────────────────────────────────────────────
+  # All-green gate — required check for branch protection
+  # ────────────────────────────────────────────────────────────────────────
+  ci-passed:
+    name: CI passed
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, go-services, migrations, secrets-scan]
+    if: always()
+    steps:
+      - name: Verify all jobs succeeded
+        run: |
+          if [ "${{ needs.frontend.result }}" != "success" ] || \
+             [ "${{ needs.backend.result }}" != "success" ] || \
+             [ "${{ needs.go-services.result }}" != "success" ] || \
+             [ "${{ needs.migrations.result }}" != "success" ] || \
+             [ "${{ needs.secrets-scan.result }}" != "success" ]; then
+            echo "::error::One or more required jobs failed"
+            exit 1
+          fi
+          echo "All required jobs passed"

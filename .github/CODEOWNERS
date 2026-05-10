@@ -1,0 +1,49 @@
+# Aifya CODEOWNERS
+#
+# Order matters — the LAST matching rule wins. So put broad rules first,
+# specific rules at the bottom.
+#
+# Owners are auto-requested for review when a PR touches their paths.
+# At least one owner approval is required to merge to main.
+#
+# Format: <pattern> <owner> [<owner> ...]
+
+# Default owner — everything not otherwise covered
+*       @JGitaka123
+
+# ── Critical clinical safety paths ──────────────────────────────────────
+# Changes here MUST be reviewed by a maintainer.
+/services/api-gateway/app/services/cds/                       @JGitaka123
+/services/api-gateway/app/routers/cds.py                      @JGitaka123
+/services/api-gateway/app/services/agents/                    @JGitaka123
+
+# ── Finance: double-entry GL engine ─────────────────────────────────────
+# DR=CR validation, period locks, idempotency — high-blast-radius code.
+/services/api-gateway/app/services/finance/                   @JGitaka123
+/services/api-gateway/app/routers/finance.py                  @JGitaka123
+/services/api-gateway/app/models/finance.py                   @JGitaka123
+
+# ── Payroll: Kenya statutory engine ─────────────────────────────────────
+# PAYE, NSSF, SHIF, Housing Levy — wrong numbers = legal liability.
+/services/api-gateway/app/services/payroll/                   @JGitaka123
+/services/api-gateway/app/routers/payroll.py                  @JGitaka123
+/services/api-gateway/app/models/payroll.py                   @JGitaka123
+/services/api-gateway/app/models/payroll_extra.py             @JGitaka123
+
+# ── Authentication / authorisation ──────────────────────────────────────
+/services/api-gateway/app/auth/                               @JGitaka123
+/services/api-gateway/app/middleware/                         @JGitaka123
+
+# ── Database migrations ─────────────────────────────────────────────────
+/services/api-gateway/alembic/                                @JGitaka123
+
+# ── External integrations (M-Pesa, SHA, KRA) ────────────────────────────
+/services/api-gateway/app/services/mpesa/                     @JGitaka123
+/services/api-gateway/app/services/sha/                       @JGitaka123
+/services/api-gateway/app/routers/mpesa.py                    @JGitaka123
+
+# ── CI / GitHub config ──────────────────────────────────────────────────
+/.github/                                                      @JGitaka123
+/CONTRIBUTING.md                                              @JGitaka123
+/CLAUDE.md                                                    @JGitaka123
+/CLAUDE-FINAL.md                                              @JGitaka123

@@ -256,6 +256,17 @@ Interactive API docs at `http://localhost:8000/docs` (Swagger UI).
 - Serious Adverse Events (SAE) reportable within **24 hours**
 - All data access logged to **immutable event store**
 
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for branch strategy, PR rules, commit conventions, and the security/clinical-safety bar every change must clear.
+
+In short:
+- Feature work → `feat/<scope>` branch → PR to `develop`
+- Bug fixes → `fix/<scope>` branch → PR to `develop`
+- Hotfixes → `hotfix/<scope>` branch → PR to `main` AND `develop`
+- Releases → PR `develop` → `main` (tagged with version)
+- All PRs must pass CI (lint + typecheck + tests + secrets scan)
+
 ## License
 
 Proprietary. All rights reserved.

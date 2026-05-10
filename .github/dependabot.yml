@@ -1,0 +1,112 @@
+version: 2
+updates:
+  # ── Frontend (apps/web) ────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: "/apps/web"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "Africa/Nairobi"
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      radix-ui:
+        patterns: ["@radix-ui/*"]
+      tanstack:
+        patterns: ["@tanstack/*"]
+      testing:
+        patterns: ["@testing-library/*", "vitest", "jsdom", "@vitejs/plugin-react"]
+      eslint:
+        patterns: ["eslint", "eslint-*"]
+
+  # ── Backend (services/api-gateway) ─────────────────────────────────────
+  - package-ecosystem: pip
+    directory: "/services/api-gateway"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "Africa/Nairobi"
+    open-pull-requests-limit: 5
+    labels: [dependencies, backend]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+
+  # ── Knowledge service (RAG) ────────────────────────────────────────────
+  - package-ecosystem: pip
+    directory: "/services/ai-service/knowledge"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, ai-service]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ── ScribeAI service ───────────────────────────────────────────────────
+  - package-ecosystem: pip
+    directory: "/services/ai-service/scribe/backend"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, ai-service]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ── Go services ────────────────────────────────────────────────────────
+  - package-ecosystem: gomod
+    directory: "/services/billing-service"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, go]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: gomod
+    directory: "/services/sync-service"
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, go]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ── GitHub Actions versions ────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: [dependencies, ci]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "ci(deps)"
+
+  # ── Docker base images ─────────────────────────────────────────────────
+  - package-ecosystem: docker
+    directory: "/services/api-gateway"
+    schedule:
+      interval: monthly
+    labels: [dependencies, docker]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: docker
+    directory: "/apps/web"
+    schedule:
+      interval: monthly
+    labels: [dependencies, docker]
+    reviewers: [JGitaka123]
+    commit-message:
+      prefix: "chore(deps)"
