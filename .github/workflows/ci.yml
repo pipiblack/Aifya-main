@@ -6,10 +6,10 @@ on:
   push:
     branches: [main, develop]
 
-# Cancel superseded runs on the same branch
+# Cancel superseded runs on the same PR; never cancel main/develop pushes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PYTHON_VERSION: "3.12"
@@ -79,13 +79,13 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: services/api-gateway/requirements-dev.txt
 
       - name: Install dependencies
         working-directory: services/api-gateway
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install ruff mypy pytest pytest-asyncio pytest-cov httpx
+          pip install -r requirements-dev.txt
 
       - name: Ruff lint
         working-directory: services/api-gateway
@@ -171,6 +171,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: services/api-gateway/requirements.txt
 
       - name: Install dependencies
         working-directory: services/api-gateway

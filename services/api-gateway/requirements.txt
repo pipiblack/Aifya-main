@@ -1,0 +1,37 @@
+# Aifya api-gateway runtime dependencies
+# Mirrors pyproject.toml [project.dependencies] for CI/Dependabot/uv.
+# Keep in sync with pyproject.toml — pyproject is the source of truth for `uv` builds.
+
+# --- Web framework ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
+
+# --- Database ---
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.30.0
+aiosqlite>=0.20.0       # used by tests (sqlite+aiosqlite://)
+alembic>=1.14.0
+
+# --- Validation / config ---
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+
+# --- Auth ---
+python-jose[cryptography]>=3.3.0
+
+# --- HTTP client ---
+httpx>=0.28.0
+
+# --- Caching / queues ---
+redis>=5.2.0
+celery[redis]>=5.4.0
+
+# --- Streaming ---
+aiokafka>=0.12.0
+
+# --- Logging ---
+structlog>=24.4.0
+
+# --- PDF generation (referral notes, payslips) ---
+reportlab>=4.2.0

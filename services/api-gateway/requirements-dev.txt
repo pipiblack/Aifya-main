@@ -1,0 +1,17 @@
+# Aifya api-gateway development dependencies
+# Mirrors pyproject.toml [project.optional-dependencies].dev
+# CI installs both requirements.txt and this file.
+
+-r requirements.txt
+
+# --- Lint / format / type ---
+ruff>=0.8.0
+mypy>=1.13.0
+
+# --- Test ---
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+pytest-cov>=6.0.0
+
+# --- Test fixtures ---
+factory-boy>=3.3.0

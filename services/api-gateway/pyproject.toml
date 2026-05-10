@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "sqlalchemy[asyncio]>=2.0.0",
     "asyncpg>=0.30.0",
+    "aiosqlite>=0.20.0",
     "alembic>=1.14.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
@@ -17,12 +18,15 @@ dependencies = [
     "httpx>=0.28.0",
     "python-multipart>=0.0.12",
     "aiokafka>=0.12.0",
+    "structlog>=24.4.0",
+    "reportlab>=4.2.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
     "httpx>=0.28.0",
     "mypy>=1.13.0",
     "ruff>=0.8.0",
@@ -31,10 +35,57 @@ dev = [
 
 [tool.ruff]
 target-version = "py312"
-line-length = 88
+line-length = 120
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "TCH", "RUF"]
+# Pragmatic ignores for things that don't reflect real bugs in our codebase:
+#  E501  — long-string medical rules and FHIR mappings exceed 120 cols intentionally
+#  B904  — TODO: tech debt, add `raise … from err` chaining (track in #cleanup)
+#  RUF001/002 — Unicode chars (×, −, ›) in docstrings/strings are intentional
+#  SIM105 — `try/except/pass` is occasionally clearer than `contextlib.suppress`
+#  SIM108 — ternary vs if/else is a style call, not a bug
+#  N806   — uppercase local variable for re-aliasing model classes is a common pattern
+#  N817   — PascalCase imported as acronym is fine in tests
+ignore = ["E501", "B904", "RUF001", "RUF002", "SIM105", "SIM108", "N806", "N817"]
+# FastAPI dependency-injection patterns (Depends/Query/Path/Body/Header/Cookie/Security)
+# legitimately call functions in argument defaults — exempt them from B008.
+extend-safe-fixes = ["I001"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Security",
+    "app.auth.dependencies.require_roles",
+    "app.auth.license_check.require_module",
+    "require_roles",
+    "require_module",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use longer assertion lines and skip some style checks.
+"tests/**/*.py" = ["E501", "F841", "B008", "N802", "N803", "N806"]
+# Alembic auto-generated migrations have their own conventions.
+"alembic/**/*.py" = ["E501", "I001", "F401", "F403"]
+# FastAPI routers and auth modules legitimately use Depends(require_roles(...))
+# in argument defaults — that's the FastAPI DI pattern, not a B008 bug.
+"app/routers/**/*.py" = ["B008"]
+"app/auth/**/*.py" = ["B008"]
+# DHIS2, FHIR, M-Pesa, SHA payloads use mixedCase per their respective spec —
+# matching the spec is intentional in interop code.
+"app/services/dhis2/**/*.py" = ["N815"]
+"app/services/fhir/**/*.py" = ["N815"]
+"app/services/mpesa/**/*.py" = ["N815"]
+"app/services/sha/**/*.py" = ["N815"]
+"app/schemas/fhir*.py" = ["N815"]
 
 [tool.mypy]
 python_version = "3.12"
