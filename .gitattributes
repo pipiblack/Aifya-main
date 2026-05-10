@@ -1,0 +1,53 @@
+# Aifya — enforce LF line endings on commits to avoid CRLF noise on Windows.
+
+* text=auto eol=lf
+
+# Source code
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.go text eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+
+# Config / docs
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.editorconfig text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Lockfiles — keep machine-generated formatting intact
+pnpm-lock.yaml text eol=lf -diff
+package-lock.json text eol=lf -diff
+go.sum text eol=lf -diff
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.tgz binary
+*.wav binary
+*.mp3 binary
+*.mp4 binary
+
+# Windows shell scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

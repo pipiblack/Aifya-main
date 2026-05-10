@@ -1,0 +1,40 @@
+# gitleaks configuration for Aifya
+# Extends the default ruleset with project-specific allowlists for legitimate
+# placeholders (.env.example) and CI test secrets that look like real keys.
+#
+# https://github.com/gitleaks/gitleaks#configuration
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Aifya placeholder credentials and test fixtures"
+paths = [
+  '''\.env\.example$''',
+  '''docker-compose\.yml$''',
+  '''\.github/workflows/ci\.yml$''',
+  '''SECURITY-TODO\.md$''',
+  '''CONTRIBUTING\.md$''',
+  '''README\.md$''',
+  '''CLAUDE\.md$''',
+  '''CLAUDE-FINAL\.md$''',
+  '''docs/.*\.md$''',
+  '''.*\.example$''',
+  '''pnpm-lock\.yaml$''',
+]
+
+# Strings that look like secrets but are documentation placeholders
+# or CI fixtures.
+regexes = [
+  '''change_me_in_production''',
+  '''change_me_use_openssl_rand_hex_32''',
+  '''change_me''',
+  '''ci_password''',
+  '''ci_secret_for_testing_only_not_real_use_at_all''',
+  '''test_secret_for_testing_only''',
+  '''sk-placeholder''',
+  '''placeholder''',
+  '''minioadmin''',
+  '''YOUR_[A-Z_]+''',
+  '''<[a-z_-]+>''',
+]
