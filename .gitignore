@@ -72,3 +72,9 @@ debug_db.py
 find_ids.py
 gen_hash.py
 test_hash.py
+
+# Local SQLite smoke DBs
+*.db
+*.tmp.json
+*.tmp.txt
+perf-error*.txt
