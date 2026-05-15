@@ -39,11 +39,11 @@
       "standardFlowEnabled": true,
       "redirectUris": [
         "http://localhost:3000/*",
-        "https://*.aifya.health/*"
+        "https://*.aifyahealth.co.ke/*"
       ],
       "webOrigins": [
         "http://localhost:3000",
-        "https://*.aifya.health"
+        "https://*.aifyahealth.co.ke"
       ],
       "defaultClientScopes": ["openid", "profile", "email", "aifya-scope"]
     },
@@ -79,8 +79,8 @@
   ],
   "users": [
     {
-      "username": "admin@aifya.health",
-      "email": "admin@aifya.health",
+      "username": "admin@aifyahealth.co.ke",
+      "email": "admin@aifyahealth.co.ke",
       "emailVerified": true,
       "enabled": true,
       "firstName": "System",
@@ -98,8 +98,8 @@
       "realmRoles": ["admin", "doctor"]
     },
     {
-      "username": "doctor@demo.aifya.health",
-      "email": "doctor@demo.aifya.health",
+      "username": "doctor@demo.aifyahealth.co.ke",
+      "email": "doctor@demo.aifyahealth.co.ke",
       "emailVerified": true,
       "enabled": true,
       "firstName": "Demo",
@@ -117,8 +117,8 @@
       "realmRoles": ["doctor"]
     },
     {
-      "username": "nurse@demo.aifya.health",
-      "email": "nurse@demo.aifya.health",
+      "username": "nurse@demo.aifyahealth.co.ke",
+      "email": "nurse@demo.aifyahealth.co.ke",
       "emailVerified": true,
       "enabled": true,
       "firstName": "Demo",
@@ -136,8 +136,8 @@
       "realmRoles": ["nurse"]
     },
     {
-      "username": "records@demo.aifya.health",
-      "email": "records@demo.aifya.health",
+      "username": "records@demo.aifyahealth.co.ke",
+      "email": "records@demo.aifyahealth.co.ke",
       "emailVerified": true,
       "enabled": true,
       "firstName": "Demo",

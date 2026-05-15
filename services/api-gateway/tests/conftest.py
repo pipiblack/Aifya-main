@@ -68,7 +68,7 @@ async def override_get_current_user() -> CurrentUser:
     return CurrentUser(
         user_id=USER_ID,
         facility_id=FACILITY_ID,
-        email="test@aifya.health",
+        email="test@aifyahealth.co.ke",
         roles=["admin", "doctor"],
         name="Test User",
     )

@@ -3,4 +3,4 @@ Disallow: /api/
 Disallow: /admin/
 Allow: /
 
-Sitemap: https://aifya.health/sitemap.xml
+Sitemap: https://aifyahealth.co.ke/sitemap.xml

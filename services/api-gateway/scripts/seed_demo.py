@@ -75,7 +75,7 @@ if TYPE_CHECKING:
 
 # Stable namespace for deterministic UUID generation across runs.
 # Re-running the seed yields identical UUIDs, which makes the script idempotent.
-DEMO_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "aifya-demo.aifya.co.ke")
+DEMO_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "aifya-demo.aifyahealth.co.ke")
 
 DEMO_FACILITY_NAME = "Aifya Demo Hospital"
 DEMO_FACILITY_CODE = "AIFYA-DEMO"
@@ -121,8 +121,8 @@ async def get_or_create_facility(db: AsyncSession) -> Facility:
         ward="Parklands",
         physical_address="Aifya Plaza, 5th Floor, Westlands, Nairobi",
         phone="+254700000000",
-        email="info@aifya.co.ke",
-        website="https://aifya.co.ke",
+        email="info@aifyahealth.co.ke",
+        website="https://aifyahealth.co.ke",
         timezone="Africa/Nairobi",
         currency="KES",
         is_active=True,
@@ -191,7 +191,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "admin",
         "title": "Dr.",
         "dept": "ADMIN",
-        "email": "admin@aifya.co.ke",
+        "email": "admin@aifyahealth.co.ke",
         "license_body": "KMPDC",
         "license": "KMPDC/12345",
     },
@@ -202,7 +202,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "doctor",
         "title": "Dr.",
         "dept": "OPD",
-        "email": "doctor@aifya.co.ke",
+        "email": "doctor@aifyahealth.co.ke",
         "license_body": "KMPDC",
         "license": "KMPDC/22001",
     },
@@ -213,7 +213,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "doctor",
         "title": "Dr.",
         "dept": "IPD",
-        "email": "mary.akinyi@aifya.co.ke",
+        "email": "mary.akinyi@aifyahealth.co.ke",
         "license_body": "KMPDC",
         "license": "KMPDC/22002",
     },
@@ -224,7 +224,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "nurse",
         "title": "Sister",
         "dept": "OPD",
-        "email": "nurse@aifya.co.ke",
+        "email": "nurse@aifyahealth.co.ke",
         "license_body": "NCK",
         "license": "NCK/33001",
     },
@@ -235,7 +235,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "nurse",
         "title": "Sister",
         "dept": "MCH",
-        "email": "grace.wanjiru@aifya.co.ke",
+        "email": "grace.wanjiru@aifyahealth.co.ke",
         "license_body": "NCK",
         "license": "NCK/33002",
     },
@@ -246,7 +246,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "pharmacist",
         "title": "Mr.",
         "dept": "PHARM",
-        "email": "pharmacy@aifya.co.ke",
+        "email": "pharmacy@aifyahealth.co.ke",
         "license_body": "PPB",
         "license": "PPB/44001",
     },
@@ -257,7 +257,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "lab_tech",
         "title": "Mr.",
         "dept": "LAB",
-        "email": "lab@aifya.co.ke",
+        "email": "lab@aifyahealth.co.ke",
         "license_body": "KMLTTB",
         "license": "KMLTTB/55001",
     },
@@ -268,7 +268,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "cashier",
         "title": "Ms.",
         "dept": "ADMIN",
-        "email": "cashier@aifya.co.ke",
+        "email": "cashier@aifyahealth.co.ke",
         "license_body": None,
         "license": None,
     },
@@ -279,7 +279,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "hr_admin",
         "title": "Ms.",
         "dept": "ADMIN",
-        "email": "hr@aifya.co.ke",
+        "email": "hr@aifyahealth.co.ke",
         "license_body": None,
         "license": None,
     },
@@ -290,7 +290,7 @@ STAFF_DEFINITIONS: list[dict[str, Any]] = [
         "role": "receptionist",
         "title": "Mr.",
         "dept": "OPD",
-        "email": "reception@aifya.co.ke",
+        "email": "reception@aifyahealth.co.ke",
         "license_body": None,
         "license": None,
     },
@@ -1286,7 +1286,7 @@ async def seed_employees(
             bank_account=f"01{int(ed['nssf']):010d}",
             disability_exemption=ed["disability"],
             phone=f"+25471111{ed['nssf'][-4:]}",
-            email=f"{ed['name'].split()[0].lower()}.{ed['name'].split()[-1].lower()}@aifya.co.ke",
+            email=f"{ed['name'].split()[0].lower()}.{ed['name'].split()[-1].lower()}@aifyahealth.co.ke",
             created_by=user_id,
             updated_by=user_id,
         )
@@ -1883,14 +1883,14 @@ def print_summary(facility_id: uuid.UUID) -> None:
         "Payroll runs: 1 (approved, posted to GL)\n"
         "\n"
         "DEMO USERS (create these in Keycloak separately):\n"
-        "  admin@aifya.co.ke   / DemoAdmin2026!  -- Admin / Finance\n"
-        "  doctor@aifya.co.ke  / DemoDoctor2026! -- Doctor\n"
-        "  nurse@aifya.co.ke   / DemoNurse2026!  -- Nurse\n"
-        "  pharmacy@aifya.co.ke/ DemoPharm2026!  -- Pharmacist\n"
-        "  lab@aifya.co.ke     / DemoLab2026!    -- Lab Tech\n"
-        "  cashier@aifya.co.ke / DemoCash2026!   -- Cashier\n"
-        "  hr@aifya.co.ke      / DemoHR2026!     -- HR Admin\n"
-        "  reception@aifya.co.ke / DemoRec2026!  -- Receptionist\n"
+        "  admin@aifyahealth.co.ke   / DemoAdmin2026!  -- Admin / Finance\n"
+        "  doctor@aifyahealth.co.ke  / DemoDoctor2026! -- Doctor\n"
+        "  nurse@aifyahealth.co.ke   / DemoNurse2026!  -- Nurse\n"
+        "  pharmacy@aifyahealth.co.ke/ DemoPharm2026!  -- Pharmacist\n"
+        "  lab@aifyahealth.co.ke     / DemoLab2026!    -- Lab Tech\n"
+        "  cashier@aifyahealth.co.ke / DemoCash2026!   -- Cashier\n"
+        "  hr@aifyahealth.co.ke      / DemoHR2026!     -- HR Admin\n"
+        "  reception@aifyahealth.co.ke / DemoRec2026!  -- Receptionist\n"
         "\n"
         "NOTE: This script seeds the database only. A Keycloak admin must\n"
         "create the matching users in the 'aifya' realm with the same\n"

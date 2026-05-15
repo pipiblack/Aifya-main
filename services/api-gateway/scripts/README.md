@@ -74,14 +74,14 @@ the `aifya` realm so demo logins work:
 
 | Email                  | Password         | Role                  |
 | ---------------------- | ---------------- | --------------------- |
-| admin@aifya.co.ke      | DemoAdmin2026!   | Admin / Finance       |
-| doctor@aifya.co.ke     | DemoDoctor2026!  | Doctor                |
-| nurse@aifya.co.ke      | DemoNurse2026!   | Nurse                 |
-| pharmacy@aifya.co.ke   | DemoPharm2026!   | Pharmacist            |
-| lab@aifya.co.ke        | DemoLab2026!     | Lab Tech              |
-| cashier@aifya.co.ke    | DemoCash2026!    | Cashier / Billing     |
-| hr@aifya.co.ke         | DemoHR2026!      | HR Admin              |
-| reception@aifya.co.ke  | DemoRec2026!     | Receptionist          |
+| admin@aifyahealth.co.ke      | DemoAdmin2026!   | Admin / Finance       |
+| doctor@aifyahealth.co.ke     | DemoDoctor2026!  | Doctor                |
+| nurse@aifyahealth.co.ke      | DemoNurse2026!   | Nurse                 |
+| pharmacy@aifyahealth.co.ke   | DemoPharm2026!   | Pharmacist            |
+| lab@aifyahealth.co.ke        | DemoLab2026!     | Lab Tech              |
+| cashier@aifyahealth.co.ke    | DemoCash2026!    | Cashier / Billing     |
+| hr@aifyahealth.co.ke         | DemoHR2026!      | HR Admin              |
+| reception@aifyahealth.co.ke  | DemoRec2026!     | Receptionist          |
 
 Each `Staff` row carries a deterministic `keycloak_user_id`. After
 creating the Keycloak users, either link Keycloak's user IDs to the

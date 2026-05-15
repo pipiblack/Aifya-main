@@ -1,6 +1,39 @@
-version: "3.9"
-
 services:
+  # =============================================================================
+  # Edge — Traefik reverse proxy with Let's Encrypt
+  # =============================================================================
+
+  traefik:
+    image: traefik:v3.1
+    container_name: aifya-traefik
+    profiles: ["prod"]   # only starts when running `docker compose --profile prod up`
+    restart: unless-stopped
+    command:
+      # Entry points
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      # Docker provider — discover services by label
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=aifya_default"
+      # Let's Encrypt
+      - "--certificatesresolvers.le.acme.tlschallenge=true"
+      - "--certificatesresolvers.le.acme.email=admin@aifyahealth.co.ke"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      # Logs + dashboard (dashboard on :8081 behind basic auth in prod — disable for now)
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+    networks:
+      - default
+
   # =============================================================================
   # Infrastructure
   # =============================================================================
@@ -113,6 +146,13 @@ services:
         condition: service_healthy
     volumes:
       - ./services/api-gateway:/app
+    labels:
+      # Traefik routing — only active when running with --profile prod
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.aifyahealth.co.ke`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=le"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
 
   web:
     build:
@@ -120,14 +160,21 @@ services:
       dockerfile: Dockerfile
     container_name: aifya-web
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
-      NEXT_PUBLIC_KNOWLEDGE_API_URL: http://localhost:8025/api/v1
-      NEXT_PUBLIC_SCRIBE_API_URL: http://localhost:8005
-      NEXT_PUBLIC_WS_URL: ws://localhost:8000/ws
+      NEXT_PUBLIC_API_URL: https://api.aifyahealth.co.ke/api/v1
+      NEXT_PUBLIC_KNOWLEDGE_API_URL: https://api.aifyahealth.co.ke/knowledge/api/v1
+      NEXT_PUBLIC_SCRIBE_API_URL: https://api.aifyahealth.co.ke/scribe
+      NEXT_PUBLIC_WS_URL: wss://api.aifyahealth.co.ke/ws
     ports:
       - "3000:3000"
     depends_on:
       - api-gateway
+    labels:
+      - "traefik.enable=true"
+      # Apex + www both → web frontend
+      - "traefik.http.routers.web.rule=Host(`aifyahealth.co.ke`) || Host(`www.aifyahealth.co.ke`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls.certresolver=le"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
 
   billing-service:
     build:
@@ -252,3 +299,4 @@ volumes:
   pgdata:
   minio-data:
   qdrant-data:
+  traefik-letsencrypt:

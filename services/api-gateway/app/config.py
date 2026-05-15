@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     mpesa_consumer_secret: str = ""
     mpesa_shortcode: str = ""
     mpesa_passkey: str = ""
-    mpesa_callback_url: str = "https://api.aifya.co.ke/api/v1/mpesa/callback"
+    mpesa_callback_url: str = "https://api.aifyahealth.co.ke/api/v1/mpesa/callback"
     mpesa_environment: str = "sandbox"
 
     # SHA (Social Health Authority)

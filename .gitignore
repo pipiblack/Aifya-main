@@ -78,3 +78,11 @@ test_hash.py
 *.tmp.json
 *.tmp.txt
 perf-error*.txt
+
+# Office temp files (Word auto-save)
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.docx
+*.xlsx
+*.pptx
