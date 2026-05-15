@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
@@ -222,3 +223,67 @@ class StockTransactionResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Top-up / Receive on existing item ─────────────────────────────────────
+
+
+class InventoryReceiveRequest(BaseModel):
+    """Schema for topping up an existing pharmacy item (URL-path variant).
+
+    Used by ``POST /pharmacy/inventory/{item_id}/receive`` so callers cannot
+    create a duplicate catalogue entry when restocking. The item is identified
+    in the URL — never in the body.
+    """
+
+    quantity: int = Field(..., ge=1, description="Units received (positive integer).")
+    batch_no: str | None = Field(None, max_length=50)
+    expiry_date: date | None = None
+    supplier: str | None = Field(None, max_length=200)
+    unit_cost: Decimal | None = Field(
+        None,
+        ge=0,
+        description="Per-unit cost in KES (decimal). Used to value the GRN and "
+        "optionally post to the Finance GL.",
+    )
+    notes: str | None = Field(None, max_length=500)
+    reference_number: str | None = Field(None, max_length=100)
+
+
+class InventoryAdjustRequest(BaseModel):
+    """Schema for stock-take corrections — sets ``current_quantity`` to ``new_qty``.
+
+    Used by ``POST /pharmacy/inventory/{item_id}/adjust``.
+    """
+
+    new_qty: int = Field(..., ge=0)
+    reason: str = Field(..., min_length=3, max_length=500)
+
+
+# ── Stock Summary (Opening / Received / Sales / Closing) ──────────────────
+
+
+class StockSummaryRow(BaseModel):
+    """Per-item stock summary for the inventory audit-trail view.
+
+    All four columns are required for KEMSA/PPB regulatory compliance.
+    """
+
+    item_id: uuid.UUID
+    item_name: str
+    drug_code: str
+    unit: str
+    opening_stock: int
+    received_stock: int
+    sales_stock: int
+    closing_stock: int
+    current_stock: int
+
+
+class StockSummaryResponse(BaseModel):
+    """Response envelope for the stock-summary endpoint."""
+
+    start_date: date
+    end_date: date
+    rows: list[StockSummaryRow]
+    total_items: int

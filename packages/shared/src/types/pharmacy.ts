@@ -180,3 +180,47 @@ export interface StockTransaction {
   expiry_date: string | null;
   created_at: string;
 }
+
+/**
+ * Payload for topping up an existing pharmacy item (URL-path variant).
+ *
+ * Used with `POST /pharmacy/inventory/{item_id}/receive` so callers cannot
+ * create a duplicate catalogue row when restocking.
+ */
+export interface InventoryReceiveRequest {
+  quantity: number;
+  batch_no?: string | null;
+  expiry_date?: string | null;
+  supplier?: string | null;
+  /** Per-unit cost in KES (decimal string or number). */
+  unit_cost?: string | number | null;
+  notes?: string | null;
+  reference_number?: string | null;
+}
+
+/** Payload for stock-take corrections — sets stock to `new_qty` exactly. */
+export interface InventoryAdjustRequest {
+  new_qty: number;
+  reason: string;
+}
+
+/** Single row of the Opening / Received / Sales / Closing stock summary. */
+export interface StockSummaryRow {
+  item_id: string;
+  item_name: string;
+  drug_code: string;
+  unit: string;
+  opening_stock: number;
+  received_stock: number;
+  sales_stock: number;
+  closing_stock: number;
+  current_stock: number;
+}
+
+/** Stock summary response for a date range. */
+export interface StockSummaryResponse {
+  start_date: string;
+  end_date: string;
+  rows: StockSummaryRow[];
+  total_items: number;
+}

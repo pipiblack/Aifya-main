@@ -51,6 +51,7 @@ from app.schemas.payroll import (
     StatutoryRateResponse,
 )
 from app.services.payroll.engine import run_monthly_payroll
+from app.services.payroll.exports import render_schedule
 from app.services.payroll.gl_integration import post_payroll_to_gl
 from app.services.payroll.leave import (
     approve_leave_request,
@@ -553,17 +554,41 @@ async def get_p9(
     )
 
 
+_FORMAT_DESC = (
+    "Optional export format: 'csv' | 'xlsx' | 'pdf'. When omitted returns "
+    "JSON. CSV / Excel / PDF outputs are KRA / NSSF / SHIF portal-ready."
+)
+
+
 @router.get("/reports/paye-schedule")
 async def paye_schedule(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000, le=2100),
+    format: str | None = Query(None, description=_FORMAT_DESC),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
-) -> list[dict]:
-    """KRA P10 PAYE schedule per employee."""
+) -> list[dict] | StreamingResponse:
+    """KRA P10 PAYE schedule per employee.
+
+    When ``format`` is supplied (csv / xlsx / pdf), streams a downloadable file
+    with KRA-compliant column headers; otherwise returns JSON rows.
+    """
+    rows = await get_paye_schedule(db, current_user.facility_id, month, year)
+    if format:
+        try:
+            data, media, filename = render_schedule("paye", format, rows, month, year)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+        return StreamingResponse(
+            iter([data]),
+            media_type=media,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     return [
-        {**r, "amount": str(r["amount"]), "gross": str(r["gross"])}
-        for r in await get_paye_schedule(db, current_user.facility_id, month, year)
+        {**r, "amount": str(r["amount"]), "gross": str(r["gross"])} for r in rows
     ]
 
 
@@ -571,13 +596,27 @@ async def paye_schedule(
 async def nssf_schedule(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000, le=2100),
+    format: str | None = Query(None, description=_FORMAT_DESC),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
-) -> list[dict]:
-    """NSSF schedule per employee."""
+) -> list[dict] | StreamingResponse:
+    """NSSF schedule per employee (Tier I / Tier II split for ``format`` exports)."""
+    rows = await get_nssf_schedule(db, current_user.facility_id, month, year)
+    if format:
+        try:
+            data, media, filename = render_schedule("nssf", format, rows, month, year)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+        return StreamingResponse(
+            iter([data]),
+            media_type=media,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     return [
-        {**r, "amount": str(r["amount"]), "gross": str(r["gross"])}
-        for r in await get_nssf_schedule(db, current_user.facility_id, month, year)
+        {**r, "amount": str(r["amount"]), "gross": str(r["gross"])} for r in rows
     ]
 
 
@@ -585,13 +624,27 @@ async def nssf_schedule(
 async def shif_schedule(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000, le=2100),
+    format: str | None = Query(None, description=_FORMAT_DESC),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
-) -> list[dict]:
+) -> list[dict] | StreamingResponse:
     """SHIF schedule per employee."""
+    rows = await get_shif_schedule(db, current_user.facility_id, month, year)
+    if format:
+        try:
+            data, media, filename = render_schedule("shif", format, rows, month, year)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+        return StreamingResponse(
+            iter([data]),
+            media_type=media,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     return [
-        {**r, "amount": str(r["amount"]), "gross": str(r["gross"])}
-        for r in await get_shif_schedule(db, current_user.facility_id, month, year)
+        {**r, "amount": str(r["amount"]), "gross": str(r["gross"])} for r in rows
     ]
 
 

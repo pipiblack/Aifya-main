@@ -10,10 +10,13 @@ import type {
   Dispensing,
   DispenseRequest,
   InventoryListResponse,
+  InventoryReceiveRequest,
+  InventoryAdjustRequest,
   PharmacyItem,
   PharmacyItemCreate,
   PharmacyItemUpdate,
   StockAlert,
+  StockSummaryResponse,
   StockTransaction,
   StockReceiptRequest,
   StockAdjustmentRequest,
@@ -184,5 +187,88 @@ export function useStockAlerts() {
     queryKey: ["pharmacy", "alerts"],
     queryFn: () => apiClient.get<StockAlert[]>("/pharmacy/alerts"),
     refetchInterval: 60_000,
+  });
+}
+
+// ── Top-up / stock-take on an existing item ──────────────────────────────
+
+/**
+ * Hook for topping up an EXISTING pharmacy item by URL-path id.
+ *
+ * Replaces the duplicate-creation workflow flagged by the May 2026 audit.
+ *
+ * @returns Mutation for stock top-up keyed by item id
+ */
+export function useReceiveForItem(itemId: string) {
+  const queryClient = useQueryClient();
+  return useOfflineMutation<StockTransaction, InventoryReceiveRequest>(
+    {
+      mutationFn: (data: InventoryReceiveRequest) =>
+        apiClient.post<StockTransaction>(
+          `/pharmacy/inventory/${itemId}/receive`,
+          data,
+          generateId(),
+        ),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["pharmacy"] });
+      },
+    },
+    {
+      url: `${API_URL}/pharmacy/inventory/${itemId}/receive`,
+      method: "POST",
+    },
+  );
+}
+
+/**
+ * Hook for stock-take adjustment on an existing item.
+ *
+ * @returns Mutation keyed by item id
+ */
+export function useAdjustForItem(itemId: string) {
+  const queryClient = useQueryClient();
+  return useOfflineMutation<StockTransaction, InventoryAdjustRequest>(
+    {
+      mutationFn: (data: InventoryAdjustRequest) =>
+        apiClient.post<StockTransaction>(
+          `/pharmacy/inventory/${itemId}/adjust`,
+          data,
+          generateId(),
+        ),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["pharmacy"] });
+      },
+    },
+    {
+      url: `${API_URL}/pharmacy/inventory/${itemId}/adjust`,
+      method: "POST",
+    },
+  );
+}
+
+// ── Stock summary (Opening / Received / Sales / Closing) ─────────────────
+
+/**
+ * Hook for fetching Opening/Received/Sales/Closing stock summary in a date range.
+ *
+ * @param startDate - ISO date (YYYY-MM-DD); inclusive
+ * @param endDate - ISO date (YYYY-MM-DD); inclusive
+ * @param itemId - Optional single-item filter
+ * @returns Query result with summary rows
+ */
+export function useStockSummary(
+  startDate?: string,
+  endDate?: string,
+  itemId?: string,
+) {
+  const qs = new URLSearchParams();
+  if (startDate) qs.set("start_date", startDate);
+  if (endDate) qs.set("end_date", endDate);
+  if (itemId) qs.set("item_id", itemId);
+  const path = `/pharmacy/inventory/stock-summary${qs.toString() ? `?${qs.toString()}` : ""}`;
+  return useOfflineQuery<StockSummaryResponse>({
+    queryKey: ["pharmacy", "stock-summary", startDate, endDate, itemId],
+    queryFn: () => apiClient.get<StockSummaryResponse>(path),
+    enabled: !!startDate && !!endDate,
   });
 }

@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Users as UsersIcon,
   CalendarCheck,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   useP9,
@@ -341,6 +342,104 @@ function P9Report() {
   );
 }
 
+/**
+ * Multi-format export buttons (PDF / Excel / CSV / Print) for statutory
+ * payroll schedules. Required by the May 2026 audit so PAYE / NSSF / SHIF
+ * templates can be submitted to relevant government portals.
+ *
+ * @param endpoint - One of "paye-schedule" | "nssf-schedule" | "shif-schedule"
+ * @param filenameBase - Base for the downloaded filename (e.g. "paye-2026-05")
+ * @param month - Period month (1-12)
+ * @param year - Period year (4-digit)
+ */
+function ScheduleExportButtons({
+  endpoint,
+  filenameBase,
+  month,
+  year,
+}: {
+  endpoint: "paye-schedule" | "nssf-schedule" | "shif-schedule";
+  filenameBase: string;
+  month: number;
+  year: number;
+}) {
+  const t = useTranslations("payroll");
+  const tc = useTranslations("common");
+  const [busy, setBusy] = useState<"pdf" | "xlsx" | "csv" | null>(null);
+
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+
+  const downloadFormat = async (fmt: "pdf" | "xlsx" | "csv") => {
+    setBusy(fmt);
+    try {
+      const url = `${apiBase}/payroll/reports/${endpoint}?month=${month}&year=${year}&format=${fmt}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`Export failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      // Use the server-supplied filename when available, otherwise fall back.
+      const cd = res.headers.get("Content-Disposition") ?? "";
+      const match = /filename="?([^";]+)"?/i.exec(cd);
+      const filename = match?.[1] ?? `${filenameBase}.${fmt}`;
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Schedule export failed:", err);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => window.print()}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted/50"
+      >
+        <Printer className="h-4 w-4" />
+        {t("print")}
+      </button>
+      <button
+        type="button"
+        onClick={() => downloadFormat("pdf")}
+        disabled={busy !== null}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted/50 disabled:opacity-50"
+      >
+        <FileText className="h-4 w-4" />
+        {busy === "pdf" ? tc("loading") : "PDF"}
+      </button>
+      <button
+        type="button"
+        onClick={() => downloadFormat("xlsx")}
+        disabled={busy !== null}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted/50 disabled:opacity-50"
+      >
+        <FileSpreadsheet className="h-4 w-4" />
+        {busy === "xlsx" ? tc("loading") : "Excel"}
+      </button>
+      <button
+        type="button"
+        onClick={() => downloadFormat("csv")}
+        disabled={busy !== null}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted/50 disabled:opacity-50"
+      >
+        <Download className="h-4 w-4" />
+        {busy === "csv" ? tc("loading") : "CSV"}
+      </button>
+    </div>
+  );
+}
+
 function MonthYearPicker({
   month,
   year,
@@ -404,14 +503,12 @@ function PAYEScheduleReport() {
             setYear(y);
           }}
         />
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted/50"
-          onClick={() => window.print()}
-        >
-          <Download className="h-4 w-4" />
-          {t("exportP10")}
-        </button>
+        <ScheduleExportButtons
+          endpoint="paye-schedule"
+          filenameBase={`paye-schedule-${year}-${String(month).padStart(2, "0")}`}
+          month={month}
+          year={year}
+        />
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -484,14 +581,22 @@ function NSSFScheduleReport() {
 
   return (
     <div className="space-y-4">
-      <MonthYearPicker
-        month={month}
-        year={year}
-        onChange={(m, y) => {
-          setMonth(m);
-          setYear(y);
-        }}
-      />
+      <div className="flex flex-wrap items-end gap-3">
+        <MonthYearPicker
+          month={month}
+          year={year}
+          onChange={(m, y) => {
+            setMonth(m);
+            setYear(y);
+          }}
+        />
+        <ScheduleExportButtons
+          endpoint="nssf-schedule"
+          filenameBase={`nssf-schedule-${year}-${String(month).padStart(2, "0")}`}
+          month={month}
+          year={year}
+        />
+      </div>
       <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">
@@ -569,14 +674,22 @@ function SHIFScheduleReport() {
 
   return (
     <div className="space-y-4">
-      <MonthYearPicker
-        month={month}
-        year={year}
-        onChange={(m, y) => {
-          setMonth(m);
-          setYear(y);
-        }}
-      />
+      <div className="flex flex-wrap items-end gap-3">
+        <MonthYearPicker
+          month={month}
+          year={year}
+          onChange={(m, y) => {
+            setMonth(m);
+            setYear(y);
+          }}
+        />
+        <ScheduleExportButtons
+          endpoint="shif-schedule"
+          filenameBase={`shif-schedule-${year}-${String(month).padStart(2, "0")}`}
+          month={month}
+          year={year}
+        />
+      </div>
       <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground">
