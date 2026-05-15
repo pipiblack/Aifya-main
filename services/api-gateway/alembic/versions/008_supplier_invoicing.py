@@ -1,7 +1,7 @@
 """Supplier invoicing module.
 
-Revision ID: 007
-Revises: 006
+Revision ID: 008
+Revises: 007
 Create Date: 2026-05-15
 
 Adds supplier-invoicing tables (``supplier_invoices`` and
@@ -15,8 +15,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from alembic import op
 
-revision = "007"
-down_revision = "006"
+revision = "008"
+down_revision = "007"
 branch_labels = None
 depends_on = None
 
