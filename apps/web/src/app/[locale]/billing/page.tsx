@@ -9,6 +9,10 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  Truck,
+  Users,
+  Building2,
+  ArrowRight,
 } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useBillingSummary, useInvoiceList } from "@/hooks/useBilling";
@@ -21,7 +25,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 
 /** Map invoice status to StatusBadge variant. */
-const STATUS_VARIANT: Record<string, "default" | "success" | "warning" | "error" | "info" | "purple"> = {
+const STATUS_VARIANT: Record<
+  string,
+  "default" | "success" | "warning" | "error" | "info" | "purple"
+> = {
   draft: "default",
   finalized: "warning",
   partially_paid: "info",
@@ -31,8 +38,8 @@ const STATUS_VARIANT: Record<string, "default" | "success" | "warning" | "error"
 };
 
 /**
- * Billing dashboard page — summary stats and invoice list.
- * Auto-refreshes for real-time billing updates.
+ * Billing hub — clearly separates Customer Invoicing (patients / payers)
+ * from Supplier Invoicing (vendors / procurement) per audit 2026-05-14.
  *
  * @returns Billing dashboard page
  */
@@ -82,9 +89,84 @@ export default function BillingDashboardPage() {
         }
       />
 
-      {/* Summary cards */}
+      {/* Hub sections — Customer vs Supplier invoicing */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-950">
+              <Users className="h-5 w-5 text-blue-700 dark:text-blue-300" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-foreground">
+                {t("customerInvoicingTitle") || "Customer Invoicing"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("customerInvoicingHelp") ||
+                  "Patient invoices, payments and payer claims."}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <Link
+              href="/billing#invoices"
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 font-medium text-foreground hover:bg-muted"
+            >
+              {t("viewInvoices") || "View invoices"}
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+            <Link
+              href="/insurance"
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 font-medium text-foreground hover:bg-muted"
+            >
+              {t("insuranceClaims") || "Insurance claims"}
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-950">
+              <Truck className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-foreground">
+                {t("supplierInvoicingTitle") || "Supplier Invoicing"}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t("supplierInvoicingHelp") ||
+                  "Vendor invoices, approvals and payouts."}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <Link
+              href="/billing/suppliers"
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 font-medium text-foreground hover:bg-muted"
+            >
+              <Building2 className="h-3 w-3" />
+              {t("manageSuppliers") || "Suppliers"}
+            </Link>
+            <Link
+              href="/billing/supplier-invoices"
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 font-medium text-foreground hover:bg-muted"
+            >
+              <FileText className="h-3 w-3" />
+              {t("supplierInvoices") || "Supplier invoices"}
+            </Link>
+            <Link
+              href="/billing/supplier-invoices/new"
+              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              {t("newSupplierInvoice") || "New supplier invoice"}
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary cards (customer-invoicing focused) */}
       {summary && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div id="invoices" className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard
             icon={FileText}
             label={t("summaryTotalInvoices")}
@@ -120,14 +202,30 @@ export default function BillingDashboardPage() {
       {/* Breakdown row */}
       {summary && (
         <div className="flex flex-wrap gap-3">
-          <MiniStat label={t("summaryDrafts")} value={summary.draft_count} color="default" />
-          <MiniStat label={t("summaryFinalized")} value={summary.finalized_count} color="amber" />
-          <MiniStat label={t("summaryPartiallyPaid")} value={summary.partially_paid_count} color="blue" />
-          <MiniStat label={t("summaryPaid")} value={summary.paid_count} color="green" />
+          <MiniStat
+            label={t("summaryDrafts")}
+            value={summary.draft_count}
+            color="default"
+          />
+          <MiniStat
+            label={t("summaryFinalized")}
+            value={summary.finalized_count}
+            color="amber"
+          />
+          <MiniStat
+            label={t("summaryPartiallyPaid")}
+            value={summary.partially_paid_count}
+            color="blue"
+          />
+          <MiniStat
+            label={t("summaryPaid")}
+            value={summary.paid_count}
+            color="green"
+          />
         </div>
       )}
 
-      {/* Invoice list */}
+      {/* Customer invoice list */}
       {isLoading ? (
         <PageSkeleton />
       ) : !invoices?.items.length ? (
@@ -148,7 +246,7 @@ export default function BillingDashboardPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-semibold text-foreground">
-                      {inv.patient_name ?? "\u2014"}
+                      {inv.patient_name ?? "—"}
                     </span>
                     {inv.patient_mrn && (
                       <span className="font-mono text-xs text-muted-foreground">
@@ -182,10 +280,17 @@ export default function BillingDashboardPage() {
                 </div>
 
                 {/* Status badge */}
-                <StatusBadge
-                  variant={STATUS_VARIANT[inv.status] ?? "default"}
-                >
-                  {t(inv.status === "partially_paid" ? "partiallyPaid" : inv.status as "draft" | "finalized" | "paid" | "cancelled" | "waived")}
+                <StatusBadge variant={STATUS_VARIANT[inv.status] ?? "default"}>
+                  {t(
+                    inv.status === "partially_paid"
+                      ? "partiallyPaid"
+                      : (inv.status as
+                          | "draft"
+                          | "finalized"
+                          | "paid"
+                          | "cancelled"
+                          | "waived"),
+                  )}
                 </StatusBadge>
 
                 {/* Time */}
@@ -212,7 +317,9 @@ export default function BillingDashboardPage() {
               </span>
               <button
                 onClick={() => setPage((p) => p + 1)}
-                disabled={page >= Math.ceil(invoices.total / invoices.page_size)}
+                disabled={
+                  page >= Math.ceil(invoices.total / invoices.page_size)
+                }
                 className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:opacity-50"
               >
                 {tc("next")}

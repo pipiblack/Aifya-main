@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   Heart,
@@ -18,6 +19,7 @@ import {
   useChildRecords,
 } from "@/hooks/useMCH";
 import { cn } from "@/lib/utils";
+import { PatientContextBar } from "@/components/patient/PatientContextBar";
 
 /** Risk level badge styling. */
 const RISK_STYLES: Record<string, string> = {
@@ -44,6 +46,8 @@ const STATUS_STYLES: Record<string, string> = {
 export default function MCHDashboardPage() {
   const t = useTranslations("mch");
   const tc = useTranslations("common");
+  const searchParams = useSearchParams();
+  const patientId = searchParams?.get("patient") ?? "";
   const [tab, setTab] = useState<"anc" | "children">("anc");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
@@ -55,6 +59,7 @@ export default function MCHDashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl animate-[fade-in_0.3s_ease-out] p-6 lg:p-8">
+      {patientId && <PatientContextBar patientId={patientId} className="mb-4" />}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">

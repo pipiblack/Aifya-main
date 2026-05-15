@@ -83,7 +83,10 @@ class InventoryTransaction(AuditMixin, Base):
 
 
 class Supplier(AuditMixin, Base):
-    """Vendor/supplier for procurement."""
+    """Vendor/supplier for procurement.
+
+    Shared between inventory (purchase orders) and billing (supplier invoicing).
+    """
 
     __tablename__ = "suppliers"
     __table_args__ = (Index("ix_suppliers_facility", "facility_id"),)
@@ -95,6 +98,7 @@ class Supplier(AuditMixin, Base):
     email: Mapped[str | None] = mapped_column(String(200))
     address: Mapped[str | None] = mapped_column(Text)
     kra_pin: Mapped[str | None] = mapped_column(String(20))  # Kenya Revenue Authority PIN
+    bank_account: Mapped[str | None] = mapped_column(String(100))  # for supplier payments
     payment_terms: Mapped[str | None] = mapped_column(String(100))  # net_30, net_60, cod
     category: Mapped[str | None] = mapped_column(String(50))  # medical, surgical, general, equipment
     rating: Mapped[int | None] = mapped_column(Integer)  # 1-5

@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     sha_api_url: str = ""
     sha_api_key: str = ""
 
+    # ClaimFlow — internal claims-automation service
+    claimflow_api_url: str = "http://localhost:8080"
+    claimflow_api_key: str = ""
+    claimflow_timeout_seconds: int = 15
+
     # Africa's Talking Bulk SMS
     at_username: str = ""
     at_api_key: str = ""

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   FlaskConical,
@@ -13,6 +14,7 @@ import { Link } from "@/i18n/routing";
 import { useLabWorklist } from "@/hooks/useLaboratory";
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { PatientContextBar } from "@/components/patient/PatientContextBar";
 
 /** Priority badge styling. */
 const PRIORITY_STYLES: Record<string, string> = {
@@ -39,6 +41,8 @@ const STATUS_STYLES: Record<string, string> = {
 export default function LabWorklistPage() {
   const t = useTranslations("lab");
   const tc = useTranslations("common");
+  const searchParams = useSearchParams();
+  const patientId = searchParams?.get("patient") ?? "";
   const [statusFilter, setStatusFilter] = useState<string>("");
 
   const { data, isLoading } = useLabWorklist(statusFilter || undefined);
@@ -53,6 +57,7 @@ export default function LabWorklistPage() {
 
   return (
     <div className="mx-auto max-w-6xl animate-[fade-in_0.3s_ease-out] p-6 lg:p-8">
+      {patientId && <PatientContextBar patientId={patientId} className="mb-4" />}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">

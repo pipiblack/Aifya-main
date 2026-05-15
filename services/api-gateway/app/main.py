@@ -12,6 +12,7 @@ from app.routers import (
     appointments,
     billing,
     cds,
+    claimflow,
     clinical_trials,
     communications,
     dental,
@@ -38,6 +39,7 @@ from app.routers import (
     radiology,
     referral,
     reports,
+    supplier_invoice,
     theatre,
 )
 
@@ -89,6 +91,8 @@ app.include_router(encounters.router, prefix="/api/v1/encounters", tags=["encoun
 app.include_router(pharmacy.router, prefix="/api/v1/pharmacy", tags=["pharmacy"])
 app.include_router(laboratory.router, prefix="/api/v1/laboratory", tags=["laboratory"])
 app.include_router(billing.router, prefix="/api/v1/billing", tags=["billing"])
+app.include_router(supplier_invoice.router, prefix="/api/v1", tags=["supplier-invoicing"])
+app.include_router(claimflow.router, prefix="/api/v1/insurance", tags=["claimflow"])
 app.include_router(finance.router, prefix="/api/v1/finance", tags=["finance"])
 app.include_router(ipd.router, prefix="/api/v1/ipd", tags=["ipd"])
 app.include_router(radiology.router, prefix="/api/v1/radiology", tags=["radiology"])

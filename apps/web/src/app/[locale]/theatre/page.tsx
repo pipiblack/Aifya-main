@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -15,6 +16,7 @@ import {
 import { Link } from "@/i18n/routing";
 import { useTheatreSummary, useSurgicalCases, useTheatres } from "@/hooks/useTheatre";
 import { cn } from "@/lib/utils";
+import { PatientContextBar } from "@/components/patient/PatientContextBar";
 
 const PRIORITY_STYLES: Record<string, string> = {
   emergency: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
@@ -42,6 +44,8 @@ const THEATRE_STATUS_STYLES: Record<string, string> = {
 
 export default function TheatrePage() {
   const t = useTranslations("theatre");
+  const searchParams = useSearchParams();
+  const patientId = searchParams?.get("patient") ?? "";
   const [tab, setTab] = useState<"schedule" | "theatres">("schedule");
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split("T")[0]);
 
@@ -61,6 +65,7 @@ export default function TheatrePage() {
 
   return (
     <div className="animate-[fade-in_0.3s_ease-out] space-y-6 p-6 lg:p-8">
+      {patientId && <PatientContextBar patientId={patientId} />}
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>

@@ -58,6 +58,8 @@
     "laboratory": "Laboratory",
     "emergency": "Emergency",
     "billing": "Billing",
+    "suppliers": "Suppliers",
+    "supplierInvoices": "Supplier Invoices",
     "finance": "Finance",
     "insurance": "Insurance",
     "inventory": "Inventory",

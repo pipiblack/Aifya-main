@@ -37,6 +37,8 @@ import {
   Plug,
   Wallet,
   FileText,
+  Building2,
+  Truck,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
@@ -91,6 +93,8 @@ export function Sidebar() {
     { key: "dental", href: "/dental", icon: SmilePlus, module: "dental" },
     { key: "mch", href: "/mch", icon: Baby, module: "mch" },
     { key: "billing", href: "/billing", icon: Receipt, module: "billing", separator: true },
+    { key: "suppliers", href: "/billing/suppliers", icon: Building2, module: "billing" },
+    { key: "supplierInvoices", href: "/billing/supplier-invoices", icon: Truck, module: "billing" },
     { key: "finance", href: "/finance", icon: Wallet, module: "finance" },
     { key: "insurance", href: "/insurance", icon: Shield, module: "insurance" },
     { key: "inventory", href: "/inventory", icon: Package, module: "inventory" },
@@ -107,7 +111,9 @@ export function Sidebar() {
     { key: "performance", href: "/performance", icon: Activity, module: "analytics" },
     { key: "communications", href: "/communications", icon: MessageSquare, module: "communications" },
     { key: "integrations", href: "/integrations/fhir", icon: Plug, module: "fhir" },
-    { key: "trials", href: "/trials", icon: FlaskConical, module: "clinical_trials", separator: true },
+    // Clinical Trials hidden per audit 2026-05-14 — not required at this deployment stage.
+    // Re-enable by uncommenting once trial workflows are in scope.
+    // { key: "trials", href: "/trials", icon: FlaskConical, module: "clinical_trials", separator: true },
     { key: "knowledge", href: "/knowledge", icon: BookOpen, module: "knowledge" },
     { key: "settings", href: "/settings", icon: Settings },
   ];

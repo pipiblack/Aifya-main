@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle, Clock, FileText, Printer, Send } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useReferralSummary, useReferralList } from "@/hooks/useReferrals";
 import { cn } from "@/lib/utils";
+import { PatientContextBar } from "@/components/patient/PatientContextBar";
 
 const URGENCY_STYLES: Record<string, string> = {
   emergency: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
@@ -25,6 +27,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function ReferralsPage() {
   const t = useTranslations("referrals");
+  const searchParams = useSearchParams();
+  const patientId = searchParams?.get("patient") ?? "";
   const [tab, setTab] = useState<"outgoing" | "incoming">("outgoing");
 
   const { data: summary, isLoading: summaryLoading } = useReferralSummary();
@@ -41,6 +45,7 @@ export default function ReferralsPage() {
 
   return (
     <div className="animate-[fade-in_0.3s_ease-out] space-y-6 p-6 lg:p-8">
+      {patientId && <PatientContextBar patientId={patientId} />}
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>

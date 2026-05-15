@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Calendar, CheckCircle, Clock, Users } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useDentalSummary, useDentalVisits, useDentalTreatmentPlans } from "@/hooks/useDental";
 import { cn } from "@/lib/utils";
+import { PatientContextBar } from "@/components/patient/PatientContextBar";
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-muted text-muted-foreground",
@@ -22,6 +24,8 @@ function formatKES(cents: number): string {
 
 export default function DentalPage() {
   const t = useTranslations("dental");
+  const searchParams = useSearchParams();
+  const patientId = searchParams?.get("patient") ?? "";
   const [tab, setTab] = useState<"visits" | "treatments">("visits");
 
   const { data: summary, isLoading: summaryLoading } = useDentalSummary();
@@ -37,6 +41,7 @@ export default function DentalPage() {
 
   return (
     <div className="animate-[fade-in_0.3s_ease-out] space-y-6 p-6 lg:p-8">
+      {patientId && <PatientContextBar patientId={patientId} />}
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>

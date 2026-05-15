@@ -90,6 +90,7 @@ from app.models.referral_template import ReferralTemplate
 from app.models.report import GeneratedReport, ReportTemplate
 from app.models.sms import SmsCampaign, SmsDeliveryLog
 from app.models.staff import Department, Staff
+from app.models.supplier_invoice import SupplierInvoice, SupplierInvoiceLine
 from app.models.theatre import OperatingTheatre, SurgicalCase
 from app.models.vital import VitalSign
 
@@ -183,6 +184,8 @@ __all__ = [
     "StatutoryRate",
     "StockTransaction",
     "Supplier",
+    "SupplierInvoice",
+    "SupplierInvoiceLine",
     "SurgicalCase",
     "TaxRate",
     "TrainingAttendance",
