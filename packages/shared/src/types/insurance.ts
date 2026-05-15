@@ -94,6 +94,8 @@ export interface ClaimListItem {
   approved_amount: number;
   status: string;
   claim_date: string;
+  /** Stored as "CF:<external_id>" when the claim is in ClaimFlow. */
+  sha_reference?: string | null;
 }
 
 /** Claim list response */
@@ -121,4 +123,57 @@ export interface InsuranceSummary {
   total_claim_value: number;
   active_schemes: number;
   preauth_pending: number;
+}
+
+/** Patient insurance relationship to principal */
+export type InsuranceRelationship = "self" | "spouse" | "child" | "parent" | "other";
+
+/** Create payload for a patient insurance entry */
+export interface PatientInsuranceCreate {
+  scheme_id: string;
+  member_number: string;
+  principal_name?: string | null;
+  relationship?: InsuranceRelationship | null;
+  valid_from?: string | null;
+  valid_to?: string | null;
+  is_primary?: boolean;
+  notes?: string | null;
+}
+
+/** Update payload for a patient insurance entry — all fields optional */
+export interface PatientInsuranceUpdate {
+  scheme_id?: string;
+  member_number?: string;
+  principal_name?: string | null;
+  relationship?: InsuranceRelationship | null;
+  valid_from?: string | null;
+  valid_to?: string | null;
+  is_active?: boolean;
+  is_primary?: boolean;
+  notes?: string | null;
+}
+
+/** Single patient insurance entry */
+export interface PatientInsuranceResponse {
+  id: string;
+  patient_id: string;
+  scheme_id: string;
+  scheme_name: string | null;
+  scheme_type: string | null;
+  member_number: string;
+  principal_name: string | null;
+  relationship: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_active: boolean;
+  is_primary: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Paginated list of patient insurance entries */
+export interface PatientInsuranceListResponse {
+  items: PatientInsuranceResponse[];
+  total: number;
 }

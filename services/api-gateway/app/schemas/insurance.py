@@ -104,6 +104,7 @@ class ClaimListItem(BaseModel):
     approved_amount: int
     status: str
     claim_date: datetime
+    sha_reference: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -139,3 +140,69 @@ class InsuranceSummary(BaseModel):
     total_claim_value: int = 0
     active_schemes: int = 0
     preauth_pending: int = 0
+
+
+# ── Patient Insurance (multi-entry) ──────────────────────────────────────────
+
+
+class PatientInsuranceCreate(BaseModel):
+    """Schema for adding a new insurance entry to a patient."""
+
+    scheme_id: uuid.UUID
+    member_number: str = Field(..., min_length=1, max_length=50)
+    principal_name: str | None = Field(None, max_length=200)
+    relationship: str | None = Field(
+        None, pattern=r"^(self|spouse|child|parent|other)$"
+    )
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
+    is_primary: bool = Field(
+        default=False,
+        description="Mark this insurance as the patient's primary insurer",
+    )
+    notes: str | None = Field(None, max_length=1000)
+
+
+class PatientInsuranceUpdate(BaseModel):
+    """Schema for editing an insurance entry. All fields optional."""
+
+    scheme_id: uuid.UUID | None = None
+    member_number: str | None = Field(None, min_length=1, max_length=50)
+    principal_name: str | None = Field(None, max_length=200)
+    relationship: str | None = Field(
+        None, pattern=r"^(self|spouse|child|parent|other)$"
+    )
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
+    is_active: bool | None = None
+    is_primary: bool | None = None
+    notes: str | None = Field(None, max_length=1000)
+
+
+class PatientInsuranceResponse(BaseModel):
+    """Schema for patient insurance API responses (joined with scheme)."""
+
+    id: uuid.UUID
+    patient_id: uuid.UUID
+    scheme_id: uuid.UUID
+    scheme_name: str | None = None
+    scheme_type: str | None = None
+    member_number: str
+    principal_name: str | None
+    relationship: str | None
+    valid_from: datetime | None
+    valid_to: datetime | None
+    is_active: bool
+    is_primary: bool
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PatientInsuranceListResponse(BaseModel):
+    """Paginated list of insurance entries for a patient."""
+
+    items: list[PatientInsuranceResponse]
+    total: int

@@ -2,11 +2,16 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, User, Phone, MapPin, Shield, Heart, Edit } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Heart, Edit } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePatient } from "@/hooks/usePatients";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { formatDate } from "@/lib/utils";
 import { PatientTimeline } from "@/components/patients/PatientTimeline";
+import { PatientInsuranceSection } from "@/components/patients/PatientInsuranceSection";
+
+/** Roles permitted to edit patient records (must mirror backend RBAC). */
+const PATIENT_EDIT_ROLES = ["admin", "facility_admin", "records_admin"] as const;
 
 /**
  * Patient detail page with demographics, contact, insurance, and timeline.
@@ -17,6 +22,12 @@ export default function PatientDetailPage() {
   const t = useTranslations("patients");
   const tc = useTranslations("common");
   const { data: patient, isLoading } = usePatient(params.patientId);
+  const { user } = useAuth();
+  const canEdit =
+    !!user &&
+    user.roles.some((r) =>
+      (PATIENT_EDIT_ROLES as readonly string[]).includes(r),
+    );
 
   if (isLoading) {
     return (
@@ -50,7 +61,7 @@ export default function PatientDetailPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">
             {patient.first_name} {patient.middle_name ?? ""} {patient.last_name}
           </h1>
@@ -58,6 +69,16 @@ export default function PatientDetailPage() {
             {patient.mrn}
           </p>
         </div>
+        {canEdit ? (
+          <Link
+            href={`/patients/${params.patientId}/edit`}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            aria-label={t("editPatient")}
+          >
+            <Edit className="h-4 w-4" />
+            {t("editPatient")}
+          </Link>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -92,13 +113,6 @@ export default function PatientDetailPage() {
           <InfoRow label={t("postalAddress")} value={patient.postal_address} />
         </InfoCard>
 
-        {/* Insurance */}
-        <InfoCard title={t("insurance")} icon={<Shield className="h-5 w-5" />}>
-          <InfoRow label={t("shaNumber")} value={patient.sha_number} />
-          <InfoRow label={t("insuranceProvider")} value={patient.insurance_provider} />
-          <InfoRow label={t("insuranceMemberNumber")} value={patient.insurance_member_number} />
-        </InfoCard>
-
         {/* Medical Info */}
         <InfoCard
           title={t("medicalInfo")}
@@ -125,6 +139,11 @@ export default function PatientDetailPage() {
           />
         </InfoCard>
       </div>
+
+      {/* Multi-insurance section (audit 2026-05-14) */}
+      <section className="mt-8">
+        <PatientInsuranceSection patientId={params.patientId} />
+      </section>
 
       {/* Timeline */}
       <section className="mt-8">

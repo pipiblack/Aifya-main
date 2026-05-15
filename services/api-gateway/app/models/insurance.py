@@ -46,12 +46,18 @@ class InsuranceScheme(AuditMixin, Base):
 
 
 class PatientInsurance(AuditMixin, Base):
-    """Patient insurance membership."""
+    """
+    Patient insurance membership. A patient can have multiple insurance entries
+    (e.g. SHA + a private insurer). Exactly one entry per patient should have
+    is_primary=True; primary is mirrored to Patient.insurance_provider /
+    Patient.insurance_member_number for backwards-compat (legacy callers).
+    """
 
     __tablename__ = "patient_insurance"
     __table_args__ = (
         Index("ix_patient_insurance_patient", "facility_id", "patient_id"),
         Index("ix_patient_insurance_facility_status", "facility_id", "is_active"),
+        Index("ix_patient_insurance_primary", "patient_id", "is_primary"),
     )
 
     patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
@@ -62,6 +68,8 @@ class PatientInsurance(AuditMixin, Base):
     valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    is_primary: Mapped[bool] = mapped_column(default=False, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text)
 
 
 class InsuranceClaim(AuditMixin, Base):

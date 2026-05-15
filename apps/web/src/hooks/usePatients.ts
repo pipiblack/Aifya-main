@@ -4,8 +4,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useOfflineQuery } from "@/hooks/useOfflineQuery";
 import { useOfflineMutation } from "@/hooks/useOfflineMutation";
-import type { Patient, PatientListResponse, PatientCreate } from "@aifya/shared";
+import type {
+  Patient,
+  PatientListResponse,
+  PatientCreate,
+} from "@aifya/shared";
 import { generateId } from "@/lib/utils";
+
+/** Partial patient payload accepted by PATCH /patients/{id}. */
+export type PatientUpdatePayload = Partial<Omit<PatientCreate, "allergies" | "chronic_conditions">> & {
+  allergies?: string[] | null;
+  chronic_conditions?: string[] | null;
+};
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -67,5 +77,29 @@ export function useRegisterPatient() {
       },
     },
     { url: `${API_URL}/patients`, method: "POST" }
+  );
+}
+
+/**
+ * Hook for updating an existing patient (admin-only on the backend).
+ * Audit (2026-05-14): patient edits gated by admin/facility_admin/records_admin
+ * roles; backend rejects with 403 if caller lacks the role.
+ *
+ * @param patientId - Patient UUID being edited
+ * @returns Mutation for updating a patient
+ */
+export function useUpdatePatient(patientId: string) {
+  const queryClient = useQueryClient();
+
+  return useOfflineMutation<Patient, PatientUpdatePayload>(
+    {
+      mutationFn: (data: PatientUpdatePayload) =>
+        apiClient.patch<Patient>(`/patients/${patientId}`, data, generateId()),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["patients", patientId] });
+        queryClient.invalidateQueries({ queryKey: ["patients"] });
+      },
+    },
+    { url: `${API_URL}/patients/${patientId}`, method: "PATCH" }
   );
 }

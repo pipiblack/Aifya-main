@@ -1,12 +1,13 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.insurance import (
     InsuranceClaim,
     InsuranceScheme,
+    PatientInsurance,
     PreAuthorization,
 )
 from app.models.patient import Patient
@@ -16,6 +17,9 @@ from app.schemas.insurance import (
     ClaimStatusUpdate,
     InsuranceSchemeCreate,
     InsuranceSummary,
+    PatientInsuranceCreate,
+    PatientInsuranceResponse,
+    PatientInsuranceUpdate,
 )
 
 
@@ -165,6 +169,7 @@ class InsuranceService:
                 approved_amount=c.approved_amount,
                 status=c.status,
                 claim_date=c.claim_date,
+                sha_reference=c.sha_reference,
             )
             for c, pf, pl, sn in result.all()
         ]
@@ -274,3 +279,378 @@ class InsuranceService:
             active_schemes=schemes.scalar() or 0,
             preauth_pending=preauth.scalar() or 0,
         )
+
+    # ── Patient insurance (multi-entry) ─────────────────────────────────────
+
+    async def list_patient_insurances(
+        self, patient_id: uuid.UUID, facility_id: uuid.UUID
+    ) -> list[PatientInsuranceResponse]:
+        """
+        List all (non-deleted) insurance entries for a patient.
+
+        @param patient_id: Patient UUID
+        @param facility_id: Facility UUID (multi-tenant scope)
+        @returns Insurance entries with scheme details, primary first
+        """
+        result = await self.db.execute(
+            select(
+                PatientInsurance,
+                InsuranceScheme.name.label("scheme_name"),
+                InsuranceScheme.scheme_type.label("scheme_type"),
+            )
+            .join(
+                InsuranceScheme, PatientInsurance.scheme_id == InsuranceScheme.id
+            )
+            .where(
+                PatientInsurance.facility_id == facility_id,
+                PatientInsurance.patient_id == patient_id,
+                PatientInsurance.is_deleted == False,  # noqa: E712
+            )
+            .order_by(
+                PatientInsurance.is_primary.desc(),
+                PatientInsurance.created_at.asc(),
+            )
+        )
+        items: list[PatientInsuranceResponse] = []
+        for pi, scheme_name, scheme_type in result.all():
+            items.append(
+                PatientInsuranceResponse(
+                    id=pi.id,
+                    patient_id=pi.patient_id,
+                    scheme_id=pi.scheme_id,
+                    scheme_name=scheme_name,
+                    scheme_type=scheme_type,
+                    member_number=pi.member_number,
+                    principal_name=pi.principal_name,
+                    relationship=pi.relationship,
+                    valid_from=pi.valid_from,
+                    valid_to=pi.valid_to,
+                    is_active=pi.is_active,
+                    is_primary=pi.is_primary,
+                    notes=pi.notes,
+                    created_at=pi.created_at,
+                    updated_at=pi.updated_at,
+                )
+            )
+        return items
+
+    async def get_patient_insurance(
+        self,
+        insurance_id: uuid.UUID,
+        patient_id: uuid.UUID,
+        facility_id: uuid.UUID,
+    ) -> PatientInsurance | None:
+        """
+        Fetch a single insurance entry, scoped by patient + facility.
+
+        @param insurance_id: Insurance entry UUID
+        @param patient_id: Patient UUID
+        @param facility_id: Facility UUID
+        @returns Row or None
+        """
+        result = await self.db.execute(
+            select(PatientInsurance).where(
+                PatientInsurance.id == insurance_id,
+                PatientInsurance.patient_id == patient_id,
+                PatientInsurance.facility_id == facility_id,
+                PatientInsurance.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def _has_primary(
+        self, patient_id: uuid.UUID, facility_id: uuid.UUID
+    ) -> bool:
+        """Return True if patient already has an active primary insurance."""
+        result = await self.db.execute(
+            select(func.count(PatientInsurance.id)).where(
+                PatientInsurance.patient_id == patient_id,
+                PatientInsurance.facility_id == facility_id,
+                PatientInsurance.is_primary == True,  # noqa: E712
+                PatientInsurance.is_deleted == False,  # noqa: E712
+            )
+        )
+        return (result.scalar() or 0) > 0
+
+    async def _demote_other_primaries(
+        self,
+        patient_id: uuid.UUID,
+        facility_id: uuid.UUID,
+        keep_id: uuid.UUID | None,
+        updated_by: uuid.UUID,
+    ) -> None:
+        """
+        Demote all other primary insurance entries for a patient. Ensures
+        at most one row has is_primary=True at any time.
+        """
+        stmt = (
+            update(PatientInsurance)
+            .where(
+                PatientInsurance.patient_id == patient_id,
+                PatientInsurance.facility_id == facility_id,
+                PatientInsurance.is_primary == True,  # noqa: E712
+                PatientInsurance.is_deleted == False,  # noqa: E712
+            )
+            .values(is_primary=False, updated_by=updated_by)
+        )
+        if keep_id is not None:
+            stmt = stmt.where(PatientInsurance.id != keep_id)
+        await self.db.execute(stmt)
+
+    async def _sync_patient_legacy_columns(
+        self,
+        patient_id: uuid.UUID,
+        facility_id: uuid.UUID,
+        updated_by: uuid.UUID,
+    ) -> None:
+        """
+        Mirror the patient's primary insurance into the legacy
+        Patient.insurance_provider / Patient.insurance_member_number columns
+        so older callers and FHIR exports stay consistent.
+        """
+        result = await self.db.execute(
+            select(
+                InsuranceScheme.name,
+                PatientInsurance.member_number,
+            )
+            .join(
+                InsuranceScheme,
+                PatientInsurance.scheme_id == InsuranceScheme.id,
+            )
+            .where(
+                PatientInsurance.patient_id == patient_id,
+                PatientInsurance.facility_id == facility_id,
+                PatientInsurance.is_primary == True,  # noqa: E712
+                PatientInsurance.is_deleted == False,  # noqa: E712
+            )
+            .limit(1)
+        )
+        row = result.first()
+        provider = row[0] if row else None
+        member_no = row[1] if row else None
+
+        await self.db.execute(
+            update(Patient)
+            .where(
+                Patient.id == patient_id,
+                Patient.facility_id == facility_id,
+            )
+            .values(
+                insurance_provider=provider,
+                insurance_member_number=member_no,
+                updated_by=updated_by,
+            )
+        )
+
+    async def add_patient_insurance(
+        self,
+        patient_id: uuid.UUID,
+        data: PatientInsuranceCreate,
+        facility_id: uuid.UUID,
+        created_by: uuid.UUID,
+    ) -> PatientInsurance:
+        """
+        Add a new insurance entry for a patient. If is_primary=True, demote any
+        existing primary entry. If the patient has no primary yet, promote the
+        new entry automatically.
+
+        @param patient_id: Patient UUID
+        @param data: Insurance entry data
+        @param facility_id: Facility UUID
+        @param created_by: Staff UUID
+        @returns Created row
+        """
+        # Verify scheme belongs to facility
+        scheme = await self.db.execute(
+            select(InsuranceScheme).where(
+                InsuranceScheme.id == data.scheme_id,
+                InsuranceScheme.facility_id == facility_id,
+                InsuranceScheme.is_deleted == False,  # noqa: E712
+            )
+        )
+        if scheme.scalar_one_or_none() is None:
+            raise ValueError("Insurance scheme not found for this facility")
+
+        wants_primary = data.is_primary or not await self._has_primary(
+            patient_id, facility_id
+        )
+
+        entry = PatientInsurance(
+            facility_id=facility_id,
+            patient_id=patient_id,
+            scheme_id=data.scheme_id,
+            member_number=data.member_number,
+            principal_name=data.principal_name,
+            relationship=data.relationship,
+            valid_from=data.valid_from,
+            valid_to=data.valid_to,
+            is_active=True,
+            is_primary=wants_primary,
+            notes=data.notes,
+            created_by=created_by,
+            updated_by=created_by,
+        )
+        self.db.add(entry)
+        await self.db.flush()
+
+        if wants_primary:
+            await self._demote_other_primaries(
+                patient_id, facility_id, keep_id=entry.id, updated_by=created_by
+            )
+            await self._sync_patient_legacy_columns(
+                patient_id, facility_id, updated_by=created_by
+            )
+
+        await self.db.refresh(entry)
+        return entry
+
+    async def update_patient_insurance(
+        self,
+        insurance_id: uuid.UUID,
+        patient_id: uuid.UUID,
+        data: PatientInsuranceUpdate,
+        facility_id: uuid.UUID,
+        updated_by: uuid.UUID,
+    ) -> PatientInsurance | None:
+        """
+        Edit an insurance entry. Toggling is_primary=True demotes others.
+
+        @param insurance_id: Insurance entry UUID
+        @param patient_id: Patient UUID
+        @param data: Update payload
+        @param facility_id: Facility UUID
+        @param updated_by: Staff UUID
+        @returns Updated row or None if not found
+        """
+        entry = await self.get_patient_insurance(
+            insurance_id, patient_id, facility_id
+        )
+        if not entry:
+            return None
+
+        # Validate scheme switch
+        if data.scheme_id is not None and data.scheme_id != entry.scheme_id:
+            scheme = await self.db.execute(
+                select(InsuranceScheme).where(
+                    InsuranceScheme.id == data.scheme_id,
+                    InsuranceScheme.facility_id == facility_id,
+                    InsuranceScheme.is_deleted == False,  # noqa: E712
+                )
+            )
+            if scheme.scalar_one_or_none() is None:
+                raise ValueError(
+                    "Insurance scheme not found for this facility"
+                )
+
+        update_data = data.model_dump(exclude_unset=True)
+        promoting = update_data.get("is_primary") is True
+        for field, value in update_data.items():
+            setattr(entry, field, value)
+        entry.updated_by = updated_by
+
+        await self.db.flush()
+
+        if promoting:
+            await self._demote_other_primaries(
+                patient_id, facility_id, keep_id=entry.id, updated_by=updated_by
+            )
+
+        # Always re-sync legacy columns in case primary/member changed
+        await self._sync_patient_legacy_columns(
+            patient_id, facility_id, updated_by=updated_by
+        )
+
+        await self.db.refresh(entry)
+        return entry
+
+    async def delete_patient_insurance(
+        self,
+        insurance_id: uuid.UUID,
+        patient_id: uuid.UUID,
+        facility_id: uuid.UUID,
+        updated_by: uuid.UUID,
+    ) -> bool:
+        """
+        Soft-delete an insurance entry. If it was the primary, promote the
+        oldest remaining active entry (if any) to primary.
+
+        @param insurance_id: Insurance entry UUID
+        @param patient_id: Patient UUID
+        @param facility_id: Facility UUID
+        @param updated_by: Staff UUID
+        @returns True if deleted, False if not found
+        """
+        entry = await self.get_patient_insurance(
+            insurance_id, patient_id, facility_id
+        )
+        if not entry:
+            return False
+
+        was_primary = entry.is_primary
+        entry.is_deleted = True
+        entry.deleted_at = datetime.now(UTC)
+        entry.is_active = False
+        entry.is_primary = False
+        entry.updated_by = updated_by
+        await self.db.flush()
+
+        if was_primary:
+            # Promote oldest remaining active entry to primary
+            next_primary = await self.db.execute(
+                select(PatientInsurance)
+                .where(
+                    PatientInsurance.patient_id == patient_id,
+                    PatientInsurance.facility_id == facility_id,
+                    PatientInsurance.is_deleted == False,  # noqa: E712
+                    PatientInsurance.is_active == True,  # noqa: E712
+                )
+                .order_by(PatientInsurance.created_at.asc())
+                .limit(1)
+            )
+            new_primary = next_primary.scalar_one_or_none()
+            if new_primary is not None:
+                new_primary.is_primary = True
+                new_primary.updated_by = updated_by
+                await self.db.flush()
+
+        await self._sync_patient_legacy_columns(
+            patient_id, facility_id, updated_by=updated_by
+        )
+        return True
+
+    async def set_primary_insurance(
+        self,
+        insurance_id: uuid.UUID,
+        patient_id: uuid.UUID,
+        facility_id: uuid.UUID,
+        updated_by: uuid.UUID,
+    ) -> PatientInsurance | None:
+        """
+        Promote a specific insurance entry to primary, demote others.
+
+        @param insurance_id: Insurance entry UUID
+        @param patient_id: Patient UUID
+        @param facility_id: Facility UUID
+        @param updated_by: Staff UUID
+        @returns Updated primary entry, or None if not found
+        """
+        entry = await self.get_patient_insurance(
+            insurance_id, patient_id, facility_id
+        )
+        if not entry:
+            return None
+
+        entry.is_primary = True
+        entry.is_active = True
+        entry.updated_by = updated_by
+        await self.db.flush()
+
+        await self._demote_other_primaries(
+            patient_id, facility_id, keep_id=entry.id, updated_by=updated_by
+        )
+        await self._sync_patient_legacy_columns(
+            patient_id, facility_id, updated_by=updated_by
+        )
+
+        await self.db.refresh(entry)
+        return entry

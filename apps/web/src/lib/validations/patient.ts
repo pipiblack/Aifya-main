@@ -31,3 +31,43 @@ export const patientCreateSchema = z.object({
 });
 
 export type PatientCreateFormData = z.infer<typeof patientCreateSchema>;
+
+/**
+ * Zod schema for patient update — all fields optional (PATCH semantics).
+ * Mirrors the backend PatientUpdate schema. Insurance is managed via the
+ * dedicated multi-insurance endpoints, not via this form.
+ */
+export const patientUpdateSchema = z.object({
+  first_name: z.string().min(1).max(100).optional(),
+  middle_name: z.string().max(100).nullable().optional(),
+  last_name: z.string().min(1).max(100).optional(),
+  date_of_birth: z.string().min(1).optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  national_id: z.string().max(50).nullable().optional(),
+  passport_number: z.string().max(50).nullable().optional(),
+  phone_number: z.string().min(9).max(20).optional(),
+  alternate_phone: z.string().max(20).nullable().optional(),
+  email: z.string().email().max(255).nullable().optional().or(z.literal("")),
+  county: z.string().max(100).nullable().optional(),
+  sub_county: z.string().max(100).nullable().optional(),
+  ward: z.string().max(100).nullable().optional(),
+  village: z.string().max(200).nullable().optional(),
+  postal_address: z.string().max(200).nullable().optional(),
+  occupation: z.string().max(100).nullable().optional(),
+  marital_status: z
+    .enum(["single", "married", "divorced", "widowed"])
+    .nullable()
+    .optional(),
+  next_of_kin_name: z.string().max(200).nullable().optional(),
+  next_of_kin_phone: z.string().max(20).nullable().optional(),
+  next_of_kin_relationship: z.string().max(50).nullable().optional(),
+  sha_number: z.string().max(50).nullable().optional(),
+  blood_group: z
+    .string()
+    .regex(/^(A|B|AB|O)[+-]$/)
+    .nullable()
+    .optional()
+    .or(z.literal("")),
+});
+
+export type PatientUpdateFormData = z.infer<typeof patientUpdateSchema>;

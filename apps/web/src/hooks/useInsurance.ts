@@ -12,6 +12,10 @@ import type {
   ClaimCreate,
   ClaimStatusUpdate,
   InsuranceSummary,
+  PatientInsuranceCreate,
+  PatientInsuranceListResponse,
+  PatientInsuranceResponse,
+  PatientInsuranceUpdate,
 } from "@aifya/shared";
 import { apiFetch } from "@/lib/api";
 
@@ -23,6 +27,8 @@ const INS_KEYS = {
   schemes: () => [...INS_KEYS.all, "schemes"] as const,
   claims: (status?: string) => [...INS_KEYS.all, "claims", status] as const,
   claim: (id: string) => [...INS_KEYS.all, "claim", id] as const,
+  patientInsurances: (patientId: string) =>
+    [...INS_KEYS.all, "patient", patientId] as const,
 };
 
 /** Get insurance summary. */
@@ -96,4 +102,181 @@ export function useUpdateClaimStatus(id: string) {
     },
     { url: `${API_URL}/insurance/claims/${id}/status`, method: "POST" }
   );
+}
+
+// ── Patient insurance (multi-entry) ──────────────────────────────────────────
+
+/**
+ * List all insurance entries for a patient. Returns the primary entry first,
+ * then any secondary insurers. Supports multiple insurers per patient
+ * (e.g. SHA + private) per the 2026-05-14 audit.
+ */
+export function usePatientInsurances(patientId: string) {
+  return useOfflineQuery<PatientInsuranceListResponse>({
+    queryKey: INS_KEYS.patientInsurances(patientId),
+    queryFn: () => apiFetch(`/api/v1/patients/${patientId}/insurances`),
+    enabled: !!patientId,
+    staleTime: 30_000,
+  });
+}
+
+/** Add a new insurance entry for a patient. */
+export function useAddPatientInsurance(patientId: string) {
+  const qc = useQueryClient();
+  return useOfflineMutation<PatientInsuranceResponse, PatientInsuranceCreate>(
+    {
+      mutationFn: (data) =>
+        apiFetch(`/api/v1/patients/${patientId}/insurances`, {
+          method: "POST",
+          body: JSON.stringify(data),
+        }),
+      onSuccess: () => {
+        qc.invalidateQueries({
+          queryKey: INS_KEYS.patientInsurances(patientId),
+        });
+        qc.invalidateQueries({ queryKey: ["patients", patientId] });
+      },
+    },
+    { url: `${API_URL}/patients/${patientId}/insurances`, method: "POST" }
+  );
+}
+
+/** Edit a patient insurance entry. */
+export function useUpdatePatientInsurance(patientId: string) {
+  const qc = useQueryClient();
+  return useOfflineMutation<
+    PatientInsuranceResponse,
+    { insuranceId: string; data: PatientInsuranceUpdate }
+  >(
+    {
+      mutationFn: ({ insuranceId, data }) =>
+        apiFetch(
+          `/api/v1/patients/${patientId}/insurances/${insuranceId}`,
+          { method: "PATCH", body: JSON.stringify(data) }
+        ),
+      onSuccess: () => {
+        qc.invalidateQueries({
+          queryKey: INS_KEYS.patientInsurances(patientId),
+        });
+        qc.invalidateQueries({ queryKey: ["patients", patientId] });
+      },
+    },
+    {
+      url: `${API_URL}/patients/${patientId}/insurances/_`,
+      method: "PATCH",
+    }
+  );
+}
+
+/** Soft-delete a patient insurance entry. */
+export function useDeletePatientInsurance(patientId: string) {
+  const qc = useQueryClient();
+  return useOfflineMutation<void, { insuranceId: string }>(
+    {
+      mutationFn: ({ insuranceId }) =>
+        apiFetch(
+          `/api/v1/patients/${patientId}/insurances/${insuranceId}`,
+          { method: "DELETE" }
+        ),
+      onSuccess: () => {
+        qc.invalidateQueries({
+          queryKey: INS_KEYS.patientInsurances(patientId),
+        });
+        qc.invalidateQueries({ queryKey: ["patients", patientId] });
+      },
+    },
+    {
+      url: `${API_URL}/patients/${patientId}/insurances/_`,
+      method: "DELETE",
+    }
+  );
+}
+
+/** Promote a patient insurance entry to primary. */
+export function useSetPrimaryPatientInsurance(patientId: string) {
+  const qc = useQueryClient();
+  return useOfflineMutation<
+    PatientInsuranceResponse,
+    { insuranceId: string }
+  >(
+    {
+      mutationFn: ({ insuranceId }) =>
+        apiFetch(
+          `/api/v1/patients/${patientId}/insurances/${insuranceId}/set-primary`,
+          { method: "POST" }
+        ),
+      onSuccess: () => {
+        qc.invalidateQueries({
+          queryKey: INS_KEYS.patientInsurances(patientId),
+        });
+        qc.invalidateQueries({ queryKey: ["patients", patientId] });
+      },
+    },
+    {
+      url: `${API_URL}/patients/${patientId}/insurances/_/set-primary`,
+      method: "POST",
+    }
+  );
+}
+
+// ── ClaimFlow integration ──────────────────────────────────────────────────
+
+/** Response shape from ClaimFlow action endpoints. */
+export interface ClaimFlowActionResponse {
+  ok: boolean;
+  claim_id: string;
+  local_status?: string;
+  claimflow_external_id?: string | null;
+  claimflow_status?: string | null;
+  approved_amount?: number;
+  paid_amount?: number;
+  view_url?: string | null;
+  details?: Record<string, unknown>;
+}
+
+/** Submit a claim to ClaimFlow. */
+export function useSubmitClaimToClaimFlow(claimId: string) {
+  const qc = useQueryClient();
+  return useOfflineMutation<ClaimFlowActionResponse, void>(
+    {
+      mutationFn: () =>
+        apiFetch(`/api/v1/insurance/claims/${claimId}/submit-to-claimflow`, {
+          method: "POST",
+        }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: INS_KEYS.all }),
+    },
+    {
+      url: `${API_URL}/insurance/claims/${claimId}/submit-to-claimflow`,
+      method: "POST",
+    },
+  );
+}
+
+/** Sync a claim's status from ClaimFlow into Aifya. */
+export function useSyncClaimWithClaimFlow(claimId: string) {
+  const qc = useQueryClient();
+  return useOfflineMutation<ClaimFlowActionResponse, void>(
+    {
+      mutationFn: () =>
+        apiFetch(`/api/v1/insurance/claims/${claimId}/sync-with-claimflow`, {
+          method: "POST",
+        }),
+      onSuccess: () => qc.invalidateQueries({ queryKey: INS_KEYS.all }),
+    },
+    {
+      url: `${API_URL}/insurance/claims/${claimId}/sync-with-claimflow`,
+      method: "POST",
+    },
+  );
+}
+
+/** Read-only fetch of latest ClaimFlow status. */
+export function useClaimFlowStatus(claimId: string, enabled = true) {
+  return useOfflineQuery<ClaimFlowActionResponse>({
+    queryKey: [...INS_KEYS.claim(claimId), "claimflow-status"],
+    queryFn: () =>
+      apiFetch(`/api/v1/insurance/claims/${claimId}/claimflow-status`),
+    enabled: enabled && !!claimId,
+    staleTime: 15_000,
+  });
 }
