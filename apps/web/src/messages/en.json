@@ -158,7 +158,6 @@
     "spouse": "Spouse",
     "child": "Child",
     "parent": "Parent",
-    "other": "Other",
     "insuranceAdded": "Insurance added",
     "insuranceUpdated": "Insurance updated",
     "insuranceRemoved": "Insurance removed",
@@ -566,7 +565,30 @@
     "summaryTotalPaid": "Total Paid",
     "summaryOutstanding": "Outstanding",
     "filterAll": "All",
-    "itemCount": "Items"
+    "itemCount": "Items",
+    "customerInvoicingTitle": "Customer Invoicing",
+    "customerInvoicingHelp": "Patient and payer invoices, payments, and statements.",
+    "supplierInvoicingTitle": "Supplier Invoicing",
+    "supplierInvoicingHelp": "Vendor bills, expense invoices, withholding tax tracking.",
+    "viewInvoices": "View Invoices",
+    "insuranceClaims": "Insurance Claims",
+    "manageSuppliers": "Manage Suppliers",
+    "newSupplier": "New Supplier",
+    "newSupplierInvoice": "New Supplier Invoice",
+    "new": "New",
+    "suppliers": "Suppliers",
+    "supplierInvoices": "Supplier Invoices",
+    "supplier": "Supplier",
+    "selectSupplier": "Select supplier",
+    "searchSuppliers": "Search suppliers by name, KRA PIN or phone",
+    "invoiceDate": "Invoice Date",
+    "dueDate": "Due Date",
+    "vatAmount": "VAT",
+    "whtAmount": "WHT",
+    "account": "Account",
+    "addLine": "Add Line",
+    "approved": "Approved",
+    "received": "Received"
   },
   "ipd": {
     "title": "Inpatient Department",
@@ -1475,7 +1497,8 @@
       "private": "Private",
       "corporate": "Corporate",
       "nhif_legacy": "NHIF Legacy"
-    }
+    },
+    "claimFlowActions": "ClaimFlow Actions"
   },
   "licensing": {
     "upgradeRequired": "Upgrade Required",

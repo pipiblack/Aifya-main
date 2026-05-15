@@ -158,7 +158,6 @@
     "spouse": "Mwenza",
     "child": "Mtoto",
     "parent": "Mzazi",
-    "other": "Nyingine",
     "insuranceAdded": "Bima imeongezwa",
     "insuranceUpdated": "Bima imesasishwa",
     "insuranceRemoved": "Bima imeondolewa",
@@ -566,7 +565,30 @@
     "summaryTotalPaid": "Jumla Iliyolipwa",
     "summaryOutstanding": "Iliyobaki",
     "filterAll": "Zote",
-    "itemCount": "Vipengele"
+    "itemCount": "Vipengele",
+    "customerInvoicingTitle": "Bili za Wateja",
+    "customerInvoicingHelp": "Bili za wagonjwa, malipo na taarifa.",
+    "supplierInvoicingTitle": "Bili za Wasambazaji",
+    "supplierInvoicingHelp": "Bili za wauzaji, gharama, na ufuatiliaji wa kodi.",
+    "viewInvoices": "Angalia Bili",
+    "insuranceClaims": "Madai ya Bima",
+    "manageSuppliers": "Simamia Wasambazaji",
+    "newSupplier": "Msambazaji Mpya",
+    "newSupplierInvoice": "Bili Mpya ya Msambazaji",
+    "new": "Mpya",
+    "suppliers": "Wasambazaji",
+    "supplierInvoices": "Bili za Wasambazaji",
+    "supplier": "Msambazaji",
+    "selectSupplier": "Chagua msambazaji",
+    "searchSuppliers": "Tafuta wasambazaji kwa jina, KRA PIN au simu",
+    "invoiceDate": "Tarehe ya Bili",
+    "dueDate": "Tarehe ya Kulipa",
+    "vatAmount": "VAT",
+    "whtAmount": "WHT",
+    "account": "Akaunti",
+    "addLine": "Ongeza Mstari",
+    "approved": "Imeidhinishwa",
+    "received": "Imepokelewa"
   },
   "ipd": {
     "title": "Idara ya Wagonjwa wa Ndani",
@@ -1475,7 +1497,8 @@
       "private": "Binafsi",
       "corporate": "Kampuni",
       "nhif_legacy": "NHIF Zamani"
-    }
+    },
+    "claimFlowActions": "Vitendo vya ClaimFlow"
   },
   "licensing": {
     "upgradeRequired": "Uboreshaji Unahitajika",

@@ -560,7 +560,7 @@ _FORMAT_DESC = (
 )
 
 
-@router.get("/reports/paye-schedule")
+@router.get("/reports/paye-schedule", response_model=None)
 async def paye_schedule(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000, le=2100),
@@ -592,7 +592,7 @@ async def paye_schedule(
     ]
 
 
-@router.get("/reports/nssf-schedule")
+@router.get("/reports/nssf-schedule", response_model=None)
 async def nssf_schedule(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000, le=2100),
@@ -620,7 +620,7 @@ async def nssf_schedule(
     ]
 
 
-@router.get("/reports/shif-schedule")
+@router.get("/reports/shif-schedule", response_model=None)
 async def shif_schedule(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000, le=2100),
