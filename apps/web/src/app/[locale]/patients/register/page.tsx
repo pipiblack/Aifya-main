@@ -36,8 +36,19 @@ export default function PatientRegistrationPage() {
   });
 
   const onSubmit = async (data: PatientCreateFormData) => {
+    // Strip empty strings from optional fields → send null instead so that
+    // backend pattern validators (e.g. blood_group regex) don't reject them.
+    // Audit (2026-05-14): "impossible to register a patient without entering
+    // blood group" — root cause was "" failing the backend pattern.
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      cleaned[key] = value === "" ? null : value;
+    }
+
     try {
-      const patient = await registerMutation.mutateAsync(data);
+      const patient = await registerMutation.mutateAsync(
+        cleaned as PatientCreateFormData,
+      );
       router.push(`/patients/${patient.id}`);
     } catch {
       // Error handled by mutation state

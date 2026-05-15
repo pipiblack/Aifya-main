@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Calendar, Search } from "lucide-react";
+import { ArrowLeft, Calendar, Check, Search, X } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import {
   useAvailableSlots,
   useCreateAppointment,
   useDoctorSchedules,
 } from "@/hooks/useAppointments";
+import { usePatientSearch } from "@/hooks/usePatients";
 import { cn } from "@/lib/utils";
 import type { AvailableSlot } from "@aifya/shared";
 
@@ -31,6 +32,16 @@ export default function NewAppointmentPage() {
 
   // Form fields
   const [patientId, setPatientId] = useState("");
+  // Selected patient display name once a search result is chosen
+  const [selectedPatientName, setSelectedPatientName] = useState<string>("");
+  // Search-as-you-type query for the patient autocomplete
+  const [patientQuery, setPatientQuery] = useState<string>("");
+  const [showPatientResults, setShowPatientResults] = useState<boolean>(false);
+  const { data: patientSearchResults } = usePatientSearch(
+    patientQuery.length >= 2 ? patientQuery : undefined,
+    1,
+    8,
+  );
   const [appointmentType, setAppointmentType] = useState("consultation");
   const [priority, setPriority] = useState("routine");
   const [visitReason, setVisitReason] = useState("");
@@ -189,17 +200,82 @@ export default function NewAppointmentPage() {
             {t("bookingDetails")}
           </h2>
           <div className="space-y-4">
-            <div>
+            <div className="relative">
               <label className="mb-1 block text-sm font-medium text-foreground">
                 {t("patientId")} *
               </label>
-              <input
-                type="text"
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-                placeholder={t("patientIdPlaceholder")}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
-              />
+              {selectedPatientName ? (
+                <div className="flex items-center justify-between rounded-lg border border-input bg-background px-3 py-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <span className="font-medium text-foreground">{selectedPatientName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({patientId.slice(0, 8)}…)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPatientId("");
+                      setSelectedPatientName("");
+                      setPatientQuery("");
+                    }}
+                    aria-label={tc("clear") ?? "Clear"}
+                    className="rounded p-1 text-muted-foreground hover:bg-muted"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={patientQuery}
+                      onChange={(e) => {
+                        setPatientQuery(e.target.value);
+                        setShowPatientResults(true);
+                      }}
+                      onFocus={() => setShowPatientResults(true)}
+                      placeholder={t("patientIdPlaceholder")}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm text-foreground"
+                    />
+                    <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                  {showPatientResults && patientQuery.length >= 2 && (
+                    <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
+                      {(patientSearchResults?.items ?? []).map((p) => (
+                        <li key={p.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPatientId(p.id);
+                              setSelectedPatientName(
+                                `${p.first_name} ${p.last_name}`.trim(),
+                              );
+                              setShowPatientResults(false);
+                              setPatientQuery("");
+                            }}
+                            className="block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                          >
+                            <div className="font-medium text-foreground">
+                              {p.first_name} {p.last_name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {p.id.slice(0, 8)}… · {p.phone_number ?? "—"}
+                            </div>
+                          </button>
+                        </li>
+                      ))}
+                      {(patientSearchResults?.items?.length ?? 0) === 0 && (
+                        <li className="px-3 py-2 text-sm text-muted-foreground">
+                          {tc("noResults") ?? "No matches"}
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
