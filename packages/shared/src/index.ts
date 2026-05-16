@@ -107,7 +107,7 @@ export type {
 } from "./types/radiology";
 export type {
   ANCStatus,
-  RiskLevel,
+  MCHRiskLevel,
   PregnancyOutcome,
   ModeOfDelivery,
   BabyOutcome,

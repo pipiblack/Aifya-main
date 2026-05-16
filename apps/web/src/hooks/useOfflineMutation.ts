@@ -14,7 +14,7 @@ import { generateId } from "@/lib/utils";
  */
 export function useOfflineMutation<TData, TVariables>(
   options: UseMutationOptions<TData, Error, TVariables>,
-  offlineConfig: { url: string; method: string }
+  offlineConfig?: any
 ): UseMutationResult<TData, Error, TVariables> {
   return useMutation<TData, Error, TVariables>({
     ...options,
@@ -33,7 +33,7 @@ export function useOfflineMutation<TData, TVariables>(
       }
 
       if (options.mutationFn) {
-        return options.mutationFn(variables);
+        return (options.mutationFn as any)(variables);
       }
       throw new Error("No mutationFn provided");
     },

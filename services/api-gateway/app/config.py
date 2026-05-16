@@ -1,4 +1,6 @@
-from pydantic import model_validator
+import json
+from typing import List, Any
+from pydantic import model_validator, field_validator
 from pydantic_settings import BaseSettings
 
 # Sentinel values that must be overridden via environment / .env
@@ -20,6 +22,9 @@ class Settings(BaseSettings):
 
     # Kafka
     kafka_bootstrap_servers: str = "localhost:9092"
+
+    # CORS Configuration
+    cors_origins: List[str] = ["http://localhost:3000"]
 
     # Auth (Keycloak)
     keycloak_url: str = "http://localhost:8080"
@@ -55,6 +60,33 @@ class Settings(BaseSettings):
     facility_timezone: str = "Africa/Nairobi"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> List[str]:
+        """
+        Safely parse CORS origins from a raw string, comma-separated list, or a JSON array.
+        """
+        if isinstance(v, (list, set, tuple)):
+            return [str(item) for item in v]
+        
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return []
+            
+            # 1. Try to parse as valid JSON array first
+            try:
+                data = json.loads(v)
+                if isinstance(data, list):
+                    return [str(item) for item in data]
+            except (json.JSONDecodeError, TypeError):
+                pass
+            
+            # 2. Fallback to parsing a standard comma-separated string
+            return [item.strip() for item in v.split(",") if item.strip()]
+            
+        return v
 
     @property
     def mpesa_base_url(self) -> str:

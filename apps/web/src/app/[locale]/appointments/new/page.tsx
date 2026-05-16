@@ -46,10 +46,10 @@ export default function NewAppointmentPage() {
   // Unique doctors from schedules
   const doctors = schedules
     ? Array.from(
-        new Map(
-          schedules.map((s) => [s.doctor_id, { id: s.doctor_id, name: s.doctor_name }])
-        ).values()
-      )
+      new Map(
+        schedules.map((s) => [s.doctor_id, { id: s.doctor_id, name: s.doctor_name }])
+      ).values()
+    )
     : [];
 
   /**
@@ -65,7 +65,7 @@ export default function NewAppointmentPage() {
       appointment_date: selectedSlot.date,
       start_time: selectedSlot.start_time,
       end_time: selectedSlot.end_time,
-      appointment_type: appointmentType,
+      appointment_type: appointmentType as AppointmentType,
       priority,
       visit_reason: visitReason || undefined,
       notes: notes || undefined,
@@ -160,7 +160,7 @@ export default function NewAppointmentPage() {
                       !slot.available
                         ? "cursor-not-allowed border-border bg-muted/30 text-muted-foreground/70 line-through"
                         : selectedSlot?.start_time === slot.start_time &&
-                            selectedSlot?.doctor_id === slot.doctor_id
+                          selectedSlot?.doctor_id === slot.doctor_id
                           ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-950"
                           : "border-border bg-card hover:border-blue-300 hover:bg-blue-50 dark:hover:border-blue-600 dark:hover:bg-blue-950/30"
                     )}

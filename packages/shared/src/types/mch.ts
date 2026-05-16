@@ -2,7 +2,7 @@
 export type ANCStatus = "active" | "delivered" | "postnatal" | "closed" | "transferred";
 
 /** Pregnancy risk level. */
-export type RiskLevel = "low" | "moderate" | "high";
+export type MCHRiskLevel = "low" | "moderate" | "high";
 
 /** Pregnancy outcome. */
 export type PregnancyOutcome = "live_birth" | "stillbirth" | "miscarriage" | "abortion" | "ectopic";
@@ -35,7 +35,7 @@ export interface ANCProfileResponse {
   expected_delivery_date: string | null;
   first_visit_date: string | null;
   gestation_at_first_visit: number | null;
-  risk_level: RiskLevel;
+  risk_level: MCHRiskLevel;
   risk_factors: string[] | null;
   blood_group: string | null;
   hiv_status: string | null;
@@ -62,7 +62,7 @@ export interface ANCProfileListItem {
   parity: number;
   expected_delivery_date: string | null;
   gestation_weeks: number | null;
-  risk_level: RiskLevel;
+  risk_level: MCHRiskLevel;
   status: ANCStatus;
   visit_count: number;
   created_at: string;
@@ -86,7 +86,7 @@ export interface ANCProfileCreate {
   blood_group?: string | null;
   hiv_status?: string | null;
   on_art?: boolean;
-  risk_level?: RiskLevel;
+  risk_level?: MCHRiskLevel;
   risk_factors?: string[] | null;
   notes?: string | null;
 }
