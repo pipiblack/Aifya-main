@@ -16,17 +16,82 @@
   "ssoSessionMaxLifespan": 36000,
   "roles": {
     "realm": [
-      { "name": "admin", "description": "System administrator" },
-      { "name": "facility_admin", "description": "Facility administrator" },
-      { "name": "doctor", "description": "Medical doctor / clinical officer" },
-      { "name": "nurse", "description": "Registered nurse / enrolled nurse" },
-      { "name": "pharmacist", "description": "Pharmacist" },
-      { "name": "lab_tech", "description": "Laboratory technologist" },
-      { "name": "cashier", "description": "Billing / cashier" },
-      { "name": "records", "description": "Health records / registration clerk" },
-      { "name": "radiologist", "description": "Radiologist / imaging tech" },
-      { "name": "investigator", "description": "Clinical trials investigator" },
-      { "name": "research_coordinator", "description": "Clinical trials coordinator" }
+      {
+        "name": "system_admin",
+        "description": "System administrator"
+      },
+      {
+        "name": "hospital_admin",
+        "description": "Hospital administrator"
+      },
+      {
+        "name": "facility_admin",
+        "description": "Facility administrator"
+      },
+      {
+        "name": "doctor",
+        "description": "Medical doctor / clinical officer"
+      },
+      {
+        "name": "nurse",
+        "description": "Registered nurse / enrolled nurse"
+      },
+      {
+        "name": "registration",
+        "description": "Patient Registration"
+      },
+      {
+        "name": "records",
+        "description": "Health records clerk"
+      },
+      {
+        "name": "cashier",
+        "description": "Cashier"
+      },
+      {
+        "name": "billing_clerk",
+        "description": "Billing Clerk"
+      },
+      {
+        "name": "lab_personnel",
+        "description": "Laboratory technologist / personnel"
+      },
+      {
+        "name": "pathologist",
+        "description": "Pathologist"
+      },
+      {
+        "name": "pharmacist",
+        "description": "Pharmacist"
+      },
+      {
+        "name": "radiologist",
+        "description": "Radiologist"
+      },
+      {
+        "name": "store_keeper",
+        "description": "Store Keeper"
+      },
+      {
+        "name": "midwife",
+        "description": "MCH / Midwife"
+      },
+      {
+        "name": "hr_manager",
+        "description": "HR Manager"
+      },
+      {
+        "name": "claims_officer",
+        "description": "Claims Officer"
+      },
+      {
+        "name": "investigator",
+        "description": "Clinical trials investigator"
+      },
+      {
+        "name": "research_coordinator",
+        "description": "Clinical trials coordinator"
+      }
     ]
   },
   "clients": [
@@ -35,17 +100,24 @@
       "name": "Aifya Web Application",
       "enabled": true,
       "publicClient": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "standardFlowEnabled": true,
       "redirectUris": [
         "http://localhost:3000/*",
-        "https://*.aifya.health/*"
+        "https://*.aifya.health/*",
+        "https://*.aifyahealth.co.ke/*"
       ],
       "webOrigins": [
         "http://localhost:3000",
-        "https://*.aifya.health"
+        "https://*.aifya.health",
+        "https://*.aifyahealth.co.ke"
       ],
-      "defaultClientScopes": ["openid", "profile", "email", "aifya-scope"]
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "aifya-scope"
+      ]
     },
     {
       "clientId": "aifya-api",
@@ -53,7 +125,12 @@
       "enabled": true,
       "bearerOnly": true,
       "publicClient": false,
-      "defaultClientScopes": ["openid", "profile", "email", "aifya-scope"]
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "aifya-scope"
+      ]
     }
   ],
   "clientScopes": [
@@ -86,7 +163,9 @@
       "firstName": "System",
       "lastName": "Admin",
       "attributes": {
-        "facility_id": ["00000000-0000-0000-0000-000000000001"]
+        "facility_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       },
       "credentials": [
         {
@@ -95,7 +174,9 @@
           "temporary": true
         }
       ],
-      "realmRoles": ["admin", "doctor"]
+      "realmRoles": [
+        "system_admin"
+      ]
     },
     {
       "username": "doctor@demo.aifya.health",
@@ -105,7 +186,9 @@
       "firstName": "Demo",
       "lastName": "Doctor",
       "attributes": {
-        "facility_id": ["00000000-0000-0000-0000-000000000001"]
+        "facility_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       },
       "credentials": [
         {
@@ -114,7 +197,9 @@
           "temporary": true
         }
       ],
-      "realmRoles": ["doctor"]
+      "realmRoles": [
+        "doctor"
+      ]
     },
     {
       "username": "nurse@demo.aifya.health",
@@ -124,7 +209,9 @@
       "firstName": "Demo",
       "lastName": "Nurse",
       "attributes": {
-        "facility_id": ["00000000-0000-0000-0000-000000000001"]
+        "facility_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       },
       "credentials": [
         {
@@ -133,7 +220,9 @@
           "temporary": true
         }
       ],
-      "realmRoles": ["nurse"]
+      "realmRoles": [
+        "nurse"
+      ]
     },
     {
       "username": "records@demo.aifya.health",
@@ -143,7 +232,9 @@
       "firstName": "Demo",
       "lastName": "Records",
       "attributes": {
-        "facility_id": ["00000000-0000-0000-0000-000000000001"]
+        "facility_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       },
       "credentials": [
         {
@@ -152,7 +243,9 @@
           "temporary": true
         }
       ],
-      "realmRoles": ["records"]
+      "realmRoles": [
+        "records"
+      ]
     }
   ]
 }

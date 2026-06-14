@@ -1,15 +1,21 @@
 /** Staff role */
 export type StaffRole =
+  | "system_admin"
+  | "hospital_admin"
   | "doctor"
   | "nurse"
-  | "pharmacist"
-  | "lab_tech"
-  | "radiologist"
-  | "admin"
-  | "cashier"
+  | "registration"
   | "records"
-  | "receptionist"
-  | "midwife";
+  | "cashier"
+  | "billing_clerk"
+  | "lab_personnel"
+  | "pathologist"
+  | "pharmacist"
+  | "radiologist"
+  | "store_keeper"
+  | "midwife"
+  | "hr_manager"
+  | "claims_officer";
 
 /** Employment type */
 export type EmploymentType =

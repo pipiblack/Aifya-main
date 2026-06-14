@@ -21,7 +21,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const tokenUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
-  const redirectUri = `${request.nextUrl.origin}/api/auth/callback`;
+  const redirectUri = `${request.nextUrl.origin}/next-api/auth/callback`;
 
   const body = new URLSearchParams({
     grant_type: "authorization_code",

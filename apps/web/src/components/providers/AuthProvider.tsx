@@ -29,8 +29,8 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
 });
 
 const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL ?? "http://localhost:8080";
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(() => {
     // Redirect to Keycloak login — callback goes to server-side Route Handler
     const redirectUri = encodeURIComponent(
-      window.location.origin + "/api/auth/callback",
+      window.location.origin + "/next-api/auth/callback",
     );
     const baseUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect`;
     const authUrl =
@@ -66,14 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     // Server-side logout handler clears cookies and redirects to Keycloak
-    window.location.href = "/api/auth/logout";
+    window.location.href = "/next-api/auth/logout";
   }, []);
 
   // Check session on mount by calling the server-side /api/auth/me endpoint
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch("/api/auth/me", {
+        const response = await fetch("/next-api/auth/me", {
           credentials: "include",
         });
         if (response.ok) {

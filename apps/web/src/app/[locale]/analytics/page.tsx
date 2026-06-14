@@ -28,7 +28,8 @@ import { StatCardSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useAnalyticsDashboard } from "@/hooks/useAnalytics";
 import { cn } from "@/lib/utils";
-import type { StockoutUrgency, RiskLevel } from "@aifya/shared";
+// import type { StockoutUrgency, RiskLevel } from "@aifya/shared";
+import type { StockoutUrgency, RiskLevel } from "../../../../../types";
 
 /**
  * Map stockout urgency to StatusBadge variant.
@@ -127,11 +128,11 @@ export default function AnalyticsPage() {
   const avgOccupancy =
     dashboard?.bed_forecasts && dashboard.bed_forecasts.length > 0
       ? Math.round(
-          dashboard.bed_forecasts.reduce(
-            (sum, b) => sum + b.predicted_occupancy,
-            0
-          ) / dashboard.bed_forecasts.length
-        )
+        dashboard.bed_forecasts.reduce(
+          (sum, b) => sum + b.predicted_occupancy,
+          0
+        ) / dashboard.bed_forecasts.length
+      )
       : 0;
 
   const criticalStockouts =

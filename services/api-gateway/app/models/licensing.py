@@ -53,7 +53,7 @@ class FacilityLicense(Base):
     )  # HMAC-signed key: AIFYA-TIER-XXXXXXXX-XXXX
 
     # Tier: community | professional | enterprise | government
-    tier: Mapped[str] = mapped_column(String(30), nullable=False, default="community")
+    tier: Mapped[str] = mapped_column(String(30), nullable=False, default="professional")
 
     # Entitlements snapshot — denormalized from TIER_ENTITLEMENTS for offline validation
     max_users: Mapped[int] = mapped_column(Integer, nullable=False, default=5)

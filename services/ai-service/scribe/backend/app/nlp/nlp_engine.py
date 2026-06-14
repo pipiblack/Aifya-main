@@ -78,7 +78,7 @@ class NLPError(Exception):
 
 class NLPEngine:
     def __init__(self):
-        self._api_available = bool(settings.openai_api_key and settings.openai_api_key != "sk-proj-youropenaiapikeyhere...")
+        self._api_available = bool(settings.openai_api_key and settings.openai_api_key != "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")
 
     @retry(
         retry=retry_if_exception_type((APIError, APIConnectionError, TimeoutError)),

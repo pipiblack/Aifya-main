@@ -97,6 +97,7 @@ services:
       dockerfile: Dockerfile
     container_name: aifya-api-gateway
     environment:
+      SECRET_KEY: "fb7a9c8d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b"
       DATABASE_URL: postgresql+asyncpg://aifya_user:change_me_in_production@postgres:5432/aifya
       REDIS_URL: redis://redis:6379/0
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -165,7 +166,7 @@ services:
       VLLM_BASE_URL: http://localhost:8002/v1
       CELERY_BROKER_URL: redis://redis:6379/3
       CELERY_RESULT_BACKEND: redis://redis:6379/4
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: '["http://localhost:3000"]'
     ports:
       - "8025:8025"
     depends_on:
@@ -211,7 +212,7 @@ services:
       dockerfile: Dockerfile
     container_name: aifya-scribe
     ports:
-      - "8005:8005"
+      - "8005:8000"
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+asyncpg://aifya_user:change_me_in_production@postgres:5432/aifya

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { LicenseProvider, useLicenseContext } from "@/components/licensing/LicenseProvider";
@@ -16,6 +17,18 @@ import { useTelemetry } from "@/hooks/useTelemetry";
 function AppShellInner({ children }: { children: ReactNode }) {
   const { daysRemaining, inGracePeriod } = useLicenseContext();
   useTelemetry();
+  const pathname = usePathname() || "";
+
+  // Hide the dashboard shell on auth pages
+  const isAuthPage = pathname.endsWith("/login") || pathname.endsWith("/logout");
+
+  if (isAuthPage) {
+    return (
+      <main className="min-h-screen bg-background dark:bg-background">
+        {children}
+      </main>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
