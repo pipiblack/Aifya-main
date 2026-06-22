@@ -70,6 +70,39 @@ async def test_post_transaction_balances(seeded_period: AccountingPeriod) -> Non
 
 
 @pytest.mark.asyncio
+async def test_post_transaction_prefers_monthly_period_when_year_end_overlaps(
+    seeded_period: AccountingPeriod,
+) -> None:
+    """Operational postings use the monthly period, not the overlapping FY row."""
+    async with test_session() as db:
+        fiscal_year = AccountingPeriod(
+            facility_id=FACILITY_ID,
+            name="FY2026",
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31),
+            status="open",
+            year_end=True,
+            created_by=USER_ID,
+            updated_by=USER_ID,
+        )
+        db.add(fiscal_year)
+        await db.commit()
+
+    async with test_session() as db:
+        txn = await post_transaction(
+            db=db,
+            facility_id=FACILITY_ID,
+            event_type="invoice_cash",
+            amount=Decimal("1000.00"),
+            metadata={"date": "2026-05-15", "description": "Test invoice"},
+            user_id=USER_ID,
+        )
+        await db.commit()
+
+    assert txn.period_id == seeded_period.id
+
+
+@pytest.mark.asyncio
 async def test_idempotency_key_prevents_duplicates(
     seeded_period: AccountingPeriod,
 ) -> None:

@@ -136,7 +136,7 @@ export default function KnowledgeBasePage() {
     undefined
   );
 
-  const documents = data?.items ?? [];
+  const documents = useMemo(() => data?.items ?? [], [data?.items]);
   const totalCount = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 

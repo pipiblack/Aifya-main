@@ -23,6 +23,7 @@ import {
 } from "@/hooks/usePharmacy";
 import { formatKES, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import type { PharmacyItemCreate } from "@aifya/shared";
 
 const newItemSchema = z.object({
   drug_code: z.string().min(1),
@@ -43,7 +44,7 @@ const newItemSchema = z.object({
   shelf_location: z.string().nullable().optional(),
 });
 
-type NewItemFormData = z.infer<typeof newItemSchema>;
+type NewItemFormData = PharmacyItemCreate;
 
 /**
  * Pharmacy inventory management page.

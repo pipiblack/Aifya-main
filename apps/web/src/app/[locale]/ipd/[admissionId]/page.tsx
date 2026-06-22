@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useIPD";
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import type { DischargeRequest, NursingNoteCreate } from "@aifya/shared";
 
 const nursingNoteSchema = z.object({
   note_type: z.enum([
@@ -42,7 +43,7 @@ const nursingNoteSchema = z.object({
   severity: z.enum(["normal", "warning", "critical"]).nullable().optional(),
 });
 
-type NursingNoteFormData = z.infer<typeof nursingNoteSchema>;
+type NursingNoteFormData = NursingNoteCreate;
 
 const dischargeSchema = z.object({
   discharge_type: z.enum([
@@ -60,7 +61,7 @@ const dischargeSchema = z.object({
   discharge_medications: z.string().nullable().optional(),
 });
 
-type DischargeFormData = z.infer<typeof dischargeSchema>;
+type DischargeFormData = DischargeRequest;
 
 /** Severity badge styling. */
 const SEVERITY_STYLES: Record<string, string> = {

@@ -11,6 +11,7 @@ import {
 import { useRegisterPatient } from "@/hooks/usePatients";
 import { HelpTooltip } from "@/components/help/HelpTooltip";
 import { cn } from "@/lib/utils";
+import type { PatientCreate } from "@aifya/shared";
 
 /**
  * Patient Registration form page.
@@ -37,7 +38,13 @@ export default function PatientRegistrationPage() {
 
   const onSubmit = async (data: PatientCreateFormData) => {
     try {
-      const patient = await registerMutation.mutateAsync(data);
+      const payload = Object.fromEntries(
+        Object.entries(data).map(([key, value]) => [
+          key,
+          value === "" ? null : value,
+        ])
+      ) as unknown as PatientCreate;
+      const patient = await registerMutation.mutateAsync(payload);
       router.push(`/patients/${patient.id}`);
     } catch {
       // Error handled by mutation state

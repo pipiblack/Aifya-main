@@ -15,6 +15,7 @@ import {
 import { useEncounterDiagnoses, useAddDiagnosis } from "@/hooks/useEncounters";
 import { ICD10Autocomplete } from "@/components/opd/ICD10Autocomplete";
 import { cn } from "@/lib/utils";
+import type { DiagnosisCreate } from "@aifya/shared";
 
 const diagnosisSchema = z.object({
   icd10_code: z.string().min(3, "ICD-10 code required"),
@@ -25,7 +26,7 @@ const diagnosisSchema = z.object({
   is_chronic: z.boolean().optional(),
 });
 
-type DiagnosisFormData = z.infer<typeof diagnosisSchema>;
+type DiagnosisFormData = Omit<DiagnosisCreate, "encounter_id" | "patient_id">;
 
 interface DiagnosisPanelProps {
   encounterId: string;

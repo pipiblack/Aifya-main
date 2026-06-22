@@ -6,6 +6,7 @@ const mockFetch = vi.fn();
 beforeEach(() => {
   vi.stubGlobal("fetch", mockFetch);
   mockFetch.mockReset();
+  vi.unstubAllEnvs();
 });
 
 describe("apiFetch", () => {
@@ -20,6 +21,24 @@ describe("apiFetch", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       "http://localhost:8000/api/v1/patients",
+      expect.objectContaining({
+        credentials: "include",
+      })
+    );
+  });
+
+  it("does not duplicate /api/v1 when API_BASE already includes it", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:8000/api/v1");
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: "123" }),
+    });
+
+    await apiFetch("/api/v1/licensing/license");
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/v1/licensing/license",
       expect.objectContaining({
         credentials: "include",
       })

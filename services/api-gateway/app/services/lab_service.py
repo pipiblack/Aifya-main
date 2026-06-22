@@ -166,7 +166,7 @@ class LabService:
                 LabOrder.status.in_(["ordered", "collected", "processing"])
             )
 
-        priority_order = func.case(
+        priority_order = case(
             (LabOrder.priority == "stat", 3),
             (LabOrder.priority == "urgent", 2),
             else_=1,

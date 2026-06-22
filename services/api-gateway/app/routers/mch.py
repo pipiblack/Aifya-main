@@ -90,11 +90,17 @@ async def create_anc_profile(
     @returns Created ANC profile
     """
     service = MCHService(db)
-    profile = await service.create_anc_profile(
-        data=data,
-        facility_id=current_user.facility_id,
-        created_by=current_user.user_id,
-    )
+    try:
+        profile = await service.create_anc_profile(
+            data=data,
+            facility_id=current_user.facility_id,
+            created_by=current_user.user_id,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
     return ANCProfileResponse.model_validate(profile)
 
 
@@ -155,7 +161,7 @@ async def add_anc_visit(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     return ANCVisitResponse.model_validate(visit)
 
 
@@ -189,7 +195,7 @@ async def record_delivery(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     return DeliveryRecordResponse.model_validate(delivery)
 
 
@@ -292,5 +298,5 @@ async def record_immunization(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     return ImmunizationResponse.model_validate(immunization)

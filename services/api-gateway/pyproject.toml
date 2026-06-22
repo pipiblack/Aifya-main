@@ -29,6 +29,7 @@ dev = [
     "mypy>=1.13.0",
     "ruff>=0.8.0",
     "factory-boy>=3.3.0",
+    "aiosqlite==0.19.0",
 ]
 
 [tool.ruff]
@@ -46,3 +47,6 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

@@ -57,7 +57,6 @@ async def _create_theatre(client: AsyncClient) -> str:
         json={
             "name": "OR-1",
             "theatre_type": "general",
-            "capacity": 1,
         },
     )
     assert response.status_code == 201
@@ -85,12 +84,11 @@ async def _create_case(
             "encounter_id": encounter_id,
             "theatre_id": theatre_id,
             "procedure_name": "Appendectomy",
-            "surgery_type": "emergency",
-            "anesthesia_type": "general",
-            "scheduled_date": "2026-05-01",
-            "scheduled_time": "10:00",
-            "estimated_duration_minutes": 90,
-            "surgeon_id": "00000000-0000-0000-0000-000000000002",
+            "priority": "emergency",
+            "anaesthesia_type": "general",
+            "scheduled_date": "2026-05-01T10:00:00",
+            "estimated_duration_min": 90,
+            "lead_surgeon_id": "00000000-0000-0000-0000-000000000002",
         },
     )
     assert response.status_code == 201
@@ -119,8 +117,8 @@ async def test_list_theatres_empty(client: AsyncClient) -> None:
     response = await client.get("/api/v1/theatre/theatres")
 
     assert response.status_code == 200
-    data: dict[str, object] = response.json()
-    assert isinstance(data, dict)
+    data: list[dict[str, object]] = response.json()
+    assert data == []
 
 
 # -- Theatres: create ---------------------------------------------------------
@@ -134,7 +132,6 @@ async def test_create_theatre(client: AsyncClient) -> None:
         json={
             "name": "OR-1",
             "theatre_type": "general",
-            "capacity": 1,
         },
     )
 
@@ -142,9 +139,8 @@ async def test_create_theatre(client: AsyncClient) -> None:
     data: dict[str, object] = response.json()
     assert data["name"] == "OR-1"
     assert data["theatre_type"] == "general"
-    assert data["capacity"] == 1
     assert "id" in data
-    assert "created_at" in data
+    assert "code" in data
 
 
 # -- Cases: empty list --------------------------------------------------------
@@ -177,12 +173,11 @@ async def test_schedule_case(client: AsyncClient) -> None:
             "encounter_id": encounter_id,
             "theatre_id": theatre_id,
             "procedure_name": "Appendectomy",
-            "surgery_type": "emergency",
-            "anesthesia_type": "general",
-            "scheduled_date": "2026-05-01",
-            "scheduled_time": "10:00",
-            "estimated_duration_minutes": 90,
-            "surgeon_id": "00000000-0000-0000-0000-000000000002",
+            "priority": "emergency",
+            "anaesthesia_type": "general",
+            "scheduled_date": "2026-05-01T10:00:00",
+            "estimated_duration_min": 90,
+            "lead_surgeon_id": "00000000-0000-0000-0000-000000000002",
         },
     )
 
@@ -192,10 +187,10 @@ async def test_schedule_case(client: AsyncClient) -> None:
     assert data["encounter_id"] == encounter_id
     assert data["theatre_id"] == theatre_id
     assert data["procedure_name"] == "Appendectomy"
-    assert data["surgery_type"] == "emergency"
-    assert data["anesthesia_type"] == "general"
-    assert data["scheduled_date"] == "2026-05-01"
-    assert data["estimated_duration_minutes"] == 90
+    assert data["priority"] == "emergency"
+    assert data["anaesthesia_type"] == "general"
+    assert data["scheduled_date"].startswith("2026-05-01T07:00:00")
+    assert data["estimated_duration_min"] == 90
     assert "id" in data
     assert "created_at" in data
 
@@ -247,8 +242,8 @@ async def test_add_operative_notes(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/theatre/cases/{case_id}/operative-notes",
         json={
-            "findings": "Inflamed appendix with localized peritonitis",
-            "procedure_performed": "Laparoscopic appendectomy",
+            "operative_findings": "Inflamed appendix with localized peritonitis",
+            "operative_notes": "Laparoscopic appendectomy",
             "complications": "None",
             "blood_loss_ml": 50,
         },

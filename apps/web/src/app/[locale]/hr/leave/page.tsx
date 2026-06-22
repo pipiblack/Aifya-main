@@ -12,6 +12,7 @@ import {
   useSubmitLeaveRequest,
   useApproveLeaveRequest,
   type LeaveRequest,
+  type LeaveRequestCreate,
   type LeaveRequestStatus,
 } from "@/hooks/usePayroll";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -29,7 +30,7 @@ const leaveSchema = z.object({
   reason: z.string().optional(),
 });
 
-type LeaveForm = z.infer<typeof leaveSchema>;
+type LeaveForm = LeaveRequestCreate;
 
 type Tab = "mine" | "pending" | "calendar";
 

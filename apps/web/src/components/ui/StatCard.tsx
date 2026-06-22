@@ -20,6 +20,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 export function StatCard({
   icon: Icon,
   label,
+  title,
   value,
   subtitle,
   trend,
@@ -28,10 +29,11 @@ export function StatCard({
   onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
-  label: string;
+  label?: string;
+  title?: string;
   value: number | string;
   subtitle?: string;
-  trend?: number;
+  trend?: number | null;
   alert?: string;
   color?: "primary" | "blue" | "purple" | "amber" | "red" | "green" | "teal" | "cyan" | "orange" | "pink" | "indigo" | "emerald" | "violet" | "rose";
   onClick?: () => void;
@@ -54,6 +56,7 @@ export function StatCard({
   };
 
   const c = colorMap[color] ?? colorMap.primary;
+  const displayLabel = label ?? title ?? "";
 
   return (
     <div
@@ -90,7 +93,7 @@ export function StatCard({
           {value}
         </p>
         <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-          {label}
+          {displayLabel}
         </p>
       </div>
       {subtitle && (

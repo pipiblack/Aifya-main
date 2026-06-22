@@ -13,10 +13,11 @@ export async function apiFetch<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const backendBase = API_BASE.replace(/\/api\/v1\/?$/, "");
 
   // If path starts with /api/v1, prepend the backend base URL
   // Otherwise assume it's a relative path to the current origin (Next.js API routes)
-  const url = path.startsWith("/api/v1") ? `${API_BASE}${path}` : path;
+  const url = path.startsWith("/api/v1") ? `${backendBase}${path}` : path;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

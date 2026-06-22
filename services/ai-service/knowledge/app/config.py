@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     )
     keycloak_realm: str = Field("aifya", validation_alias="KEYCLOAK_REALM")
     jwt_algorithm: str = "RS256"
+    local_auth_bypass: bool = Field(False, validation_alias="LOCAL_AUTH_BYPASS")
 
     # --- Database (document metadata) ---
     database_url: str = Field(
@@ -86,6 +87,7 @@ class Settings(BaseSettings):
     vllm_base_url: str = Field(
         "http://localhost:8002/v1", validation_alias="VLLM_BASE_URL"
     )
+    openai_api_key: str = Field("", validation_alias="OPENAI_API_KEY")
     generation_model: str = Field(
         "Qwen/Qwen2.5-72B-Instruct", validation_alias="GENERATION_MODEL"
     )

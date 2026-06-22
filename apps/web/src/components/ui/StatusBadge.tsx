@@ -7,7 +7,10 @@ type BadgeVariant =
   | "success"
   | "warning"
   | "error"
+  | "danger"
   | "info"
+  | "neutral"
+  | "blue"
   | "purple"
   | "cyan"
   | "pink"
@@ -28,7 +31,10 @@ const VARIANT_STYLES: Record<BadgeVariant, string> = {
   success: "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/10 dark:bg-green-950/50 dark:text-green-400 dark:ring-green-500/20",
   warning: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10 dark:bg-amber-950/50 dark:text-amber-400 dark:ring-amber-500/20",
   error: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10 dark:bg-red-950/50 dark:text-red-400 dark:ring-red-500/20",
+  danger: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10 dark:bg-red-950/50 dark:text-red-400 dark:ring-red-500/20",
   info: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/10 dark:bg-blue-950/50 dark:text-blue-400 dark:ring-blue-500/20",
+  neutral: "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/10 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-500/20",
+  blue: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/10 dark:bg-blue-950/50 dark:text-blue-400 dark:ring-blue-500/20",
   purple: "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/10 dark:bg-purple-950/50 dark:text-purple-400 dark:ring-purple-500/20",
   cyan: "bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-600/10 dark:bg-cyan-950/50 dark:text-cyan-400 dark:ring-cyan-500/20",
   pink: "bg-pink-50 text-pink-700 ring-1 ring-inset ring-pink-600/10 dark:bg-pink-950/50 dark:text-pink-400 dark:ring-pink-500/20",

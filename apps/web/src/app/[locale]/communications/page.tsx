@@ -20,7 +20,12 @@ import { StatCardSkeleton, Skeleton } from "@/components/ui/Skeleton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useMessages, useMessageTemplates, useSendMessage } from "@/hooks/useCommunications";
 import { cn } from "@/lib/utils";
-import type { MessageChannel, MessageStatus, MessageCategory } from "@aifya/shared";
+import type {
+  MessageCategory,
+  MessageChannel,
+  MessageStatus,
+  MessageTemplate,
+} from "@aifya/shared";
 
 /** Channel display config. */
 const CHANNEL_DISPLAY: Record<MessageChannel, { label: string; color: string }> = {

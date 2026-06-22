@@ -6,6 +6,7 @@ All queries are scoped by facility_id for multi-tenant isolation.
 import uuid
 
 from qdrant_client import QdrantClient
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http import models as qmodels
 from structlog import get_logger
 
@@ -16,6 +17,12 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 _client: QdrantClient | None = None
+
+
+def _is_already_exists_error(exc: UnexpectedResponse) -> bool:
+    """Return True for Qdrant's idempotent create conflict response."""
+    message = str(exc).lower()
+    return "409" in message or "already exists" in message
 
 
 def get_qdrant_client() -> QdrantClient:
@@ -44,34 +51,37 @@ async def ensure_collection() -> None:
     existing = {c.name for c in collections}
 
     if settings.qdrant_collection not in existing:
-        client.create_collection(
-            collection_name=settings.qdrant_collection,
-            vectors_config=qmodels.VectorParams(
-                size=settings.embedding_dimension,
-                distance=qmodels.Distance.COSINE,
-            ),
-        )
+        try:
+            client.create_collection(
+                collection_name=settings.qdrant_collection,
+                vectors_config=qmodels.VectorParams(
+                    size=settings.embedding_dimension,
+                    distance=qmodels.Distance.COSINE,
+                ),
+            )
+        except UnexpectedResponse as exc:
+            if not _is_already_exists_error(exc):
+                raise
+            collections = client.get_collections().collections
+            existing = {c.name for c in collections}
+            if settings.qdrant_collection not in existing:
+                raise
 
-        client.create_payload_index(
-            collection_name=settings.qdrant_collection,
-            field_name="facility_id",
-            field_schema=qmodels.PayloadSchemaType.KEYWORD,
-        )
-        client.create_payload_index(
-            collection_name=settings.qdrant_collection,
-            field_name="document_id",
-            field_schema=qmodels.PayloadSchemaType.KEYWORD,
-        )
-        client.create_payload_index(
-            collection_name=settings.qdrant_collection,
-            field_name="category",
-            field_schema=qmodels.PayloadSchemaType.KEYWORD,
-        )
-        client.create_payload_index(
-            collection_name=settings.qdrant_collection,
-            field_name="department",
-            field_schema=qmodels.PayloadSchemaType.KEYWORD,
-        )
+        for field_name in ("facility_id", "document_id", "category", "department"):
+            try:
+                client.create_payload_index(
+                    collection_name=settings.qdrant_collection,
+                    field_name=field_name,
+                    field_schema=qmodels.PayloadSchemaType.KEYWORD,
+                )
+            except UnexpectedResponse as exc:
+                if not _is_already_exists_error(exc):
+                    raise
+                logger.info(
+                    "qdrant_payload_index_exists",
+                    collection=settings.qdrant_collection,
+                    field_name=field_name,
+                )
 
         logger.info(
             "qdrant_collection_created",

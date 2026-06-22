@@ -135,7 +135,12 @@ async def test_list_inventory_search(client: AsyncClient) -> None:
     await client.post("/api/v1/pharmacy/inventory", json=_inventory_item_payload())
     await client.post(
         "/api/v1/pharmacy/inventory",
-        json={**_inventory_item_payload(), "drug_code": "IBU-400", "drug_name": "Ibuprofen 400mg"},
+        json={
+            **_inventory_item_payload(),
+            "drug_code": "IBU-400",
+            "drug_name": "Ibuprofen 400mg",
+            "generic_name": "Ibuprofen",
+        },
     )
 
     response = await client.get("/api/v1/pharmacy/inventory", params={"q": "Paracetamol"})

@@ -10,6 +10,7 @@ import {
   useBudgets,
   useCreateBudget,
   useBudgetVsActual,
+  type BudgetCreate,
 } from "@/hooks/useFinance";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -25,7 +26,7 @@ const budgetSchema = z.object({
   amount: z.coerce.number().min(0.01),
 });
 
-type BudgetForm = z.infer<typeof budgetSchema>;
+type BudgetForm = BudgetCreate;
 
 function asNumber(v: string | number | null | undefined): number {
   if (v == null) return 0;

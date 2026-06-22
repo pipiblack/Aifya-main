@@ -100,7 +100,7 @@ export default function FHIRExplorerPage() {
               {capability?.title ?? t("serverTitle")}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {capability?.description ?? t("serverDescription")}
+              {t("serverDescription")}
             </p>
           </div>
           {capability && (

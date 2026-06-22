@@ -31,8 +31,8 @@ async def test_create_encounter(client: AsyncClient, patient_id: str) -> None:
     assert data["patient_id"] == patient_id
     assert data["encounter_type"] == "opd"
     assert data["chief_complaint"] == "Persistent headache for 3 days"
-    assert data["status"] == "in_progress"
-    assert data["visit_number"].startswith("VST-")
+    assert data["status"] == "waiting"
+    assert data["queue_number"] is not None
     assert "id" in data
 
 
@@ -94,14 +94,16 @@ async def test_add_vitals(client: AsyncClient, patient_id: str) -> None:
     enc_id = enc_resp.json()["id"]
 
     response = await client.post(f"/api/v1/encounters/{enc_id}/vitals", json={
+        "encounter_id": enc_id,
+        "patient_id": patient_id,
         "temperature": 37.2,
         "systolic_bp": 120,
         "diastolic_bp": 80,
-        "pulse_rate": 72,
+        "heart_rate": 72,
         "respiratory_rate": 18,
         "oxygen_saturation": 98,
-        "weight": 65.5,
-        "height": 165.0,
+        "weight_kg": 65.5,
+        "height_cm": 165.0,
     })
 
     assert response.status_code == 201
@@ -109,6 +111,7 @@ async def test_add_vitals(client: AsyncClient, patient_id: str) -> None:
     assert data["temperature"] == 37.2
     assert data["systolic_bp"] == 120
     assert data["oxygen_saturation"] == 98
+    assert data["heart_rate"] == 72
     assert data["bmi"] is not None  # Should auto-calculate
 
 
@@ -123,8 +126,10 @@ async def test_add_diagnosis(client: AsyncClient, patient_id: str) -> None:
     enc_id = enc_resp.json()["id"]
 
     response = await client.post(f"/api/v1/encounters/{enc_id}/diagnoses", json={
+        "encounter_id": enc_id,
+        "patient_id": patient_id,
         "icd10_code": "J06.9",
-        "description": "Acute upper respiratory infection, unspecified",
+        "icd10_description": "Acute upper respiratory infection, unspecified",
         "diagnosis_type": "primary",
         "certainty": "confirmed",
     })
@@ -132,6 +137,7 @@ async def test_add_diagnosis(client: AsyncClient, patient_id: str) -> None:
     assert response.status_code == 201
     data = response.json()
     assert data["icd10_code"] == "J06.9"
+    assert data["icd10_description"] == "Acute upper respiratory infection, unspecified"
     assert data["diagnosis_type"] == "primary"
     assert data["certainty"] == "confirmed"
 
@@ -147,10 +153,12 @@ async def test_add_prescription(client: AsyncClient, patient_id: str) -> None:
     enc_id = enc_resp.json()["id"]
 
     response = await client.post(f"/api/v1/encounters/{enc_id}/prescriptions", json={
+        "encounter_id": enc_id,
+        "patient_id": patient_id,
         "drug_name": "Artemether-Lumefantrine",
         "generic_name": "AL",
         "dosage": "80/480mg",
-        "frequency": "BD",
+        "frequency": "bd",
         "duration_days": 3,
         "quantity": 24,
         "route": "oral",
@@ -158,12 +166,12 @@ async def test_add_prescription(client: AsyncClient, patient_id: str) -> None:
     })
 
     assert response.status_code == 201
-    data = response.json()
+    data = response.json()["prescription"]
     assert data["drug_name"] == "Artemether-Lumefantrine"
     assert data["dosage"] == "80/480mg"
-    assert data["frequency"] == "BD"
+    assert data["frequency"] == "bd"
     assert data["duration_days"] == 3
-    assert data["status"] == "prescribed"
+    assert data["status"] == "pending"
 
 
 @pytest.mark.asyncio
@@ -177,11 +185,14 @@ async def test_create_lab_order(client: AsyncClient, patient_id: str) -> None:
     enc_id = enc_resp.json()["id"]
 
     response = await client.post(f"/api/v1/encounters/{enc_id}/lab-orders", json={
+        "encounter_id": enc_id,
+        "patient_id": patient_id,
+        "priority": "urgent",
         "tests": [
-            {"test_name": "Malaria RDT", "test_code": "MAL-RDT", "priority": "urgent"},
-            {"test_name": "Complete Blood Count", "test_code": "CBC", "priority": "routine"},
+            {"test_name": "Malaria RDT", "test_code": "MAL-RDT"},
+            {"test_name": "Complete Blood Count", "test_code": "CBC"},
         ],
-        "clinical_notes": "Fever x3 days, suspect P. falciparum",
+        "clinical_info": "Fever x3 days, suspect P. falciparum",
     })
 
     assert response.status_code == 201

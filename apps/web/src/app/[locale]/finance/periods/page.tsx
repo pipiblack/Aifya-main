@@ -19,6 +19,7 @@ import {
   useClosePeriod,
   useYearEndClose,
   type Period,
+  type PeriodCreate,
 } from "@/hooks/useFinance";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -32,7 +33,7 @@ const periodSchema = z.object({
   is_year_end: z.boolean().optional(),
 });
 
-type PeriodForm = z.infer<typeof periodSchema>;
+type PeriodForm = PeriodCreate;
 
 const STATUS_VARIANT: Record<string, "default" | "success" | "warning" | "error" | "info" | "purple"> = {
   open: "success",

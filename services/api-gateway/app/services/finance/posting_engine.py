@@ -86,6 +86,7 @@ async def _get_period_for_date(
             AccountingPeriod.facility_id == facility_id,
             AccountingPeriod.start_date <= posting_date,
             AccountingPeriod.end_date >= posting_date,
+            AccountingPeriod.year_end == False,  # noqa: E712
             AccountingPeriod.is_deleted == False,  # noqa: E712
         )
     )

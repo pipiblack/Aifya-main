@@ -67,14 +67,15 @@ async def create_anc_visit(
     payload: dict[str, Any] = {
         "anc_profile_id": anc_profile_id,
         "visit_number": 1,
-        "gestational_age_weeks": 12,
-        "weight": 65.0,
-        "blood_pressure_systolic": 120,
-        "blood_pressure_diastolic": 75,
-        "fundal_height": 12,
+        "visit_date": "2026-04-15",
+        "gestation_weeks": 12,
+        "weight_kg": 65.0,
+        "bp_systolic": 120,
+        "bp_diastolic": 75,
+        "fundal_height_cm": 12,
         "fetal_heart_rate": 150,
-        "presentation": "cephalic",
-        "notes": "Normal progress",
+        "fetal_presentation": "cephalic",
+        "clinical_notes": "Normal progress",
     }
     response = await client.post("/api/v1/mch/anc/visits", json=payload)
     assert response.status_code == 201, f"ANC visit creation failed: {response.text}"
@@ -93,12 +94,12 @@ async def record_delivery(
     payload: dict[str, Any] = {
         "anc_profile_id": anc_profile_id,
         "delivery_date": "2026-10-20T14:30:00",
-        "delivery_type": "normal_vaginal",
-        "baby_gender": "female",
-        "baby_weight": 3200,
+        "mode_of_delivery": "svd",
+        "baby_outcome": "live_birth",
+        "baby_sex": "female",
+        "birth_weight_grams": 3200,
         "apgar_1min": 8,
         "apgar_5min": 9,
-        "outcome": "live_birth",
     }
     response = await client.post("/api/v1/mch/delivery", json=payload)
     assert response.status_code == 201, f"Delivery recording failed: {response.text}"
@@ -117,10 +118,11 @@ async def create_child_record(
     """
     payload: dict[str, Any] = {
         "patient_id": patient_id,
-        "mother_id": mother_id,
-        "birth_weight": 3200,
-        "birth_length": 50,
-        "head_circumference": 35,
+        "mother_patient_id": mother_id,
+        "date_of_birth": "2026-10-20",
+        "birth_weight_grams": 3200,
+        "sex": "female",
+        "place_of_birth": "facility",
     }
     response = await client.post("/api/v1/mch/children", json=payload)
     assert response.status_code == 201, f"Child record creation failed: {response.text}"
@@ -246,10 +248,10 @@ async def test_get_anc_profile_detail(client: AsyncClient) -> None:
 
     assert response.status_code == 200
     data: dict[str, Any] = response.json()
-    assert data["id"] == profile["id"]
-    assert data["patient_id"] == patient["id"]
-    assert data["gravida"] == 2
-    assert data["parity"] == 1
+    assert data["profile"]["id"] == profile["id"]
+    assert data["profile"]["patient_id"] == patient["id"]
+    assert data["profile"]["gravida"] == 2
+    assert data["profile"]["parity"] == 1
 
 
 @pytest.mark.asyncio
@@ -287,14 +289,15 @@ async def test_add_anc_visit(client: AsyncClient) -> None:
     payload: dict[str, Any] = {
         "anc_profile_id": profile["id"],
         "visit_number": 1,
-        "gestational_age_weeks": 12,
-        "weight": 65.0,
-        "blood_pressure_systolic": 120,
-        "blood_pressure_diastolic": 75,
-        "fundal_height": 12,
+        "visit_date": "2026-04-15",
+        "gestation_weeks": 12,
+        "weight_kg": 65.0,
+        "bp_systolic": 120,
+        "bp_diastolic": 75,
+        "fundal_height_cm": 12,
         "fetal_heart_rate": 150,
-        "presentation": "cephalic",
-        "notes": "Normal progress",
+        "fetal_presentation": "cephalic",
+        "clinical_notes": "Normal progress",
     }
     response = await client.post("/api/v1/mch/anc/visits", json=payload)
 
@@ -303,14 +306,14 @@ async def test_add_anc_visit(client: AsyncClient) -> None:
     assert "id" in data
     assert data["anc_profile_id"] == profile["id"]
     assert data["visit_number"] == 1
-    assert data["gestational_age_weeks"] == 12
-    assert data["weight"] == 65.0
-    assert data["blood_pressure_systolic"] == 120
-    assert data["blood_pressure_diastolic"] == 75
-    assert data["fundal_height"] == 12
+    assert data["gestation_weeks"] == 12
+    assert data["weight_kg"] == 65.0
+    assert data["bp_systolic"] == 120
+    assert data["bp_diastolic"] == 75
+    assert data["fundal_height_cm"] == 12
     assert data["fetal_heart_rate"] == 150
-    assert data["presentation"] == "cephalic"
-    assert data["notes"] == "Normal progress"
+    assert data["fetal_presentation"] == "cephalic"
+    assert data["clinical_notes"] == "Normal progress"
 
 
 @pytest.mark.asyncio
@@ -320,14 +323,15 @@ async def test_add_anc_visit_missing_profile(client: AsyncClient) -> None:
     payload: dict[str, Any] = {
         "anc_profile_id": fake_profile_id,
         "visit_number": 1,
-        "gestational_age_weeks": 12,
-        "weight": 65.0,
-        "blood_pressure_systolic": 120,
-        "blood_pressure_diastolic": 75,
-        "fundal_height": 12,
+        "visit_date": "2026-04-15",
+        "gestation_weeks": 12,
+        "weight_kg": 65.0,
+        "bp_systolic": 120,
+        "bp_diastolic": 75,
+        "fundal_height_cm": 12,
         "fetal_heart_rate": 150,
-        "presentation": "cephalic",
-        "notes": "Test visit",
+        "fetal_presentation": "cephalic",
+        "clinical_notes": "Test visit",
     }
     response = await client.post("/api/v1/mch/anc/visits", json=payload)
     assert response.status_code in (400, 404, 422)
@@ -343,14 +347,15 @@ async def test_add_multiple_anc_visits(client: AsyncClient) -> None:
     visit1_payload: dict[str, Any] = {
         "anc_profile_id": profile["id"],
         "visit_number": 1,
-        "gestational_age_weeks": 12,
-        "weight": 65.0,
-        "blood_pressure_systolic": 120,
-        "blood_pressure_diastolic": 75,
-        "fundal_height": 12,
+        "visit_date": "2026-04-15",
+        "gestation_weeks": 12,
+        "weight_kg": 65.0,
+        "bp_systolic": 120,
+        "bp_diastolic": 75,
+        "fundal_height_cm": 12,
         "fetal_heart_rate": 150,
-        "presentation": "cephalic",
-        "notes": "First visit — normal",
+        "fetal_presentation": "cephalic",
+        "clinical_notes": "First visit - normal",
     }
     resp1 = await client.post("/api/v1/mch/anc/visits", json=visit1_payload)
     assert resp1.status_code == 201
@@ -359,14 +364,15 @@ async def test_add_multiple_anc_visits(client: AsyncClient) -> None:
     visit2_payload: dict[str, Any] = {
         "anc_profile_id": profile["id"],
         "visit_number": 2,
-        "gestational_age_weeks": 20,
-        "weight": 68.0,
-        "blood_pressure_systolic": 118,
-        "blood_pressure_diastolic": 72,
-        "fundal_height": 20,
+        "visit_date": "2026-06-15",
+        "gestation_weeks": 20,
+        "weight_kg": 68.0,
+        "bp_systolic": 118,
+        "bp_diastolic": 72,
+        "fundal_height_cm": 20,
         "fetal_heart_rate": 145,
-        "presentation": "cephalic",
-        "notes": "Second visit — good progress",
+        "fetal_presentation": "cephalic",
+        "clinical_notes": "Second visit - good progress",
     }
     resp2 = await client.post("/api/v1/mch/anc/visits", json=visit2_payload)
     assert resp2.status_code == 201
@@ -394,12 +400,12 @@ async def test_record_delivery(client: AsyncClient) -> None:
     payload: dict[str, Any] = {
         "anc_profile_id": profile["id"],
         "delivery_date": "2026-10-20T14:30:00",
-        "delivery_type": "normal_vaginal",
-        "baby_gender": "female",
-        "baby_weight": 3200,
+        "mode_of_delivery": "svd",
+        "baby_outcome": "live_birth",
+        "baby_sex": "female",
+        "birth_weight_grams": 3200,
         "apgar_1min": 8,
         "apgar_5min": 9,
-        "outcome": "live_birth",
     }
     response = await client.post("/api/v1/mch/delivery", json=payload)
 
@@ -407,12 +413,12 @@ async def test_record_delivery(client: AsyncClient) -> None:
     data: dict[str, Any] = response.json()
     assert "id" in data
     assert data["anc_profile_id"] == profile["id"]
-    assert data["delivery_type"] == "normal_vaginal"
-    assert data["baby_gender"] == "female"
-    assert data["baby_weight"] == 3200
+    assert data["mode_of_delivery"] == "svd"
+    assert data["baby_sex"] == "female"
+    assert data["birth_weight_grams"] == 3200
     assert data["apgar_1min"] == 8
     assert data["apgar_5min"] == 9
-    assert data["outcome"] == "live_birth"
+    assert data["baby_outcome"] == "live_birth"
 
 
 @pytest.mark.asyncio
@@ -422,12 +428,12 @@ async def test_record_delivery_invalid_profile(client: AsyncClient) -> None:
     payload: dict[str, Any] = {
         "anc_profile_id": fake_profile_id,
         "delivery_date": "2026-10-20T14:30:00",
-        "delivery_type": "normal_vaginal",
-        "baby_gender": "male",
-        "baby_weight": 3500,
+        "mode_of_delivery": "svd",
+        "baby_outcome": "live_birth",
+        "baby_sex": "male",
+        "birth_weight_grams": 3500,
         "apgar_1min": 9,
         "apgar_5min": 10,
-        "outcome": "live_birth",
     }
     response = await client.post("/api/v1/mch/delivery", json=payload)
     assert response.status_code in (400, 404, 422)
@@ -437,7 +443,7 @@ async def test_record_delivery_invalid_profile(client: AsyncClient) -> None:
 async def test_record_delivery_missing_required_fields(client: AsyncClient) -> None:
     """Test that recording delivery without required fields returns 422."""
     response = await client.post(
-        "/api/v1/mch/delivery", json={"delivery_type": "normal_vaginal"}
+        "/api/v1/mch/delivery", json={"mode_of_delivery": "svd"}
     )
     assert response.status_code == 422
 
@@ -493,10 +499,11 @@ async def test_create_child_record(client: AsyncClient) -> None:
 
     payload: dict[str, Any] = {
         "patient_id": child_patient["id"],
-        "mother_id": mother["id"],
-        "birth_weight": 3200,
-        "birth_length": 50,
-        "head_circumference": 35,
+        "mother_patient_id": mother["id"],
+        "date_of_birth": "2026-10-20",
+        "birth_weight_grams": 3200,
+        "sex": "female",
+        "place_of_birth": "facility",
     }
     response = await client.post("/api/v1/mch/children", json=payload)
 
@@ -504,10 +511,9 @@ async def test_create_child_record(client: AsyncClient) -> None:
     data: dict[str, Any] = response.json()
     assert "id" in data
     assert data["patient_id"] == child_patient["id"]
-    assert data["mother_id"] == mother["id"]
-    assert data["birth_weight"] == 3200
-    assert data["birth_length"] == 50
-    assert data["head_circumference"] == 35
+    assert data["mother_patient_id"] == mother["id"]
+    assert data["birth_weight_grams"] == 3200
+    assert data["sex"] == "female"
 
 
 @pytest.mark.asyncio
@@ -537,7 +543,7 @@ async def test_create_child_record_appears_in_list(client: AsyncClient) -> None:
 async def test_create_child_record_missing_required_fields(client: AsyncClient) -> None:
     """Test that creating a child record without required fields returns 422."""
     response = await client.post(
-        "/api/v1/mch/children", json={"birth_weight": 3000}
+        "/api/v1/mch/children", json={"birth_weight_grams": 3000}
     )
     assert response.status_code == 422
 
@@ -562,6 +568,7 @@ async def test_record_immunization(client: AsyncClient) -> None:
 
     payload: dict[str, Any] = {
         "child_record_id": child_record["id"],
+        "vaccine_code": "BCG",
         "vaccine_name": "BCG",
         "dose_number": 1,
         "date_given": "2026-10-25",
@@ -613,6 +620,7 @@ async def test_record_multiple_immunizations(client: AsyncClient) -> None:
     # BCG
     bcg_payload: dict[str, Any] = {
         "child_record_id": child_id,
+        "vaccine_code": "BCG",
         "vaccine_name": "BCG",
         "dose_number": 1,
         "date_given": "2026-10-25",
@@ -627,8 +635,9 @@ async def test_record_multiple_immunizations(client: AsyncClient) -> None:
     # OPV 0
     opv_payload: dict[str, Any] = {
         "child_record_id": child_id,
+        "vaccine_code": "OPV",
         "vaccine_name": "OPV",
-        "dose_number": 0,
+        "dose_number": 1,
         "date_given": "2026-10-25",
         "site": "oral",
         "batch_number": "OPV-2026-001",
@@ -685,6 +694,7 @@ async def test_list_immunizations_after_recording(client: AsyncClient) -> None:
     # Record BCG
     imm_payload: dict[str, Any] = {
         "child_record_id": child_id,
+        "vaccine_code": "BCG",
         "vaccine_name": "BCG",
         "dose_number": 1,
         "date_given": "2026-10-25",
@@ -726,7 +736,7 @@ async def test_full_mch_workflow(client: AsyncClient) -> None:
 
     # 4. Record delivery
     delivery = await record_delivery(client, profile_id)
-    assert delivery["outcome"] == "live_birth"
+    assert delivery["baby_outcome"] == "live_birth"
 
     # 5. Register baby as patient
     baby_payload: dict[str, Any] = {
@@ -747,6 +757,7 @@ async def test_full_mch_workflow(client: AsyncClient) -> None:
     # 7. Record immunization
     imm_payload: dict[str, Any] = {
         "child_record_id": child_id,
+        "vaccine_code": "BCG",
         "vaccine_name": "BCG",
         "dose_number": 1,
         "date_given": "2026-10-25",

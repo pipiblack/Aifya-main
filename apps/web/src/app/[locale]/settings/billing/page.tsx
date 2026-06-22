@@ -93,8 +93,8 @@ export default function BillingPage() {
         { text: t("features.ipd"), included: true },
         { text: t("features.pharmacy"), included: true },
         { text: t("features.laboratory"), included: true },
-        { text: t("features.ai"), included: false },
-        { text: t("features.trials"), included: false },
+        { text: t("features.ai"), included: true },
+        { text: t("features.trials"), included: true },
       ],
     },
     {

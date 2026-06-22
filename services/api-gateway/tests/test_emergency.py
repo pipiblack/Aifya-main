@@ -52,9 +52,9 @@ async def test_get_emergency_summary(client: AsyncClient) -> None:
     assert response.status_code == 200
     data: dict[str, object] = response.json()
     assert "total_today" in data
-    assert "waiting" in data
-    assert "in_progress" in data
-    assert "discharged" in data
+    assert "awaiting_triage" in data
+    assert "in_treatment" in data
+    assert "discharged_today" in data
 
 
 # ── Queue ────────────────────────────────────────────────────────────────────
@@ -83,8 +83,8 @@ async def test_register_emergency_visit(client: AsyncClient) -> None:
     assert visit["patient_id"] == patient_id
     assert visit["chief_complaint"] == "Chest pain"
     assert visit["arrival_mode"] == "ambulance"
-    assert visit["presenting_condition"] == "Acute chest pain, diaphoresis"
-    assert visit["status"] == "waiting"
+    assert visit["notes"] is None
+    assert visit["status"] == "arrived"
     assert "created_at" in visit
 
 
@@ -127,9 +127,9 @@ async def test_triage_emergency_visit(client: AsyncClient) -> None:
     visit_id: str = str(visit["id"])
 
     triage_payload: dict[str, object] = {
-        "triage_category": "orange",
+        "triage_category": "urgent",
         "triage_score": 3,
-        "vital_signs": {
+        "triage_vitals": {
             "bp": "140/90",
             "hr": 110,
             "rr": 22,
@@ -144,7 +144,8 @@ async def test_triage_emergency_visit(client: AsyncClient) -> None:
     assert response.status_code == 200
     data: dict[str, object] = response.json()
     assert data["id"] == visit_id
-    assert data["triage_category"] == "orange"
+    assert data["triage_category"] == "urgent"
+    assert data["triage_color"] == "orange"
     assert data["triage_score"] == 3
     assert data["status"] == "triaged"
 
@@ -170,7 +171,7 @@ async def test_assign_doctor_to_emergency_visit(client: AsyncClient) -> None:
     data: dict[str, object] = response.json()
     assert data["id"] == visit_id
     assert data["assigned_doctor_id"] == "00000000-0000-0000-0000-000000000002"
-    assert data["status"] == "in_progress"
+    assert data["status"] == "in_treatment"
 
 
 # ── Disposition ──────────────────────────────────────────────────────────────
@@ -184,7 +185,7 @@ async def test_record_disposition(client: AsyncClient) -> None:
     visit_id: str = str(visit["id"])
 
     disposition_payload: dict[str, str] = {
-        "disposition": "admitted",
+        "disposition": "admit",
         "disposition_notes": "Admit to cardiology ward",
     }
     response = await client.post(
@@ -194,9 +195,9 @@ async def test_record_disposition(client: AsyncClient) -> None:
     assert response.status_code == 200
     data: dict[str, object] = response.json()
     assert data["id"] == visit_id
-    assert data["disposition"] == "admitted"
+    assert data["disposition"] == "admit"
     assert data["disposition_notes"] == "Admit to cardiology ward"
-    assert data["status"] == "disposed"
+    assert data["status"] == "admitted"
 
 
 # ── Queue After Registration ────────────────────────────────────────────────

@@ -44,12 +44,13 @@ async def _create_ward(client: AsyncClient) -> dict:
     """Create a test ward and return the response data.
 
     @param client: Async HTTP test client
-    @returns Ward response dict with id, name, ward_type, capacity
+    @returns Ward response dict with id, name, ward_type, total_beds
     """
     response = await client.post("/api/v1/ipd/wards", json={
         "name": "General Ward A",
+        "code": "GWA",
         "ward_type": "general",
-        "capacity": 20,
+        "total_beds": 20,
     })
     assert response.status_code == 201
     return response.json()
@@ -85,9 +86,10 @@ async def _create_admission(client: AsyncClient) -> dict:
     response = await client.post("/api/v1/ipd/admissions", json={
         "patient_id": patient_id,
         "encounter_id": encounter_id,
+        "ward_id": ward["id"],
         "bed_id": bed["id"],
-        "admitting_diagnosis": "Pneumonia",
-        "admission_type": "emergency",
+        "admission_diagnosis": "Pneumonia",
+        "admitted_from": "emergency",
     })
     assert response.status_code == 201
     data = response.json()
@@ -132,14 +134,15 @@ async def test_create_ward(client: AsyncClient) -> None:
     """Test creating a new ward with valid data."""
     response = await client.post("/api/v1/ipd/wards", json={
         "name": "ICU Ward",
+        "code": "ICU",
         "ward_type": "icu",
-        "capacity": 10,
+        "total_beds": 10,
     })
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "ICU Ward"
     assert data["ward_type"] == "icu"
-    assert data["capacity"] == 10
+    assert data["total_beds"] == 10
     assert "id" in data
 
 
@@ -148,8 +151,9 @@ async def test_create_ward_general(client: AsyncClient) -> None:
     """Test creating a general ward."""
     response = await client.post("/api/v1/ipd/wards", json={
         "name": "General Ward B",
+        "code": "GWB",
         "ward_type": "general",
-        "capacity": 30,
+        "total_beds": 30,
     })
     assert response.status_code == 201
     data = response.json()
@@ -161,8 +165,9 @@ async def test_create_ward_maternity(client: AsyncClient) -> None:
     """Test creating a maternity ward."""
     response = await client.post("/api/v1/ipd/wards", json={
         "name": "Maternity Wing",
+        "code": "MAT",
         "ward_type": "maternity",
-        "capacity": 15,
+        "total_beds": 15,
     })
     assert response.status_code == 201
     assert response.json()["ward_type"] == "maternity"
@@ -170,26 +175,28 @@ async def test_create_ward_maternity(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_create_ward_pediatric(client: AsyncClient) -> None:
-    """Test creating a pediatric ward."""
+    """Test creating a paediatric ward."""
     response = await client.post("/api/v1/ipd/wards", json={
         "name": "Pediatric Ward",
-        "ward_type": "pediatric",
-        "capacity": 12,
+        "code": "PED",
+        "ward_type": "paediatric",
+        "total_beds": 12,
     })
     assert response.status_code == 201
-    assert response.json()["ward_type"] == "pediatric"
+    assert response.json()["ward_type"] == "paediatric"
 
 
 @pytest.mark.asyncio
-async def test_create_ward_private(client: AsyncClient) -> None:
-    """Test creating a private ward."""
+async def test_create_ward_surgical(client: AsyncClient) -> None:
+    """Test creating a surgical ward."""
     response = await client.post("/api/v1/ipd/wards", json={
-        "name": "Private Rooms",
-        "ward_type": "private",
-        "capacity": 5,
+        "name": "Surgical Ward",
+        "code": "SURG",
+        "ward_type": "surgical",
+        "total_beds": 5,
     })
     assert response.status_code == 201
-    assert response.json()["ward_type"] == "private"
+    assert response.json()["ward_type"] == "surgical"
 
 
 @pytest.mark.asyncio
@@ -197,8 +204,9 @@ async def test_create_ward_invalid_type(client: AsyncClient) -> None:
     """Test validation rejects invalid ward type."""
     response = await client.post("/api/v1/ipd/wards", json={
         "name": "Bad Ward",
+        "code": "BAD",
         "ward_type": "invalid_type",
-        "capacity": 10,
+        "total_beds": 10,
     })
     assert response.status_code == 422
 
@@ -208,7 +216,7 @@ async def test_create_ward_missing_name(client: AsyncClient) -> None:
     """Test validation rejects missing required fields."""
     response = await client.post("/api/v1/ipd/wards", json={
         "ward_type": "general",
-        "capacity": 10,
+        "total_beds": 10,
     })
     assert response.status_code == 422
 
@@ -218,13 +226,15 @@ async def test_list_wards_after_creation(client: AsyncClient) -> None:
     """Test listing wards returns created wards."""
     await client.post("/api/v1/ipd/wards", json={
         "name": "Ward 1",
+        "code": "W1",
         "ward_type": "general",
-        "capacity": 20,
+        "total_beds": 20,
     })
     await client.post("/api/v1/ipd/wards", json={
         "name": "Ward 2",
+        "code": "W2",
         "ward_type": "icu",
-        "capacity": 8,
+        "total_beds": 8,
     })
 
     response = await client.get("/api/v1/ipd/wards")
@@ -264,17 +274,17 @@ async def test_create_bed_standard(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_bed_electric(client: AsyncClient) -> None:
-    """Test creating an electric bed."""
+async def test_create_bed_hdu(client: AsyncClient) -> None:
+    """Test creating an HDU bed."""
     ward = await _create_ward(client)
 
     response = await client.post("/api/v1/ipd/beds", json={
         "ward_id": ward["id"],
         "bed_number": "B-002",
-        "bed_type": "electric",
+        "bed_type": "hdu",
     })
     assert response.status_code == 201
-    assert response.json()["bed_type"] == "electric"
+    assert response.json()["bed_type"] == "hdu"
 
 
 @pytest.mark.asyncio
@@ -326,7 +336,7 @@ async def test_list_beds_after_creation(client: AsyncClient) -> None:
     await client.post("/api/v1/ipd/beds", json={
         "ward_id": ward["id"],
         "bed_number": "C-002",
-        "bed_type": "electric",
+        "bed_type": "hdu",
     })
 
     response = await client.get("/api/v1/ipd/beds")
@@ -341,8 +351,9 @@ async def test_list_beds_filter_by_ward(client: AsyncClient) -> None:
     ward1 = await _create_ward(client)
     ward2_resp = await client.post("/api/v1/ipd/wards", json={
         "name": "Ward 2",
+        "code": "W2",
         "ward_type": "icu",
-        "capacity": 5,
+        "total_beds": 5,
     })
     ward2 = ward2_resp.json()
 
@@ -388,17 +399,18 @@ async def test_admit_patient(client: AsyncClient) -> None:
     response = await client.post("/api/v1/ipd/admissions", json={
         "patient_id": patient_id,
         "encounter_id": encounter_id,
+        "ward_id": ward["id"],
         "bed_id": bed["id"],
-        "admitting_diagnosis": "Pneumonia",
-        "admission_type": "emergency",
+        "admission_diagnosis": "Pneumonia",
+        "admitted_from": "emergency",
     })
     assert response.status_code == 201
     data = response.json()
     assert data["patient_id"] == patient_id
     assert data["encounter_id"] == encounter_id
     assert data["bed_id"] == bed["id"]
-    assert data["admitting_diagnosis"] == "Pneumonia"
-    assert data["admission_type"] == "emergency"
+    assert data["admission_diagnosis"] == "Pneumonia"
+    assert data["admitted_from"] == "emergency"
     assert "id" in data
     assert "admitted_at" in data
 
@@ -407,7 +419,7 @@ async def test_admit_patient(client: AsyncClient) -> None:
 async def test_admit_patient_missing_fields(client: AsyncClient) -> None:
     """Test validation rejects admission with missing required fields."""
     response = await client.post("/api/v1/ipd/admissions", json={
-        "admitting_diagnosis": "Pneumonia",
+        "admission_diagnosis": "Pneumonia",
     })
     assert response.status_code == 422
 
@@ -425,9 +437,10 @@ async def test_admit_patient_with_idempotency_key(client: AsyncClient) -> None:
         json={
             "patient_id": patient_id,
             "encounter_id": encounter_id,
+            "ward_id": ward["id"],
             "bed_id": bed["id"],
-            "admitting_diagnosis": "Malaria",
-            "admission_type": "emergency",
+            "admission_diagnosis": "Malaria",
+            "admitted_from": "emergency",
         },
         headers={"X-Idempotency-Key": "ipd-admit-001"},
     )
@@ -445,7 +458,7 @@ async def test_get_admission_detail(client: AsyncClient) -> None:
     data = response.json()
     assert data["id"] == admission_id
     assert data["patient_id"] == result["patient_id"]
-    assert data["admitting_diagnosis"] == "Pneumonia"
+    assert data["admission_diagnosis"] == "Pneumonia"
 
 
 @pytest.mark.asyncio
@@ -478,12 +491,12 @@ async def test_add_nursing_note_assessment(client: AsyncClient) -> None:
     admission_id = result["admission"]["id"]
 
     response = await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "assessment",
+        "note_type": "observation",
         "content": "Patient alert and oriented. Temp 38.2C. Lungs: bilateral crackles.",
     })
     assert response.status_code == 201
     data = response.json()
-    assert data["note_type"] == "assessment"
+    assert data["note_type"] == "observation"
     assert "bilateral crackles" in data["content"]
     assert "id" in data
 
@@ -495,11 +508,11 @@ async def test_add_nursing_note_intervention(client: AsyncClient) -> None:
     admission_id = result["admission"]["id"]
 
     response = await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "intervention",
+        "note_type": "medication",
         "content": "Administered IV ceftriaxone 2g as prescribed. Patient tolerated well.",
     })
     assert response.status_code == 201
-    assert response.json()["note_type"] == "intervention"
+    assert response.json()["note_type"] == "medication"
 
 
 @pytest.mark.asyncio
@@ -509,11 +522,11 @@ async def test_add_nursing_note_progress(client: AsyncClient) -> None:
     admission_id = result["admission"]["id"]
 
     response = await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "progress",
+        "note_type": "procedure",
         "content": "Fever subsiding. Appetite improving. SpO2 96% on room air.",
     })
     assert response.status_code == 201
-    assert response.json()["note_type"] == "progress"
+    assert response.json()["note_type"] == "procedure"
 
 
 @pytest.mark.asyncio
@@ -536,7 +549,7 @@ async def test_add_nursing_note_missing_content(client: AsyncClient) -> None:
     admission_id = result["admission"]["id"]
 
     response = await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "assessment",
+        "note_type": "observation",
     })
     assert response.status_code == 422
 
@@ -560,15 +573,15 @@ async def test_list_nursing_notes_after_creation(client: AsyncClient) -> None:
     admission_id = result["admission"]["id"]
 
     await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "assessment",
+        "note_type": "observation",
         "content": "Initial assessment: vitals stable.",
     })
     await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "intervention",
+        "note_type": "medication",
         "content": "IV fluids started.",
     })
     await client.post(f"/api/v1/ipd/admissions/{admission_id}/notes", json={
-        "note_type": "progress",
+        "note_type": "procedure",
         "content": "Patient resting comfortably.",
     })
 
@@ -590,9 +603,9 @@ async def test_discharge_patient_normal(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/ipd/admissions/{admission_id}/discharge",
         json={
-            "discharge_type": "normal",
+            "discharge_type": "recovered",
             "discharge_summary": "Patient recovered from pneumonia. Completed 5-day IV antibiotics.",
-            "follow_up_instructions": "Review in OPD after 7 days. Continue oral amoxicillin 500mg TDS x 5 days.",
+            "follow_up_plan": "Review in OPD after 7 days. Continue oral amoxicillin 500mg TDS x 5 days.",
         },
     )
     assert response.status_code == 200
@@ -610,9 +623,9 @@ async def test_discharge_patient_lama(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/ipd/admissions/{admission_id}/discharge",
         json={
-            "discharge_type": "lama",
+            "discharge_type": "dama",
             "discharge_summary": "Patient insisted on leaving. Risks explained and documented.",
-            "follow_up_instructions": "Urgent: Return immediately if symptoms worsen.",
+            "follow_up_plan": "Urgent: Return immediately if symptoms worsen.",
         },
     )
     assert response.status_code == 200
@@ -627,9 +640,9 @@ async def test_discharge_patient_death(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/ipd/admissions/{admission_id}/discharge",
         json={
-            "discharge_type": "death",
+            "discharge_type": "deceased",
             "discharge_summary": "Patient succumbed to complications. Time of death 14:30.",
-            "follow_up_instructions": "N/A",
+            "follow_up_plan": "N/A",
         },
     )
     assert response.status_code == 200
@@ -646,7 +659,7 @@ async def test_discharge_invalid_type(client: AsyncClient) -> None:
         json={
             "discharge_type": "invalid",
             "discharge_summary": "Test",
-            "follow_up_instructions": "Test",
+            "follow_up_plan": "Test",
         },
     )
     assert response.status_code == 422
@@ -659,9 +672,9 @@ async def test_discharge_not_found(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/ipd/admissions/{fake_id}/discharge",
         json={
-            "discharge_type": "normal",
+            "discharge_type": "recovered",
             "discharge_summary": "Test discharge",
-            "follow_up_instructions": "Follow up in 7 days",
+            "follow_up_plan": "Follow up in 7 days",
         },
     )
     assert response.status_code == 404
@@ -676,7 +689,7 @@ async def test_discharge_missing_summary(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/ipd/admissions/{admission_id}/discharge",
         json={
-            "discharge_type": "normal",
+            "discharge_summary": "Test",
         },
     )
     assert response.status_code == 422

@@ -32,6 +32,8 @@
     ],
     "skipLibCheck": true,
     "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noEmit": true,
     "incremental": true,
     "esModuleInterop": true,

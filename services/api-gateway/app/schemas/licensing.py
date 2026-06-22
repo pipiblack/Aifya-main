@@ -23,12 +23,13 @@ COMMUNITY_MODULES = [
     "billing",
 ]
 
-# Professional adds clinical depth
-PROFESSIONAL_MODULES = COMMUNITY_MODULES + [
+# All operational modules available to paying local/professional facilities.
+ALL_OPERATIONAL_MODULES = COMMUNITY_MODULES + [
     "ipd",
     "pharmacy",
     "laboratory",
     "radiology",
+    "imaging",
     "appointments",
     "mch",
     "dental",
@@ -39,27 +40,36 @@ PROFESSIONAL_MODULES = COMMUNITY_MODULES + [
     "inventory",
     "hr",
     "reports",
-]
-
-# Enterprise adds AI + analytics + integrations
-ENTERPRISE_MODULES = PROFESSIONAL_MODULES + [
+    "finance",
+    "analytics",
+    "performance",
+    "communications",
+    "fhir",
+    "fhir_api",
+    "knowledge",
+    "clinical_trials",
+    "cds",
+    "agents",
+    "help",
+    "help_bot",
+    "federated",
     "scribe_ai",
     "claimflow_ai",
-    "clinical_trials",
-    "analytics",
     "dhis2_sync",
-    "fhir_api",
     "mpesa_billing",
     "api_access",
-]
-
-# Government = Enterprise + county-level features
-GOVERNMENT_MODULES = ENTERPRISE_MODULES + [
     "multi_facility",
     "county_dashboard",
     "aggregate_reporting",
     "facility_comparison",
 ]
+
+# Professional opens every operational module. Enterprise and Government keep
+# higher limits/support flags, not extra app navigation locks.
+PROFESSIONAL_MODULES = ALL_OPERATIONAL_MODULES
+ENTERPRISE_MODULES = ALL_OPERATIONAL_MODULES
+
+GOVERNMENT_MODULES = ALL_OPERATIONAL_MODULES
 
 TIER_ENTITLEMENTS: dict[str, dict] = {
     "community": {
@@ -87,7 +97,7 @@ TIER_ENTITLEMENTS: dict[str, dict] = {
         "max_facilities": 1,
         "enabled_modules": PROFESSIONAL_MODULES,
         "feature_flags": {
-            "ai_features": False,
+            "ai_features": True,
             "custom_reports": True,
             "api_access": False,
             "data_export": True,

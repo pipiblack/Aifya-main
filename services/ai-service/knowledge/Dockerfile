@@ -1,16 +1,19 @@
 FROM python:3.12-slim
 
+ENV PIP_DEFAULT_TIMEOUT=300 \
+    PIP_RETRIES=10
+
 WORKDIR /app
 
 # System deps for PyMuPDF and document parsing
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Retries=5 update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout 300 --retries 10 -r requirements.txt
 
 COPY . .
 

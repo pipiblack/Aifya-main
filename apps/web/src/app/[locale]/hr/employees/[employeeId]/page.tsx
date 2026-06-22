@@ -26,6 +26,7 @@ import {
   useEmployeePayslips,
   useLeaveRequests,
   useLeaveTypes,
+  type SalaryChange,
 } from "@/hooks/usePayroll";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { TabGroup } from "@/components/ui/TabGroup";
@@ -53,7 +54,7 @@ const salarySchema = z.object({
   notes: z.string().optional(),
 });
 
-type SalaryForm = z.infer<typeof salarySchema>;
+type SalaryForm = SalaryChange;
 
 type Tab = "profile" | "salary" | "payslips" | "leave" | "performance";
 

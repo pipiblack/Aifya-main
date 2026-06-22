@@ -6,8 +6,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
 from app.auth.keycloak import decode_token
+from app.config import settings
 
 security = HTTPBearer(auto_error=False)
+LOCAL_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
+LOCAL_FACILITY_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
 @dataclass(frozen=True)
@@ -22,6 +25,17 @@ class CurrentUser:
     email: str
     roles: list[str]
     name: str
+
+
+def _local_demo_user() -> CurrentUser:
+    """Return a stable local user for Docker pre-deploy runs."""
+    return CurrentUser(
+        user_id=LOCAL_USER_ID,
+        facility_id=LOCAL_FACILITY_ID,
+        email="admin@aifya.local",
+        roles=["system_admin", "facility_admin", "doctor", "nurse"],
+        name="Aifya Local Admin",
+    )
 
 
 async def get_current_user(
@@ -46,6 +60,8 @@ async def get_current_user(
         token = request.cookies.get("access_token")
 
     if token is None:
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication token",
@@ -55,6 +71,8 @@ async def get_current_user(
     try:
         payload = await decode_token(token)
     except JWTError:
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
@@ -64,6 +82,8 @@ async def get_current_user(
     # Extract Keycloak claims
     user_id_str = payload.get("sub")
     if not user_id_str or not isinstance(user_id_str, str):
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing subject claim",
@@ -72,6 +92,8 @@ async def get_current_user(
     # facility_id is a custom claim added to Keycloak tokens via protocol mapper
     facility_id_str = payload.get("facility_id")
     if not facility_id_str or not isinstance(facility_id_str, str):
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing facility_id claim",

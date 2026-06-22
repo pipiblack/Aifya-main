@@ -20,6 +20,7 @@ import {
   useUpdateAccount,
   useDeleteAccount,
   type Account,
+  type AccountCreate,
   type AccountType,
   type CashflowCategory,
 } from "@/hooks/useFinance";
@@ -38,7 +39,7 @@ const accountSchema = z.object({
   parent_id: z.string().nullable().optional(),
 });
 
-type AccountForm = z.infer<typeof accountSchema>;
+type AccountForm = AccountCreate;
 
 const TYPE_VARIANT: Record<AccountType, "info" | "purple" | "warning" | "success" | "error"> = {
   asset: "info",

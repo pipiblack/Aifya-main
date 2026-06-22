@@ -12,6 +12,13 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 
+def _auth_headers() -> dict[str, str]:
+    """Return OpenAI-compatible auth headers when an API key is configured."""
+    if not settings.openai_api_key:
+        return {}
+    return {"Authorization": f"Bearer {settings.openai_api_key}"}
+
+
 _SYSTEM_PROMPT_EN = """You are an institutional knowledge assistant for a hospital using the Aifya Health Platform.
 Your role is to answer questions based ONLY on the provided document excerpts.
 
@@ -115,6 +122,7 @@ Provide a clear, well-structured answer. Cite sources using [Source N] notation.
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 f"{settings.vllm_base_url}/chat/completions",
+                headers=_auth_headers(),
                 json={
                     "model": settings.generation_model,
                     "messages": messages,
@@ -169,8 +177,11 @@ async def check_health() -> str:
     @returns Status string: 'connected' or 'disconnected'
     """
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(f"{settings.vllm_base_url}/models")
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            resp = await client.get(
+                f"{settings.vllm_base_url}/models",
+                headers=_auth_headers(),
+            )
             if resp.status_code == 200:
                 return "connected"
             return "degraded"

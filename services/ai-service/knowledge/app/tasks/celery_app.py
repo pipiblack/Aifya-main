@@ -30,3 +30,6 @@ celery_app.conf.update(
         "app.tasks.ingest.*": {"queue": "knowledge"},
     },
 )
+
+# Import task modules so workers started with `-A app.tasks.celery_app` register them.
+import app.tasks.ingest  # noqa: E402,F401

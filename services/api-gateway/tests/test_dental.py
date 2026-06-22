@@ -3,6 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+DENTIST_ID = "00000000-0000-0000-0000-000000000002"
+
 
 # -- Helpers ------------------------------------------------------------------
 
@@ -38,8 +40,14 @@ async def _create_visit(client: AsyncClient, patient_id: str) -> dict[str, objec
         "/api/v1/dental/visits",
         json={
             "patient_id": patient_id,
-            "tooth_numbers": [11, 12],
-            "procedures": ["examination", "cleaning"],
+            "dentist_id": DENTIST_ID,
+            "chief_complaint": "Routine checkup",
+            "procedures": {
+                "items": [
+                    {"tooth": 11, "procedure_type": "examination"},
+                    {"tooth": 12, "procedure_type": "cleaning"},
+                ],
+            },
             "notes": "Routine dental checkup",
         },
     )
@@ -125,8 +133,14 @@ async def test_create_visit(client: AsyncClient) -> None:
         "/api/v1/dental/visits",
         json={
             "patient_id": patient_id,
-            "tooth_numbers": [11, 12],
-            "procedures": ["examination", "cleaning"],
+            "dentist_id": DENTIST_ID,
+            "chief_complaint": "Routine checkup",
+            "procedures": {
+                "items": [
+                    {"tooth": 11, "procedure_type": "examination"},
+                    {"tooth": 12, "procedure_type": "cleaning"},
+                ],
+            },
             "notes": "Routine dental checkup",
         },
     )
@@ -134,8 +148,13 @@ async def test_create_visit(client: AsyncClient) -> None:
     assert response.status_code == 201
     data: dict[str, object] = response.json()
     assert data["patient_id"] == patient_id
-    assert data["tooth_numbers"] == [11, 12]
-    assert data["procedures"] == ["examination", "cleaning"]
+    assert data["dentist_id"] == DENTIST_ID
+    assert data["procedures"] == {
+        "items": [
+            {"tooth": 11, "procedure_type": "examination"},
+            {"tooth": 12, "procedure_type": "cleaning"},
+        ],
+    }
     assert data["notes"] == "Routine dental checkup"
     assert "id" in data
     assert "created_at" in data
@@ -196,14 +215,17 @@ async def test_create_treatment_plan(client: AsyncClient) -> None:
         "/api/v1/dental/treatment-plans",
         json={
             "patient_id": patient_id,
-            "teeth": [11],
-            "planned_procedures": [
-                {
-                    "procedure": "filling",
-                    "tooth": 11,
-                    "estimated_cost": 250000,
-                },
-            ],
+            "dentist_id": DENTIST_ID,
+            "plan_items": {
+                "items": [
+                    {
+                        "procedure_type": "filling",
+                        "tooth": 11,
+                        "estimated_cost": 250000,
+                    },
+                ],
+            },
+            "total_estimated_cost": 250000,
             "notes": "Composite filling recommended",
         },
     )
@@ -211,6 +233,7 @@ async def test_create_treatment_plan(client: AsyncClient) -> None:
     assert response.status_code == 201
     data: dict[str, object] = response.json()
     assert data["patient_id"] == patient_id
+    assert data["dentist_id"] == DENTIST_ID
     assert data["notes"] == "Composite filling recommended"
     assert "id" in data
     assert "created_at" in data

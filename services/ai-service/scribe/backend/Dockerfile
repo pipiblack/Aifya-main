@@ -1,9 +1,12 @@
 FROM python:3.12-slim AS builder
 
+ENV PIP_DEFAULT_TIMEOUT=300 \
+    PIP_RETRIES=10
+
 WORKDIR /app
 
 # Install system dependencies for WeasyPrint and audio processing
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Retries=5 update && apt-get install -y --no-install-recommends \
   build-essential \
   python3-dev \
   python3-cffi \
@@ -19,15 +22,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies (cached layer)
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN pip install --no-cache-dir --timeout 300 --retries 10 --prefix=/install -r requirements.txt
 
 # Production image
 FROM python:3.12-slim
 
+ENV PIP_DEFAULT_TIMEOUT=300 \
+    PIP_RETRIES=10
+
 WORKDIR /app
 
 # Install runtime-only system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::Retries=5 update && apt-get install -y --no-install-recommends \
   libcairo2 \
   libpango-1.0-0 \
   libpangocairo-1.0-0 \

@@ -1,6 +1,7 @@
 import json
-from typing import List, Any
-from pydantic import model_validator, field_validator
+from typing import Any, cast
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 # Sentinel values that must be overridden via environment / .env
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     kafka_bootstrap_servers: str = "localhost:9092"
 
     # CORS Configuration
-    cors_origins: List[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000"]
 
     # Auth (Keycloak)
     keycloak_url: str = "http://localhost:8080"
@@ -58,14 +59,17 @@ class Settings(BaseSettings):
     # App
     debug: bool = False
     facility_timezone: str = "Africa/Nairobi"
+    default_license_tier: str = "professional"
+    local_auth_bypass: bool = False
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: Any) -> List[str]:
+    def parse_cors_origins(cls, v: Any) -> list[str]:
         """
-        Safely parse CORS origins from a raw string, comma-separated list, or a JSON array.
+        Safely parse CORS origins from a raw string, comma-separated list,
+        or a JSON array.
         """
         if isinstance(v, (list, set, tuple)):
             return [str(item) for item in v]
@@ -86,7 +90,21 @@ class Settings(BaseSettings):
             # 2. Fallback to parsing a standard comma-separated string
             return [item.strip() for item in v.split(",") if item.strip()]
             
-        return v
+        return cast("list[str]", v)
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug(cls, v: Any) -> bool:
+        """Accept boolean-like deployment labels from shared .env files."""
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            value = v.strip().lower()
+            if value in {"1", "true", "yes", "on", "debug", "dev", "development"}:
+                return True
+            if value in {"0", "false", "no", "off", "release", "prod", "production"}:
+                return False
+        return cast("bool", v)
 
     @property
     def mpesa_base_url(self) -> str:
@@ -106,7 +124,8 @@ class Settings(BaseSettings):
             if self.secret_key in _INSECURE_DEFAULTS:
                 raise ValueError(
                     "SECRET_KEY must be set to a secure random value. "
-                    "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                    "Generate one with: "
+                    'python -c "import secrets; print(secrets.token_hex(32))"'
                 )
             if self.database_url in _INSECURE_DEFAULTS:
                 raise ValueError(

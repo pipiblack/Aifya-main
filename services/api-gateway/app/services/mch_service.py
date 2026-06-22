@@ -61,6 +61,16 @@ class MCHService:
         seq = (count_result.scalar() or 0) + 1
         anc_number = f"ANC-{date_part}-{seq:04d}"
 
+        patient_result = await self.db.execute(
+            select(Patient.id).where(
+                Patient.id == data.patient_id,
+                Patient.facility_id == facility_id,
+                Patient.is_deleted == False,  # noqa: E712
+            )
+        )
+        if patient_result.scalar_one_or_none() is None:
+            raise ValueError("Patient not found")
+
         # Calculate EDD from LMP if not provided (Naegele's rule: +280 days)
         edd = data.expected_delivery_date
         gestation_at_first: int | None = None

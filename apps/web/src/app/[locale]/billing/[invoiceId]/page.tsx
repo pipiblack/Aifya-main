@@ -25,6 +25,7 @@ import {
 } from "@/hooks/useBilling";
 import { formatKES, formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import type { PaymentCreate } from "@aifya/shared";
 
 const paymentSchema = z.object({
   amount_cents: z.coerce.number().min(1, "Amount must be at least 1"),
@@ -34,7 +35,7 @@ const paymentSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
-type PaymentFormData = z.infer<typeof paymentSchema>;
+type PaymentFormData = PaymentCreate;
 
 /** Status badge styling. */
 const STATUS_STYLES: Record<string, string> = {

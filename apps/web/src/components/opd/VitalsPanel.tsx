@@ -19,7 +19,7 @@ import { useEvaluateVitals } from "@/hooks/useCDS";
 import { CDSAlertBanner } from "@/components/opd/CDSAlertBanner";
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import type { CDSAlert } from "@aifya/shared";
+import type { CDSAlert, VitalSignCreate } from "@aifya/shared";
 
 const vitalsSchema = z.object({
   systolic_bp: z.coerce.number().min(40).max(300).nullable().optional(),
@@ -41,7 +41,7 @@ const vitalsSchema = z.object({
   gcs_motor: z.coerce.number().min(1).max(6).nullable().optional(),
 });
 
-type VitalsFormData = z.infer<typeof vitalsSchema>;
+type VitalsFormData = Omit<VitalSignCreate, "encounter_id" | "patient_id">;
 
 interface VitalsPanelProps {
   encounterId: string;
@@ -72,7 +72,7 @@ export function VitalsPanel({ encounterId, patientId }: VitalsPanelProps) {
   });
 
   const onSubmit = (data: VitalsFormData) => {
-    const cleaned: Record<string, unknown> = {
+    const cleaned: VitalSignCreate = {
       encounter_id: encounterId,
       patient_id: patientId,
     };
@@ -82,7 +82,7 @@ export function VitalsPanel({ encounterId, patientId }: VitalsPanelProps) {
       }
     }
 
-    recordVitals.mutate(cleaned as Parameters<typeof recordVitals.mutate>[0], {
+    recordVitals.mutate(cleaned, {
       onSuccess: () => {
         setShowForm(false);
         reset();

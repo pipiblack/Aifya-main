@@ -22,6 +22,7 @@ from app.config import settings
 # Map URL prefixes to module names for tier gating
 ROUTE_MODULE_MAP: dict[str, str] = {
     "/api/v1/patients": "patients",
+    "/api/v1/cds": "cds",
     "/api/v1/encounters": "encounters",
     "/api/v1/pharmacy": "pharmacy",
     "/api/v1/laboratory": "laboratory",
@@ -38,7 +39,19 @@ ROUTE_MODULE_MAP: dict[str, str] = {
     "/api/v1/referrals": "referrals",
     "/api/v1/insurance": "insurance",
     "/api/v1/dental": "dental",
+    "/api/v1/finance": "finance",
+    "/api/v1/payroll": "hr",
+    "/api/v1/analytics": "analytics",
+    "/api/v1/performance": "analytics",
+    "/api/v1/communications": "communications",
+    "/api/v1/fhir": "fhir",
+    "/api/v1/dhis2": "dhis2_sync",
+    "/api/v1/mpesa": "mpesa_billing",
+    "/api/v1/imaging": "imaging",
+    "/api/v1/agents": "agents",
     "/api/v1/trials": "clinical_trials",
+    "/api/v1/federated": "federated",
+    "/api/v1/help": "help",
 }
 
 # Routes that bypass license checks

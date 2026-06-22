@@ -1,4 +1,4 @@
-.PHONY: dev dev-down test lint typecheck db-migrate db-revision clean
+.PHONY: dev dev-down dev-logs demo-seed test lint typecheck db-migrate db-revision db-downgrade clean
 
 # --- Development ---
 dev:
@@ -10,6 +10,9 @@ dev-down:
 dev-logs:
 	docker compose logs -f
 
+demo-seed:
+	docker compose exec api-gateway python scripts/seed_demo.py
+
 # --- Testing ---
 test: test-web test-api test-billing
 
@@ -17,7 +20,7 @@ test-web:
 	cd apps/web && pnpm test
 
 test-api:
-	cd services/api-gateway && python -m pytest -v
+	cd services/api-gateway && python3 -m pytest -v
 
 test-billing:
 	cd services/billing-service && go test ./...
@@ -42,7 +45,7 @@ typecheck-web:
 	cd apps/web && pnpm typecheck
 
 typecheck-api:
-	cd services/api-gateway && mypy app
+	cd services/api-gateway && python3 -m mypy app
 
 # --- Database ---
 db-migrate:

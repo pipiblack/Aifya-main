@@ -29,7 +29,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useAnalyticsDashboard } from "@/hooks/useAnalytics";
 import { cn } from "@/lib/utils";
 // import type { StockoutUrgency, RiskLevel } from "@aifya/shared";
-import type { StockoutUrgency, RiskLevel } from "../../../../../types";
+import type { StockoutUrgency, RiskLevel } from "@aifya/shared";
 
 /**
  * Map stockout urgency to StatusBadge variant.

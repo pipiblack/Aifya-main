@@ -16,6 +16,7 @@ import {
   useFixedAssets,
   useCreateFixedAsset,
   useRunDepreciation,
+  type FixedAssetCreate,
 } from "@/hooks/useFinance";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -32,7 +33,7 @@ const assetSchema = z.object({
   useful_life_months: z.coerce.number().int().min(1),
 });
 
-type AssetForm = z.infer<typeof assetSchema>;
+type AssetForm = FixedAssetCreate;
 
 /**
  * Fixed Assets & Depreciation page.

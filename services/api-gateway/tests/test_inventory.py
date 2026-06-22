@@ -14,9 +14,9 @@ def _item_payload() -> dict[str, object]:
     """
     return {
         "name": "Surgical Gloves (Medium)",
-        "category": "medical_supplies",
-        "unit": "box",
-        "unit_price": 5000,
+        "category": "consumable",
+        "unit_of_measure": "box",
+        "unit_cost": 5000,
         "reorder_level": 10,
         "reorder_quantity": 50,
     }
@@ -84,9 +84,9 @@ async def test_create_item(client: AsyncClient) -> None:
     assert response.status_code == 201
     data: dict[str, object] = response.json()
     assert data["name"] == "Surgical Gloves (Medium)"
-    assert data["category"] == "medical_supplies"
-    assert data["unit"] == "box"
-    assert data["unit_price"] == 5000
+    assert data["category"] == "consumable"
+    assert data["unit_of_measure"] == "box"
+    assert data["unit_cost"] == 5000
     assert data["reorder_level"] == 10
     assert data["reorder_quantity"] == 50
     assert "id" in data
@@ -133,22 +133,22 @@ async def test_create_transaction(client: AsyncClient) -> None:
         "/api/v1/inventory/transactions",
         json={
             "item_id": item_id,
-            "transaction_type": "received",
+            "transaction_type": "receipt",
             "quantity": 100,
             "unit_cost": 5000,
-            "reference": "PO-001",
+            "reason": "PO-001",
         },
     )
 
     assert response.status_code == 201
     data: dict[str, object] = response.json()
     assert data["item_id"] == item_id
-    assert data["transaction_type"] == "received"
+    assert data["transaction_type"] == "receipt"
     assert data["quantity"] == 100
     assert data["unit_cost"] == 5000
-    assert data["reference"] == "PO-001"
+    assert data["reason"] == "PO-001"
     assert "id" in data
-    assert "created_at" in data
+    assert "transaction_date" in data
 
 
 # -- Transactions: list -------------------------------------------------------
@@ -162,10 +162,10 @@ async def test_list_transactions(client: AsyncClient) -> None:
         "/api/v1/inventory/transactions",
         json={
             "item_id": item_id,
-            "transaction_type": "received",
+            "transaction_type": "receipt",
             "quantity": 100,
             "unit_cost": 5000,
-            "reference": "PO-002",
+            "reason": "PO-002",
         },
     )
 

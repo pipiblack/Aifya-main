@@ -10,6 +10,7 @@ import { Link } from "@/i18n/routing";
 import {
   useEmployees,
   useCreateEmployee,
+  type EmployeeCreate,
   type EmploymentType,
 } from "@/hooks/usePayroll";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -50,7 +51,7 @@ const employeeSchema = z.object({
   other_allowances: z.coerce.number().min(0),
 });
 
-type EmployeeForm = z.infer<typeof employeeSchema>;
+type EmployeeForm = EmployeeCreate;
 
 /**
  * Employee Master List — searchable, filterable, with multi-section create modal.

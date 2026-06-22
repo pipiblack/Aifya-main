@@ -28,9 +28,10 @@ async def test_get_hr_summary(client: AsyncClient) -> None:
     assert "on_leave_today" in data
     assert "pending_leave_requests" in data
     assert "expiring_contracts" in data
-    # Fresh DB should have zero counts
-    assert data["total_staff"] == 0
-    assert data["active_staff"] == 0
+    # The shared test fixture seeds the authenticated doctor for FK-backed modules.
+    assert data["total_staff"] == 1
+    assert data["active_staff"] == 1
+    assert data["doctors"] == 1
     assert data["pending_leave_requests"] == 0
 
 
@@ -39,24 +40,26 @@ async def test_get_hr_summary(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_get_staff_directory_empty(client: AsyncClient) -> None:
-    """GET /api/v1/hr/staff returns empty directory on fresh database."""
+    """GET /api/v1/hr/staff returns the baseline seeded test doctor."""
     response = await client.get("/api/v1/hr/staff")
 
     assert response.status_code == 200
     data = response.json()
-    assert data["items"] == []
-    assert data["total"] == 0
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == "00000000-0000-0000-0000-000000000002"
+    assert data["items"][0]["role"] == "doctor"
 
 
 @pytest.mark.asyncio
 async def test_get_staff_directory_with_role_filter(client: AsyncClient) -> None:
-    """GET /api/v1/hr/staff?role=doctor returns empty list when no staff exist."""
+    """GET /api/v1/hr/staff?role=doctor returns the baseline seeded doctor."""
     response = await client.get("/api/v1/hr/staff", params={"role": "doctor"})
 
     assert response.status_code == 200
     data = response.json()
-    assert data["items"] == []
-    assert data["total"] == 0
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == "00000000-0000-0000-0000-000000000002"
+    assert data["items"][0]["role"] == "doctor"
 
 
 @pytest.mark.asyncio
@@ -374,7 +377,7 @@ async def test_create_leave_request_sick(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_create_leave_request_with_handover(client: AsyncClient) -> None:
     """POST /api/v1/hr/leave accepts handover details."""
-    handover_staff_id = str(uuid.uuid4())
+    handover_staff_id = "00000000-0000-0000-0000-000000000002"
     payload = {
         "leave_type": "annual",
         "start_date": "2026-08-01",

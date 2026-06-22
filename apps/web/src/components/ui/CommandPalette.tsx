@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -116,7 +116,10 @@ export function CommandPalette() {
       )
     : navigationItems;
 
-  const allItems = [...patientResults, ...filteredNav];
+  const allItems = useMemo(
+    () => [...patientResults, ...filteredNav],
+    [patientResults, filteredNav],
+  );
 
   // Keyboard navigation
   const handleKeyDown = useCallback(

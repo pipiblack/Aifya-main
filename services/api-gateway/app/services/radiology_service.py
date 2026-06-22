@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import EventBase
@@ -164,7 +164,7 @@ class RadiologyService:
             query = query.where(ImagingOrder.modality == modality)
 
         # Priority ordering: stat > urgent > routine, then by created_at
-        priority_order = func.case(
+        priority_order = case(
             (ImagingOrder.priority == "stat", 1),
             (ImagingOrder.priority == "urgent", 2),
             else_=3,

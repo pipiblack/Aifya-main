@@ -20,7 +20,11 @@ import { useEvaluatePrescription } from "@/hooks/useCDS";
 import { CDSAlertBanner } from "@/components/opd/CDSAlertBanner";
 import { DrugAutocomplete } from "@/components/opd/DrugAutocomplete";
 import { cn } from "@/lib/utils";
-import type { CDSAlert } from "@aifya/shared";
+import type {
+  CDSAlert,
+  PrescriptionCreate,
+  PrescriptionWithInteractions,
+} from "@aifya/shared";
 
 const prescriptionSchema = z.object({
   drug_name: z.string().min(1, "Drug name required"),
@@ -36,7 +40,7 @@ const prescriptionSchema = z.object({
   instructions: z.string().nullable().optional(),
 });
 
-type PrescriptionFormData = z.infer<typeof prescriptionSchema>;
+type PrescriptionFormData = Omit<PrescriptionCreate, "encounter_id" | "patient_id">;
 
 interface PrescriptionPanelProps {
   encounterId: string;
@@ -79,7 +83,7 @@ export function PrescriptionPanel({ encounterId, patientId }: PrescriptionPanelP
    * @returns Array of CDSAlert objects derived from interactions
    */
   const mapInteractionsToCDSAlerts = useCallback(
-    (result: { blocked: boolean; interactions?: Array<{ drug_a: string; drug_b: string; severity: string; description: string }> }): CDSAlert[] => {
+    (result: PrescriptionWithInteractions): CDSAlert[] => {
       if (!result.interactions || result.interactions.length === 0) {
         return [];
       }
@@ -92,7 +96,10 @@ export function PrescriptionPanel({ encounterId, patientId }: PrescriptionPanelP
         title: t("drugInteraction"),
         message: interaction.description,
         source_rule: "drug_interaction_check",
-        affected_items: [interaction.drug_a, interaction.drug_b],
+        affected_items: [
+          result.prescription.drug_name,
+          interaction.interacting_drug,
+        ],
         evidence: { severity: interaction.severity },
         overridable: !result.blocked,
         requires_reason: !result.blocked,

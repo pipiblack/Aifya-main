@@ -34,6 +34,26 @@ from app.schemas.licensing import (
     TIER_ENTITLEMENTS,
 )
 
+_TIER_ORDER = ["community", "professional", "enterprise", "government"]
+
+
+def _effective_tier(tier: str) -> str:
+    """
+    Apply configured local default as a floor for license entitlements.
+
+    Production keeps the default as Community. Local Docker can set
+    DEFAULT_LICENSE_TIER=professional so stale Community rows still run as
+    Professional during pre-deploy verification.
+    """
+    default_tier = (
+        settings.default_license_tier
+        if settings.default_license_tier in TIER_ENTITLEMENTS
+        else "community"
+    )
+    if tier not in TIER_ENTITLEMENTS:
+        return default_tier
+    return max((tier, default_tier), key=_TIER_ORDER.index)
+
 
 def _generate_license_key(tier: str) -> str:
     """
@@ -147,15 +167,17 @@ class LicensingService:
         license_obj = await self.get_facility_license(facility_id)
 
         if not license_obj:
-            # No license = community tier (free, limited)
-            community = TIER_ENTITLEMENTS["community"]
+            # No license = configured default tier. Local deployments can opt
+            # into Professional while production defaults remain Community.
+            default_tier = _effective_tier("community")
+            entitlements = TIER_ENTITLEMENTS[default_tier]
             return LicenseValidation(
                 is_valid=True,
-                tier="community",
-                enabled_modules=community["enabled_modules"],
-                feature_flags=community["feature_flags"],
-                max_users=community["max_users"],
-                max_patients=community["max_patients"],
+                tier=default_tier,
+                enabled_modules=entitlements["enabled_modules"],
+                feature_flags=entitlements["feature_flags"],
+                max_users=entitlements["max_users"],
+                max_patients=entitlements["max_patients"],
                 expires_at=None,
                 days_remaining=None,
             )
@@ -193,17 +215,36 @@ class LicensingService:
                 upgrade_message="Your license has expired. Renew to restore full access.",
             )
 
+        effective_tier = _effective_tier(license_obj.tier)
+        current_entitlements = TIER_ENTITLEMENTS.get(effective_tier)
+
         return LicenseValidation(
             is_valid=is_valid,
-            tier=license_obj.tier,
-            enabled_modules=license_obj.enabled_modules,
-            feature_flags=license_obj.feature_flags,
-            max_users=license_obj.max_users,
-            max_patients=license_obj.max_patients,
+            tier=effective_tier,
+            enabled_modules=(
+                current_entitlements["enabled_modules"]
+                if current_entitlements
+                else license_obj.enabled_modules
+            ),
+            feature_flags=(
+                current_entitlements["feature_flags"]
+                if current_entitlements
+                else license_obj.feature_flags
+            ),
+            max_users=(
+                current_entitlements["max_users"]
+                if current_entitlements
+                else license_obj.max_users
+            ),
+            max_patients=(
+                current_entitlements["max_patients"]
+                if current_entitlements
+                else license_obj.max_patients
+            ),
             expires_at=license_obj.expires_at,
             days_remaining=days_remaining,
             in_grace_period=in_grace,
-            upgrade_available=license_obj.tier in ("community", "professional"),
+            upgrade_available=effective_tier in ("community", "professional"),
             upgrade_message=(
                 f"License expires in {days_remaining} days. Renew now."
                 if days_remaining is not None and days_remaining <= 30

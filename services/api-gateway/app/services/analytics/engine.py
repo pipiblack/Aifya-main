@@ -11,7 +11,7 @@ import uuid
 from datetime import date, datetime, timedelta
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.encounter import Encounter
@@ -55,7 +55,10 @@ async def get_analytics_dashboard(
     readmission_risks: list[ReadmissionRisk] = []
     try:
         recent_discharged_result = await db.execute(
-            select(Encounter.patient_id)
+            select(
+                Encounter.patient_id,
+                func.max(Encounter.discharge_date).label("last_discharge"),
+            )
             .where(
                 Encounter.facility_id == facility_id,
                 Encounter.encounter_type == "ipd",
@@ -63,9 +66,9 @@ async def get_analytics_dashboard(
                 Encounter.discharge_date.isnot(None),
                 Encounter.is_deleted.is_(False),
             )
-            .order_by(Encounter.discharge_date.desc())
+            .group_by(Encounter.patient_id)
+            .order_by(func.max(Encounter.discharge_date).desc())
             .limit(_TOP_READMISSION_LIMIT)
-            .distinct()
         )
         discharged_patient_ids: list[uuid.UUID] = [
             row[0] for row in recent_discharged_result.all()
@@ -79,6 +82,7 @@ async def get_analytics_dashboard(
         readmission_risks.sort(key=lambda r: r.risk_score, reverse=True)
     except Exception as exc:
         log.warning("analytics.dashboard.readmission_failed", error=str(exc))
+        await db.rollback()
 
     # --- Bed forecast: next 7 days, all departments ---
     bed_forecasts = await forecast_bed_demand(db, facility_id, department=None, days_ahead=7)

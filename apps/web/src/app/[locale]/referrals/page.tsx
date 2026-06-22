@@ -120,7 +120,9 @@ export default function ReferralsPage() {
                     <button
                       type="button"
                       onClick={async () => {
-                        const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+                        const apiBase = (
+                          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+                        ).replace(/\/api\/v1\/?$/, "");
                         const res = await fetch(
                           `${apiBase}/api/v1/referrals/${r.id}/pdf-note`,
                           { credentials: "include" },

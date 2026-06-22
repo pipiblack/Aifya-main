@@ -30,7 +30,7 @@ import argparse
 import asyncio
 import sys
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -46,7 +46,19 @@ from sqlalchemy import select, update  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.database import async_session  # noqa: E402
+from app.models.appointment import Appointment, DoctorSchedule  # noqa: E402
 from app.models.billing import Invoice, InvoiceItem, Payment  # noqa: E402
+from app.models.clinical_trial import (  # noqa: E402
+    ClinicalTrial,
+    TrialAIScreening,
+    TrialAdverseEvent,
+    TrialParticipant,
+    TrialParticipantVisit,
+    TrialVisitSchedule,
+)
+from app.models.dental import DentalChart, DentalTreatmentPlan, DentalVisit  # noqa: E402
+from app.models.diagnosis import Diagnosis  # noqa: E402
+from app.models.emergency import EmergencyVisit  # noqa: E402
 from app.models.encounter import Encounter  # noqa: E402
 from app.models.facility import Facility  # noqa: E402
 from app.models.finance import (  # noqa: E402
@@ -56,13 +68,36 @@ from app.models.finance import (  # noqa: E402
     FixedAsset,
     RecurringTemplate,
 )
-from app.models.insurance import InsuranceScheme  # noqa: E402
+from app.models.hr import Attendance, LeaveRequest, Shift, ShiftAssignment, StaffProfile  # noqa: E402
+from app.models.insurance import (  # noqa: E402
+    InsuranceClaim,
+    InsuranceScheme,
+    PatientInsurance,
+    PreAuthorization,
+)
+from app.models.inventory import (  # noqa: E402
+    InventoryItem,
+    InventoryTransaction,
+    PurchaseOrder,
+    PurchaseOrderItem,
+    Supplier,
+)
+from app.models.ipd import Admission, Bed, NursingNote, Ward  # noqa: E402
+from app.models.lab import LabOrder, LabResult  # noqa: E402
+from app.models.mch import ANCProfile, ANCVisit, ChildRecord, Immunization  # noqa: E402
 from app.models.mpesa import MpesaStkRequest  # noqa: E402
 from app.models.patient import Patient  # noqa: E402
 from app.models.payroll import Employee, EmployeeSalary, PayrollRun  # noqa: E402
 from app.models.payroll_extra import LeaveType, PayrollLeaveRequest  # noqa: E402
 from app.models.pharmacy import PharmacyItem  # noqa: E402
+from app.models.prescription import Prescription  # noqa: E402
+from app.models.radiology import ImagingOrder, ImagingResult  # noqa: E402
+from app.models.referral import Referral  # noqa: E402
+from app.models.report import GeneratedReport, ReportTemplate  # noqa: E402
+from app.models.sms import SmsCampaign, SmsDeliveryLog  # noqa: E402
 from app.models.staff import Department, Staff  # noqa: E402
+from app.models.theatre import OperatingTheatre, SurgicalCase  # noqa: E402
+from app.models.vital import VitalSign  # noqa: E402
 from app.services.finance.posting_engine import post_transaction  # noqa: E402
 from app.services.finance.seed_data import seed_facility_finance  # noqa: E402
 from app.services.payroll.engine import run_monthly_payroll  # noqa: E402
@@ -79,6 +114,10 @@ DEMO_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, "aifya-demo.aifya.co.ke")
 DEMO_FACILITY_NAME = "Aifya Demo Hospital"
 DEMO_FACILITY_CODE = "AIFYA-DEMO"
 DEMO_FACILITY_MFL = "99999"
+
+# Must match app.auth.dependencies local development auth bypass.
+LOCAL_DEMO_FACILITY_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+LOCAL_DEMO_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
 
 # Today's reference date (overridable for stable demos)
 TODAY = date.today()
@@ -104,16 +143,44 @@ async def get_or_create_facility(db: AsyncSession) -> Facility:
     @param db: Async DB session
     @returns The Facility row (existing or newly created)
     """
+    local = (
+        await db.execute(
+            select(Facility).where(Facility.id == LOCAL_DEMO_FACILITY_ID)
+        )
+    ).scalar_one_or_none()
+    if local is not None:
+        local.name = DEMO_FACILITY_NAME
+        local.code = DEMO_FACILITY_CODE
+        local.mfl_code = DEMO_FACILITY_MFL
+        local.facility_type = "hospital"
+        local.keph_level = "4"
+        local.county = "Nairobi"
+        local.sub_county = "Westlands"
+        local.ward = "Parklands"
+        local.physical_address = "Aifya Plaza, 5th Floor, Westlands, Nairobi"
+        local.phone = "+254700000000"
+        local.email = "info@aifya.co.ke"
+        local.website = "https://aifya.co.ke"
+        local.timezone = "Africa/Nairobi"
+        local.currency = "KES"
+        local.is_active = True
+        await db.flush()
+        return local
+
     existing = (
         await db.execute(
             select(Facility).where(Facility.code == DEMO_FACILITY_CODE)
         )
     ).scalar_one_or_none()
     if existing is not None:
-        return existing
+        # Older seeds used a generated UUID. Rename that legacy facility so
+        # the local Docker auth facility can own the canonical demo code.
+        existing.code = f"{DEMO_FACILITY_CODE}-LEGACY"
+        existing.mfl_code = None
+        await db.flush()
 
     fac = Facility(
-        id=_det("facility:aifya-demo"),
+        id=LOCAL_DEMO_FACILITY_ID,
         name=DEMO_FACILITY_NAME,
         code=DEMO_FACILITY_CODE,
         facility_type="hospital",
@@ -251,7 +318,7 @@ async def seed_staff(
         kc_id = _det(f"keycloak:{s['emp']}")
         dept_id = dept_map.get(s["dept"])
         staff = Staff(
-            id=_det(f"staff:{s['emp']}"),
+            id=LOCAL_DEMO_USER_ID if s["emp"] == "AIFYA-001" else _det(f"staff:{s['emp']}"),
             facility_id=facility_id,
             keycloak_user_id=kc_id,
             employee_number=s["emp"],
@@ -271,6 +338,40 @@ async def seed_staff(
         await db.flush()
         by_num[s["emp"]] = staff.id
         created += 1
+
+    local_staff = (
+        await db.execute(
+            select(Staff).where(
+                Staff.facility_id == facility_id,
+                Staff.id == LOCAL_DEMO_USER_ID,
+            )
+        )
+    ).scalar_one_or_none()
+    if local_staff is None:
+        local_staff = Staff(
+            id=LOCAL_DEMO_USER_ID,
+            facility_id=facility_id,
+            keycloak_user_id=LOCAL_DEMO_USER_ID,
+            employee_number="AIFYA-LOCAL-ADMIN",
+            first_name="Aifya",
+            last_name="Local Admin",
+            title="Dr.",
+            role="admin",
+            license_body="KMPDC",
+            license_number="KMPDC/LOCAL",
+            department_id=dept_map.get("ADMIN"),
+            primary_department_id=dept_map.get("ADMIN"),
+            email="admin@aifya.local",
+            phone="+254700000002",
+            permissions={"local_demo": True},
+            is_active=True,
+        )
+        db.add(local_staff)
+        await db.flush()
+        by_num["AIFYA-LOCAL-ADMIN"] = local_staff.id
+        created += 1
+    else:
+        by_num.setdefault("AIFYA-LOCAL-ADMIN", local_staff.id)
 
     print(f"  Staff: {created} created, {len(existing_by_num)} existing")
     return by_num
@@ -581,6 +682,105 @@ async def _next_invoice_number(
     return f"INV-{TODAY.year}-{n:05d}"
 
 
+async def ensure_billing_gl_postings(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> tuple[int, int, int]:
+    """Post GL entries for existing demo invoices, payments, and expenses."""
+    invoices = (
+        await db.execute(select(Invoice).where(Invoice.facility_id == facility_id))
+    ).scalars().all()
+    invoice_posts = 0
+    for inv in invoices:
+        event = "invoice_insurance" if inv.payment_method == "insurance" else "invoice_cash"
+        posting_date = (
+            inv.finalized_at.date()
+            if inv.finalized_at is not None
+            else inv.created_at.date()
+        )
+        try:
+            await post_transaction(
+                db=db,
+                facility_id=facility_id,
+                event_type=event,
+                amount=Decimal(inv.total_cents) / Decimal("100"),
+                metadata={
+                    "date": posting_date.isoformat(),
+                    "reference_type": "invoice",
+                    "reference_id": str(inv.id),
+                    "description": f"{inv.invoice_number} - GL reconciliation",
+                    "department_id": None,
+                },
+                idempotency_key=f"demo-invoice:{inv.id}",
+                user_id=user_id,
+            )
+            invoice_posts += 1
+        except Exception as exc:  # noqa: BLE001
+            print(f"  WARN: GL reconcile failed for {inv.invoice_number}: {exc}")
+
+    payments = (
+        await db.execute(select(Payment).where(Payment.facility_id == facility_id))
+    ).scalars().all()
+    payment_posts = 0
+    for pay in payments:
+        try:
+            await post_transaction(
+                db=db,
+                facility_id=facility_id,
+                event_type=(
+                    "insurance_payment_received"
+                    if pay.payment_method == "insurance"
+                    else "payment_received"
+                ),
+                amount=Decimal(pay.amount_cents) / Decimal("100"),
+                metadata={
+                    "date": pay.paid_at.date().isoformat(),
+                    "reference_type": "payment",
+                    "reference_id": str(pay.id),
+                    "description": f"Payment {pay.reference_number or pay.id}",
+                },
+                idempotency_key=f"demo-pay:{pay.id}",
+                user_id=user_id,
+            )
+            payment_posts += 1
+        except Exception as exc:  # noqa: BLE001
+            print(f"  WARN: GL reconcile failed for payment {pay.id}: {exc}")
+
+    expense_posts = 0
+    expenses: list[tuple[str, int]] = [
+        ("Monthly rent", 100_000),
+        ("Electricity bill", 25_000),
+        ("Water bill", 5_000),
+        ("Internet", 8_000),
+        ("Cleaning supplies", 12_000),
+        ("Office stationery", 6_500),
+        ("Security services", 18_000),
+        ("Generator fuel", 15_000),
+    ]
+    for k, (desc, kes) in enumerate(expenses, start=1):
+        try:
+            await post_transaction(
+                db=db,
+                facility_id=facility_id,
+                event_type="expense_paid",
+                amount=Decimal(str(kes)),
+                metadata={
+                    "date": (TODAY - timedelta(days=k * 3)).isoformat(),
+                    "reference_type": "expense",
+                    "reference_id": str(_det(f"expense:{k}")),
+                    "description": desc,
+                },
+                idempotency_key=f"demo-expense:{k}",
+                user_id=user_id,
+            )
+            expense_posts += 1
+        except Exception as exc:  # noqa: BLE001
+            print(f"  WARN: GL reconcile failed for expense '{desc}': {exc}")
+
+    return invoice_posts, payment_posts, expense_posts
+
+
 # Mix of invoice scenarios: (label, kes_amount, payment_method, dept_code)
 INVOICE_SCENARIOS: list[tuple[str, int, str, str]] = [
     ("Consultation", 500, "cash", "OPD"),
@@ -629,7 +829,14 @@ async def seed_invoices_and_postings(
         )
     ).scalars().all()
     if already:
-        print(f"  Invoices: {len(already)} already exist, skipping")
+        inv_posts, pay_posts, expense_posts = await ensure_billing_gl_postings(
+            db, facility_id, user_id
+        )
+        print(
+            f"  Invoices: {len(already)} already exist; "
+            f"GL reconciled invoices={inv_posts}, payments={pay_posts}, "
+            f"expenses={expense_posts}"
+        )
         return (0, 0)
 
     # We need encounters to attach invoices to (FK constraint).
@@ -1383,6 +1590,1318 @@ async def seed_mpesa_samples(
     return created
 
 
+# ── Clinical + Operational Modules ──────────────────────────────────────────
+
+
+async def seed_hr_operations(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    dept_map: dict[str, uuid.UUID],
+    staff_map: dict[str, uuid.UUID],
+    user_id: uuid.UUID,
+) -> int:
+    """Seed HR profiles, shifts, assignments, leave, and attendance."""
+    existing_profiles = (
+        await db.execute(
+            select(StaffProfile).where(StaffProfile.facility_id == facility_id)
+        )
+    ).scalars().all()
+    created = 0
+    if not existing_profiles:
+        for i, staff_id in enumerate(list(staff_map.values())[:10], start=1):
+            profile = StaffProfile(
+                id=_det(f"staff-profile:{staff_id}"),
+                facility_id=facility_id,
+                staff_id=staff_id,
+                date_of_birth=date(1980 + (i % 12), min(i, 12), 15),
+                gender="female" if i % 2 else "male",
+                national_id=f"30{i:06d}",
+                kra_pin=f"A0096582{i:02d}G",
+                nssf_number=f"1000000{i:03d}",
+                address="Westlands, Nairobi",
+                county="Nairobi",
+                employment_type="permanent",
+                employment_date=TODAY - timedelta(days=365 + i * 20),
+                basic_salary=_kes_to_cents(60_000 + i * 5_000),
+                allowances={"housing": 15000, "transport": 8000},
+                annual_leave_balance=21 - (i % 5),
+                qualifications=[{"name": "Clinical Practice", "year": 2018 + i % 4}],
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(profile)
+            created += 1
+
+    existing_shifts = (
+        await db.execute(select(Shift).where(Shift.facility_id == facility_id))
+    ).scalars().all()
+    shift_ids: list[uuid.UUID] = [s.id for s in existing_shifts]
+    if not existing_shifts:
+        shifts = [
+            ("MORNING", "Morning Shift", time(6, 0), time(14, 0), False),
+            ("EVENING", "Evening Shift", time(14, 0), time(22, 0), False),
+            ("NIGHT", "Night Shift", time(22, 0), time(6, 0), True),
+        ]
+        for code, name, start, end, is_night in shifts:
+            shift = Shift(
+                id=_det(f"shift:{code}"),
+                facility_id=facility_id,
+                code=code,
+                name=name,
+                start_time=start,
+                end_time=end,
+                duration_hours=8,
+                is_night_shift=is_night,
+                department_id=dept_map.get("OPD"),
+                is_active=True,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(shift)
+            shift_ids.append(shift.id)
+            created += 1
+
+    existing_assignments = (
+        await db.execute(
+            select(ShiftAssignment).where(ShiftAssignment.facility_id == facility_id)
+        )
+    ).scalars().all()
+    if not existing_assignments and shift_ids:
+        for i, staff_id in enumerate(list(staff_map.values())[:8]):
+            assignment = ShiftAssignment(
+                id=_det(f"shift-assignment:{i}"),
+                facility_id=facility_id,
+                staff_id=staff_id,
+                shift_id=shift_ids[i % len(shift_ids)],
+                department_id=dept_map.get("OPD"),
+                assignment_date=TODAY + timedelta(days=i % 5),
+                status="confirmed",
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(assignment)
+            created += 1
+
+    existing_leave = (
+        await db.execute(select(LeaveRequest).where(LeaveRequest.facility_id == facility_id))
+    ).scalars().all()
+    if not existing_leave:
+        staff_ids = list(staff_map.values())
+        for i, staff_id in enumerate(staff_ids[:4], start=1):
+            lr = LeaveRequest(
+                id=_det(f"hr-leave:{i}"),
+                facility_id=facility_id,
+                staff_id=staff_id,
+                leave_type="annual" if i != 2 else "sick",
+                start_date=TODAY + timedelta(days=i * 3),
+                end_date=TODAY + timedelta(days=i * 3 + 2),
+                days_requested=3,
+                reason="Demo leave request",
+                status="approved" if i % 2 else "pending",
+                approved_by=user_id if i % 2 else None,
+                approved_at=NOW if i % 2 else None,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(lr)
+            created += 1
+
+    existing_attendance = (
+        await db.execute(select(Attendance).where(Attendance.facility_id == facility_id))
+    ).scalars().all()
+    if not existing_attendance and shift_ids:
+        for i, staff_id in enumerate(list(staff_map.values())[:8]):
+            clock_in = datetime.combine(
+                TODAY - timedelta(days=i % 4),
+                time(8, 0),
+                tzinfo=timezone.utc,
+            )
+            attendance = Attendance(
+                id=_det(f"attendance:{i}"),
+                facility_id=facility_id,
+                staff_id=staff_id,
+                shift_id=shift_ids[i % len(shift_ids)],
+                attendance_date=clock_in.date(),
+                clock_in=clock_in,
+                clock_out=clock_in + timedelta(hours=8, minutes=15),
+                status="present",
+                overtime_minutes=15,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(attendance)
+            created += 1
+
+    await db.flush()
+    print(f"  HR operations: {created} created")
+    return created
+
+
+async def seed_clinical_workflow(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    patient_ids: list[uuid.UUID],
+    dept_map: dict[str, uuid.UUID],
+    staff_map: dict[str, uuid.UUID],
+    user_id: uuid.UUID,
+) -> dict[str, uuid.UUID]:
+    """Seed OPD queue, appointments, notes, vitals, dx, Rx, lab, and radiology."""
+    if not patient_ids:
+        return {}
+
+    doctor_id = staff_map.get("AIFYA-002", user_id)
+    nurse_id = staff_map.get("AIFYA-004", user_id)
+    lab_id = staff_map.get("AIFYA-007", user_id)
+    pharm_id = staff_map.get("AIFYA-006", user_id)
+    created = 0
+
+    schedules = (
+        await db.execute(
+            select(DoctorSchedule).where(DoctorSchedule.facility_id == facility_id)
+        )
+    ).scalars().all()
+    if not schedules:
+        for dow in range(0, 5):
+            schedule = DoctorSchedule(
+                id=_det(f"doctor-schedule:{dow}"),
+                facility_id=facility_id,
+                doctor_id=doctor_id,
+                department_id=dept_map.get("OPD"),
+                day_of_week=dow,
+                start_time=time(8, 0),
+                end_time=time(16, 0),
+                slot_duration_minutes=20,
+                max_patients=24,
+                room=f"Consultation {dow + 1}",
+                consultation_type="general",
+                is_active=True,
+                effective_from=TODAY - timedelta(days=30),
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(schedule)
+            created += 1
+
+    appointments = (
+        await db.execute(select(Appointment).where(Appointment.facility_id == facility_id))
+    ).scalars().all()
+    if not appointments:
+        appointment_types = ["consultation", "follow_up", "anc", "dental", "lab", "radiology"]
+        statuses = ["scheduled", "confirmed", "checked_in", "completed"]
+        for i in range(12):
+            start = time(8 + (i % 8), (i % 3) * 20)
+            appt = Appointment(
+                id=_det(f"appointment:{i}"),
+                facility_id=facility_id,
+                patient_id=patient_ids[i % len(patient_ids)],
+                doctor_id=doctor_id,
+                department_id=dept_map.get("OPD"),
+                appointment_number=f"APT-{TODAY:%Y%m%d}-{i + 1:04d}",
+                appointment_date=TODAY + timedelta(days=(i % 5) - 1),
+                start_time=start,
+                end_time=time(start.hour, min(start.minute + 20, 59)),
+                duration_minutes=20,
+                appointment_type=appointment_types[i % len(appointment_types)],
+                visit_reason="Demo clinic booking",
+                priority="urgent" if i == 2 else "routine",
+                status=statuses[i % len(statuses)],
+                checked_in_at=NOW if statuses[i % len(statuses)] in ("checked_in", "completed") else None,
+                checked_in_by=nurse_id if statuses[i % len(statuses)] in ("checked_in", "completed") else None,
+                room="Consultation 1",
+                booked_by=user_id,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(appt)
+            created += 1
+
+    existing_encounters = (
+        await db.execute(
+            select(Encounter).where(
+                Encounter.facility_id == facility_id,
+                Encounter.chief_complaint.like("Demo clinical workflow%"),
+            )
+        )
+    ).scalars().all()
+    encounter_ids: dict[str, uuid.UUID] = {f"encounter:{i}": e.id for i, e in enumerate(existing_encounters)}
+    if not existing_encounters:
+        complaints = [
+            ("opd", "Cough and fever", "J06.9", "Acute upper respiratory infection"),
+            ("opd", "Diabetes review", "E11.9", "Type 2 diabetes mellitus"),
+            ("opd", "Hypertension review", "I10", "Essential hypertension"),
+            ("mch", "Antenatal review", "Z34.9", "Supervision of normal pregnancy"),
+            ("dental", "Tooth pain", "K02.9", "Dental caries"),
+            ("emergency", "Abdominal pain", "R10.9", "Unspecified abdominal pain"),
+        ]
+        for i, (etype, complaint, icd, desc) in enumerate(complaints):
+            enc = Encounter(
+                id=_det(f"clinical-encounter:{i}"),
+                facility_id=facility_id,
+                patient_id=patient_ids[i % len(patient_ids)],
+                encounter_type=etype,
+                encounter_date=NOW - timedelta(days=i),
+                department_id=dept_map.get("MCH" if etype == "mch" else "OPD"),
+                attending_doctor_id=doctor_id,
+                nurse_id=nurse_id,
+                queue_number=i + 1,
+                triage_category="standard",
+                priority=1 if i == 5 else 0,
+                status="completed",
+                chief_complaint=f"Demo clinical workflow: {complaint}",
+                disposition="discharged",
+                billing_status="billed",
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(enc)
+            await db.flush()
+            encounter_ids[f"encounter:{i}"] = enc.id
+
+            db.add(VitalSign(
+                id=_det(f"vitals:{i}"),
+                facility_id=facility_id,
+                encounter_id=enc.id,
+                patient_id=enc.patient_id,
+                recorded_by=nurse_id,
+                recorded_at=enc.encounter_date,
+                systolic_bp=120 + i * 3,
+                diastolic_bp=78 + i,
+                heart_rate=76 + i * 2,
+                temperature=36.7 + (i % 3) * 0.3,
+                temperature_site="oral",
+                respiratory_rate=18,
+                oxygen_saturation=98,
+                weight_kg=62 + i * 4,
+                height_cm=165,
+                bmi=22.8 + i,
+                pain_score=i % 5,
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            db.add(Diagnosis(
+                id=_det(f"diagnosis:{i}"),
+                facility_id=facility_id,
+                encounter_id=enc.id,
+                patient_id=enc.patient_id,
+                diagnosed_by=doctor_id,
+                icd10_code=icd,
+                icd10_description=desc,
+                diagnosis_type="primary",
+                clinical_status="active",
+                onset_date=enc.encounter_date.date(),
+                certainty="confirmed",
+                is_chronic=icd in {"E11.9", "I10"},
+                notes="Demo diagnosis",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            db.add(Prescription(
+                id=_det(f"prescription:{i}"),
+                facility_id=facility_id,
+                encounter_id=enc.id,
+                patient_id=enc.patient_id,
+                prescriber_id=doctor_id,
+                drug_name="Paracetamol 500mg" if i % 2 == 0 else "Amoxicillin 500mg",
+                drug_code="PCM500" if i % 2 == 0 else "AMX500",
+                generic_name="Paracetamol" if i % 2 == 0 else "Amoxicillin",
+                is_keml=True,
+                dosage="500mg",
+                dosage_value=500,
+                dosage_unit="mg",
+                route="oral",
+                frequency="tds",
+                duration_days=5,
+                quantity=15,
+                instructions="Take after meals",
+                interaction_checked=True,
+                interactions=[],
+                status="dispensed" if i % 2 == 0 else "pending",
+                dispensed_by=pharm_id if i % 2 == 0 else None,
+                dispensed_at=NOW if i % 2 == 0 else None,
+                dispensed_quantity=15 if i % 2 == 0 else None,
+                unit_cost_cents=_kes_to_cents(5),
+                total_cost_cents=_kes_to_cents(75),
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 4
+
+    lab_orders = (
+        await db.execute(select(LabOrder).where(LabOrder.facility_id == facility_id))
+    ).scalars().all()
+    if not lab_orders and encounter_ids:
+        tests = [
+            ("CBC", "Complete Blood Count", "blood", "WBC", "White Blood Cells", "6.2", 6.2, "10^9/L", "4.0-11.0"),
+            ("RBS", "Random Blood Sugar", "blood", "GLU", "Glucose", "7.8", 7.8, "mmol/L", "3.9-7.8"),
+            ("MAL", "Malaria RDT", "blood", "MRDT", "Malaria RDT", "Negative", None, "", "Negative"),
+        ]
+        for i, sample in enumerate(tests):
+            code, panel, specimen, test_code, test_name, value, numeric, unit, ref = sample
+            enc_id = list(encounter_ids.values())[i % len(encounter_ids)]
+            patient_id = patient_ids[i % len(patient_ids)]
+            order = LabOrder(
+                id=_det(f"lab-order:{i}"),
+                facility_id=facility_id,
+                encounter_id=enc_id,
+                patient_id=patient_id,
+                ordered_by=doctor_id,
+                order_number=f"LAB-{TODAY:%Y%m%d}-{i + 1:04d}",
+                priority="urgent" if i == 1 else "routine",
+                status="completed",
+                specimen_type=specimen,
+                specimen_collected_at=NOW - timedelta(hours=2),
+                specimen_collected_by=lab_id,
+                specimen_id=f"SPC-{i + 1:05d}",
+                clinical_info="Demo lab order",
+                total_cost_cents=_kes_to_cents(800 + i * 250),
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(order)
+            await db.flush()
+            db.add(LabResult(
+                id=_det(f"lab-result:{i}"),
+                facility_id=facility_id,
+                order_id=order.id,
+                patient_id=patient_id,
+                performed_by=lab_id,
+                verified_by=lab_id,
+                test_code=test_code,
+                test_name=test_name,
+                panel_name=panel,
+                result_value=value,
+                result_numeric=numeric,
+                result_unit=unit,
+                reference_range=ref,
+                interpretation="normal",
+                status="final",
+                resulted_at=NOW - timedelta(hours=1),
+                verified_at=NOW,
+                method=code,
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 2
+
+    imaging_orders = (
+        await db.execute(select(ImagingOrder).where(ImagingOrder.facility_id == facility_id))
+    ).scalars().all()
+    if not imaging_orders and encounter_ids:
+        studies = [
+            ("xray", "chest", "Chest X-ray PA", "Cough and fever"),
+            ("ultrasound", "abdomen", "Abdominal ultrasound", "Abdominal pain"),
+            ("xray", "left arm", "Left forearm X-ray", "Fall injury"),
+        ]
+        for i, (modality, body_part, description, indication) in enumerate(studies):
+            patient_id = patient_ids[(i + 3) % len(patient_ids)]
+            order = ImagingOrder(
+                id=_det(f"imaging-order:{i}"),
+                facility_id=facility_id,
+                encounter_id=list(encounter_ids.values())[i % len(encounter_ids)],
+                patient_id=patient_id,
+                ordered_by=doctor_id,
+                order_number=f"RAD-{TODAY:%Y%m%d}-{i + 1:04d}",
+                accession_number=f"ACC-{TODAY:%Y%m%d}-{i + 1:04d}",
+                modality=modality,
+                body_part=body_part,
+                laterality="na",
+                views_requested="PA" if modality == "xray" else None,
+                study_description=description,
+                priority="urgent" if i == 1 else "routine",
+                clinical_indication=indication,
+                status="completed",
+                scheduled_at=NOW - timedelta(hours=3),
+                room="Radiology 1",
+                performed_by=lab_id,
+                performed_at=NOW - timedelta(hours=2),
+                total_cost_cents=_kes_to_cents(2200 + i * 800),
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(order)
+            await db.flush()
+            db.add(ImagingResult(
+                id=_det(f"imaging-result:{i}"),
+                facility_id=facility_id,
+                order_id=order.id,
+                patient_id=patient_id,
+                reported_by=doctor_id,
+                verified_by=doctor_id,
+                findings="No acute abnormality identified.",
+                impression="Stable demo study.",
+                recommendations="Clinical correlation advised.",
+                technique="Standard departmental protocol.",
+                urgency="normal",
+                status="final",
+                reported_at=NOW - timedelta(hours=1),
+                verified_at=NOW,
+                image_keys=[{"key": f"demo/radiology/{i}.dcm", "modality": modality}],
+                dicom_study_uid=f"1.2.826.0.1.3680043.10.543.{i}",
+                dicom_series_count=1,
+                dicom_instance_count=2,
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 2
+
+    await db.flush()
+    print(f"  Clinical workflow: {created} created")
+    return encounter_ids
+
+
+async def seed_ipd_emergency_theatre(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    patient_ids: list[uuid.UUID],
+    dept_map: dict[str, uuid.UUID],
+    staff_map: dict[str, uuid.UUID],
+    user_id: uuid.UUID,
+) -> dict[str, uuid.UUID]:
+    """Seed IPD wards/beds/admissions, emergency visits, and theatre cases."""
+    if not patient_ids:
+        return {}
+
+    doctor_id = staff_map.get("AIFYA-003", user_id)
+    nurse_id = staff_map.get("AIFYA-004", user_id)
+    created = 0
+    ward_ids: dict[str, uuid.UUID] = {}
+
+    wards = (
+        await db.execute(select(Ward).where(Ward.facility_id == facility_id))
+    ).scalars().all()
+    if wards:
+        ward_ids = {w.code: w.id for w in wards}
+    else:
+        for code, name, ward_type, beds, charge in [
+            ("MMW", "Male Medical Ward", "general", 12, 2500),
+            ("FSW", "Female Surgical Ward", "surgical", 10, 3000),
+            ("MAT", "Maternity Ward", "maternity", 8, 3500),
+            ("ICU", "Intensive Care Unit", "icu", 4, 12000),
+        ]:
+            ward = Ward(
+                id=_det(f"ward:{code}"),
+                facility_id=facility_id,
+                name=name,
+                code=code,
+                ward_type=ward_type,
+                department_id=dept_map.get("IPD"),
+                floor="1",
+                total_beds=beds,
+                gender_restriction="any",
+                charge_per_day_cents=_kes_to_cents(charge),
+                is_active=True,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(ward)
+            ward_ids[code] = ward.id
+            created += 1
+
+    beds = (
+        await db.execute(select(Bed).where(Bed.facility_id == facility_id))
+    ).scalars().all()
+    bed_ids: list[uuid.UUID] = [b.id for b in beds]
+    if not beds:
+        for code, ward_id in ward_ids.items():
+            for i in range(1, 5):
+                bed = Bed(
+                    id=_det(f"bed:{code}:{i}"),
+                    facility_id=facility_id,
+                    ward_id=ward_id,
+                    bed_number=f"{code}-{i:02d}",
+                    bed_type="icu" if code == "ICU" else "standard",
+                    status="available",
+                    created_by=user_id,
+                    updated_by=user_id,
+                )
+                db.add(bed)
+                bed_ids.append(bed.id)
+                created += 1
+
+    admissions = (
+        await db.execute(select(Admission).where(Admission.facility_id == facility_id))
+    ).scalars().all()
+    admission_ids: dict[str, uuid.UUID] = {}
+    if admissions:
+        admission_ids = {a.admission_number: a.id for a in admissions}
+    elif bed_ids:
+        for i in range(3):
+            enc = Encounter(
+                id=_det(f"ipd-encounter:{i}"),
+                facility_id=facility_id,
+                patient_id=patient_ids[(i + 4) % len(patient_ids)],
+                encounter_type="ipd",
+                encounter_date=NOW - timedelta(days=i + 1),
+                department_id=dept_map.get("IPD"),
+                attending_doctor_id=doctor_id,
+                nurse_id=nurse_id,
+                status="admitted" if i < 2 else "discharged",
+                chief_complaint="Demo IPD admission",
+                disposition="admitted",
+                billing_status="billed",
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(enc)
+            await db.flush()
+            bed_id = bed_ids[i]
+            admission = Admission(
+                id=_det(f"admission:{i}"),
+                facility_id=facility_id,
+                encounter_id=enc.id,
+                patient_id=enc.patient_id,
+                ward_id=list(ward_ids.values())[i % len(ward_ids)],
+                bed_id=bed_id,
+                admission_number=f"ADM-{TODAY:%Y%m%d}-{i + 1:04d}",
+                attending_doctor_id=doctor_id,
+                primary_nurse_id=nurse_id,
+                status="admitted" if i < 2 else "discharged",
+                admission_reason="Observation and inpatient care",
+                admission_diagnosis="Pneumonia",
+                admitted_from="opd",
+                accommodation_type="general",
+                admitted_at=NOW - timedelta(days=i + 1),
+                discharged_at=NOW if i == 2 else None,
+                discharged_by=doctor_id if i == 2 else None,
+                discharge_type="improved" if i == 2 else None,
+                discharge_summary="Recovered well and discharged.",
+                length_of_stay_days=2 if i == 2 else None,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(admission)
+            admission_ids[admission.admission_number] = admission.id
+            created += 2
+            db.add(NursingNote(
+                id=_det(f"nursing-note:{i}"),
+                facility_id=facility_id,
+                admission_id=admission.id,
+                patient_id=enc.patient_id,
+                author_id=nurse_id,
+                note_type="observation",
+                content="Patient stable, medication given, vitals within range.",
+                shift="morning",
+                severity="normal",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 1
+
+    emergency = (
+        await db.execute(select(EmergencyVisit).where(EmergencyVisit.facility_id == facility_id))
+    ).scalars().all()
+    if not emergency:
+        for i, color in enumerate(["red", "orange", "yellow", "green"]):
+            enc = Encounter(
+                id=_det(f"er-encounter:{i}"),
+                facility_id=facility_id,
+                patient_id=patient_ids[(i + 7) % len(patient_ids)],
+                encounter_type="emergency",
+                encounter_date=NOW - timedelta(hours=i + 1),
+                department_id=dept_map.get("ER"),
+                attending_doctor_id=doctor_id,
+                nurse_id=nurse_id,
+                triage_category="emergency" if color == "red" else "urgent",
+                priority=4 - i,
+                status="completed",
+                chief_complaint="Demo emergency visit",
+                disposition="discharged" if i else "admitted",
+                billing_status="billed",
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(enc)
+            await db.flush()
+            db.add(EmergencyVisit(
+                id=_det(f"emergency:{i}"),
+                facility_id=facility_id,
+                patient_id=enc.patient_id,
+                encounter_id=enc.id,
+                visit_number=f"ER-{TODAY:%Y%m%d}-{i + 1:04d}",
+                arrival_time=NOW - timedelta(hours=i + 2),
+                arrival_mode="ambulance" if i == 0 else "walk_in",
+                brought_by="St John Ambulance" if i == 0 else None,
+                chief_complaint="Chest pain" if i == 0 else "Fever and weakness",
+                triage_category="emergency" if color == "red" else "urgent",
+                triage_color=color,
+                triage_score=8 - i,
+                triage_time=NOW - timedelta(hours=i + 1),
+                triaged_by=nurse_id,
+                triage_vitals={"bp_systolic": 130, "hr": 92, "spo2": 97, "gcs": 15},
+                assigned_doctor_id=doctor_id,
+                treatment_area="resus" if i == 0 else "acute",
+                treatment_started_at=NOW - timedelta(minutes=45),
+                status="admitted" if i == 0 else "discharged",
+                disposition="admit" if i == 0 else "discharge",
+                disposition_time=NOW,
+                is_resuscitation=i == 0,
+                interventions=[{"procedure": "IV access", "by": str(nurse_id)}],
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 2
+
+    theatres = (
+        await db.execute(select(OperatingTheatre).where(OperatingTheatre.facility_id == facility_id))
+    ).scalars().all()
+    theatre_ids = [t.id for t in theatres]
+    if not theatres:
+        for i, name in enumerate(["Main Theatre", "Minor Theatre"], start=1):
+            theatre = OperatingTheatre(
+                id=_det(f"theatre:{i}"),
+                facility_id=facility_id,
+                name=name,
+                code=f"OT-{i}",
+                theatre_type="general" if i == 1 else "minor",
+                status="available",
+                floor="2",
+                equipment=[{"name": "Anaesthesia Machine", "status": "ready"}],
+                is_active=True,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(theatre)
+            theatre_ids.append(theatre.id)
+            created += 1
+
+    cases = (
+        await db.execute(select(SurgicalCase).where(SurgicalCase.facility_id == facility_id))
+    ).scalars().all()
+    if not cases and theatre_ids:
+        for i, procedure in enumerate(["Appendectomy", "Caesarean Section", "Wound Debridement"]):
+            db.add(SurgicalCase(
+                id=_det(f"surgical-case:{i}"),
+                facility_id=facility_id,
+                case_number=f"SC-{TODAY:%Y%m%d}-{i + 1:04d}",
+                patient_id=patient_ids[(i + 8) % len(patient_ids)],
+                theatre_id=theatre_ids[i % len(theatre_ids)],
+                scheduled_date=NOW + timedelta(days=i),
+                estimated_duration_min=90,
+                priority="urgent" if i == 0 else "elective",
+                procedure_name=procedure,
+                laterality="na",
+                diagnosis="Demo surgical diagnosis",
+                anaesthesia_type="spinal" if i == 1 else "general",
+                lead_surgeon_id=doctor_id,
+                scrub_nurse_id=nurse_id,
+                circulating_nurse_id=nurse_id,
+                status="scheduled" if i < 2 else "completed",
+                surgery_start=NOW - timedelta(hours=3) if i == 2 else None,
+                surgery_end=NOW - timedelta(hours=1) if i == 2 else None,
+                operative_findings="Demo operative findings",
+                blood_loss_ml=150 if i == 2 else None,
+                preop_checklist={"consent": True, "site_marked": True},
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 1
+
+    await db.flush()
+    print(f"  IPD/Emergency/Theatre: {created} created")
+    return admission_ids
+
+
+async def seed_specialty_modules(
+    db: AsyncSession,
+    facility_id: uuid.UUID,
+    patient_ids: list[uuid.UUID],
+    dept_map: dict[str, uuid.UUID],
+    staff_map: dict[str, uuid.UUID],
+    user_id: uuid.UUID,
+) -> int:
+    """Seed MCH, dental, referrals, inventory, claims, reports, SMS, and trials."""
+    if not patient_ids:
+        return 0
+
+    doctor_id = staff_map.get("AIFYA-002", user_id)
+    nurse_id = staff_map.get("AIFYA-005", user_id)
+    dentist_id = staff_map.get("AIFYA-002", user_id)
+    created = 0
+
+    dental_charts = (
+        await db.execute(select(DentalChart).where(DentalChart.facility_id == facility_id))
+    ).scalars().all()
+    if not dental_charts:
+        for i in range(3):
+            patient_id = patient_ids[(i + 4) % len(patient_ids)]
+            db.add(DentalChart(
+                id=_det(f"dental-chart:{i}"),
+                facility_id=facility_id,
+                patient_id=patient_id,
+                teeth={
+                    "36": {"status": "filled", "notes": "Amalgam restoration"},
+                    "46": {"status": "decayed", "notes": "Needs restoration"},
+                },
+                periodontal_status="Mild gingivitis",
+                occlusion_notes="Class I occlusion",
+                notes="Demo dental chart",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            db.add(DentalVisit(
+                id=_det(f"dental-visit:{i}"),
+                facility_id=facility_id,
+                visit_number=f"DV-{TODAY:%Y%m%d}-{i + 1:04d}",
+                patient_id=patient_id,
+                dentist_id=dentist_id,
+                visit_date=NOW - timedelta(days=i),
+                chief_complaint="Tooth pain",
+                examination_findings="Caries on lower molar",
+                procedures=[{"tooth": "46", "procedure_type": "restoration"}],
+                diagnosis="Dental caries",
+                status="completed",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            db.add(DentalTreatmentPlan(
+                id=_det(f"dental-plan:{i}"),
+                facility_id=facility_id,
+                plan_number=f"DP-{TODAY:%Y%m%d}-{i + 1:04d}",
+                patient_id=patient_id,
+                dentist_id=dentist_id,
+                diagnosis="Dental caries",
+                plan_items=[{
+                    "tooth": "46",
+                    "procedure_type": "composite restoration",
+                    "priority": "routine",
+                    "estimated_cost": 350000,
+                    "status": "planned",
+                }],
+                total_estimated_cost=_kes_to_cents(3500),
+                status="approved",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 3
+
+    anc_profiles = (
+        await db.execute(select(ANCProfile).where(ANCProfile.facility_id == facility_id))
+    ).scalars().all()
+    if not anc_profiles:
+        mother_id = patient_ids[4 % len(patient_ids)]
+        child_id = patient_ids[0]
+        anc = ANCProfile(
+            id=_det("anc-profile:1"),
+            facility_id=facility_id,
+            patient_id=mother_id,
+            anc_number=f"ANC-{TODAY:%Y%m%d}-0001",
+            gravida=2,
+            parity=1,
+            living_children=1,
+            lmp_date=TODAY - timedelta(days=168),
+            expected_delivery_date=TODAY + timedelta(days=112),
+            first_visit_date=TODAY - timedelta(days=80),
+            gestation_at_first_visit=12,
+            risk_level="moderate",
+            risk_factors=["previous_cs"],
+            blood_group="O+",
+            hiv_status="negative",
+            hiv_test_date=TODAY - timedelta(days=30),
+            vdrl_status="non_reactive",
+            hepatitis_b="negative",
+            pmtct_enrolled=True,
+            status="active",
+            notes="Demo ANC profile",
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        db.add(anc)
+        await db.flush()
+        db.add(ANCVisit(
+            id=_det("anc-visit:1"),
+            facility_id=facility_id,
+            anc_profile_id=anc.id,
+            patient_id=mother_id,
+            provider_id=nurse_id,
+            visit_number=2,
+            visit_date=TODAY,
+            gestation_weeks=24,
+            weight_kg=68.5,
+            bp_systolic=118,
+            bp_diastolic=76,
+            pulse_rate=82,
+            temperature=36.8,
+            urine_protein="nil",
+            urine_glucose="nil",
+            fundal_height_cm=24,
+            fetal_heart_rate=144,
+            fetal_presentation="cephalic",
+            fetal_movement="present",
+            hb_level=11.8,
+            iron_folate_given=True,
+            tetanus_dose="TT2",
+            ipt_malaria_dose="IPT2",
+            birth_plan_discussed=True,
+            danger_signs_counselled=True,
+            breastfeeding_counselled=True,
+            next_visit_date=TODAY + timedelta(days=28),
+            clinical_notes="Routine ANC review.",
+            created_by=user_id,
+            updated_by=user_id,
+        ))
+        child = ChildRecord(
+            id=_det("child-record:1"),
+            facility_id=facility_id,
+            patient_id=child_id,
+            mother_patient_id=mother_id,
+            child_number=f"CH-{TODAY:%Y%m%d}-0001",
+            date_of_birth=TODAY - timedelta(days=35),
+            birth_weight_grams=3200,
+            sex="female",
+            place_of_birth="facility",
+            birth_notification_number="BN-2026-0001",
+            feeding_method="exclusive_breastfeeding",
+            status="active",
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        db.add(child)
+        await db.flush()
+        for i, (code, name, dose) in enumerate([("BCG", "BCG", 1), ("OPV_0", "OPV 0", 0)]):
+            db.add(Immunization(
+                id=_det(f"immunization:{code}"),
+                facility_id=facility_id,
+                child_record_id=child.id,
+                patient_id=child_id,
+                administered_by=nurse_id,
+                vaccine_code=code,
+                vaccine_name=name,
+                dose_number=dose,
+                date_given=TODAY - timedelta(days=30 - i),
+                age_at_dose_weeks=0,
+                batch_number=f"KEPI-{i + 1:03d}",
+                site="left_arm" if code == "BCG" else "oral",
+                route="id" if code == "BCG" else "oral",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+        created += 5
+
+    referrals = (
+        await db.execute(select(Referral).where(Referral.facility_id == facility_id))
+    ).scalars().all()
+    if not referrals:
+        for i in range(4):
+            db.add(Referral(
+                id=_det(f"referral:{i}"),
+                facility_id=facility_id,
+                referral_number=f"REF-{TODAY:%Y%m%d}-{i + 1:04d}",
+                patient_id=patient_ids[(i + 2) % len(patient_ids)],
+                referral_type="external" if i % 2 else "internal",
+                direction="outgoing",
+                referring_doctor_id=doctor_id,
+                referring_department_id=dept_map.get("OPD"),
+                receiving_department_id=dept_map.get("RAD") if i % 2 == 0 else None,
+                receiving_facility_name="Kenyatta National Hospital" if i % 2 else None,
+                receiving_facility_mfl="13023" if i % 2 else None,
+                reason="Specialist review",
+                clinical_notes="Demo referral note with attached summary.",
+                diagnosis="Hypertension",
+                urgency="urgent" if i == 0 else "routine",
+                referral_date=NOW - timedelta(days=i),
+                status="sent" if i < 3 else "completed",
+                response_date=NOW if i == 3 else None,
+                response_notes="Patient reviewed and returned to facility.",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 1
+
+    inventory_items = (
+        await db.execute(select(InventoryItem).where(InventoryItem.facility_id == facility_id))
+    ).scalars().all()
+    inventory_ids: list[uuid.UUID] = [item.id for item in inventory_items]
+    if not inventory_items:
+        for i, item in enumerate([
+            ("GLOVES-M", "Examination Gloves Medium", "consumable", "box", 450, 120),
+            ("SYR-5ML", "5ml Syringes", "consumable", "piece", 8, 1000),
+            ("GAUZE", "Sterile Gauze", "surgical", "pack", 120, 250),
+            ("REAG-CBC", "CBC Reagent Pack", "reagent", "pack", 8500, 12),
+            ("PAPER-A4", "A4 Printing Paper", "stationery", "ream", 650, 50),
+        ]):
+            code, name, category, uom, cost, stock = item
+            inv = InventoryItem(
+                id=_det(f"inventory-item:{code}"),
+                facility_id=facility_id,
+                item_code=code,
+                name=name,
+                category=category,
+                unit_of_measure=uom,
+                unit_cost=_kes_to_cents(cost),
+                current_stock=stock,
+                reorder_level=20,
+                reorder_quantity=100,
+                max_stock=2000,
+                store_location="Main Store",
+                department_id=dept_map.get("LAB") if category == "reagent" else dept_map.get("ADMIN"),
+                is_active=True,
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(inv)
+            inventory_ids.append(inv.id)
+            db.add(InventoryTransaction(
+                id=_det(f"inventory-opening:{code}"),
+                facility_id=facility_id,
+                item_id=inv.id,
+                transaction_type="opening",
+                quantity=stock,
+                balance_after=stock,
+                unit_cost=_kes_to_cents(cost),
+                total_cost=_kes_to_cents(cost * stock),
+                transaction_date=NOW - timedelta(days=7),
+                reference_number=f"OPEN-{code}",
+                reason="Opening demo stock",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 2
+
+    suppliers = (
+        await db.execute(select(Supplier).where(Supplier.facility_id == facility_id))
+    ).scalars().all()
+    supplier_id = suppliers[0].id if suppliers else _det("supplier:medsurg")
+    if not suppliers:
+        db.add(Supplier(
+            id=supplier_id,
+            facility_id=facility_id,
+            name="MediSurg Supplies Kenya",
+            supplier_code="SUP-001",
+            contact_person="Jane Njeri",
+            phone="+254722000111",
+            email="orders@medisurg.example",
+            address="Industrial Area, Nairobi",
+            kra_pin="P051234567A",
+            payment_terms="net_30",
+            category="medical",
+            rating=5,
+            is_active=True,
+            created_by=user_id,
+            updated_by=user_id,
+        ))
+        created += 1
+
+    pos = (
+        await db.execute(select(PurchaseOrder).where(PurchaseOrder.facility_id == facility_id))
+    ).scalars().all()
+    if not pos and inventory_ids:
+        po = PurchaseOrder(
+            id=_det("purchase-order:1"),
+            facility_id=facility_id,
+            po_number=f"PO-{TODAY:%Y%m%d}-0001",
+            supplier_id=supplier_id,
+            order_date=NOW - timedelta(days=2),
+            expected_delivery=NOW + timedelta(days=5),
+            status="approved",
+            subtotal=_kes_to_cents(45_000),
+            tax_amount=_kes_to_cents(7_200),
+            total_amount=_kes_to_cents(52_200),
+            approved_by=user_id,
+            approved_at=NOW - timedelta(days=1),
+            delivery_address="Aifya Demo Hospital Main Store",
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        db.add(po)
+        await db.flush()
+        db.add(PurchaseOrderItem(
+            id=_det("purchase-order-item:1"),
+            facility_id=facility_id,
+            purchase_order_id=po.id,
+            item_id=inventory_ids[0],
+            quantity_ordered=100,
+            quantity_received=0,
+            unit_cost=_kes_to_cents(450),
+            total_cost=_kes_to_cents(45_000),
+            created_by=user_id,
+            updated_by=user_id,
+        ))
+        created += 2
+
+    scheme = (
+        await db.execute(
+            select(InsuranceScheme).where(
+                InsuranceScheme.facility_id == facility_id,
+                InsuranceScheme.scheme_code == "SHA",
+            )
+        )
+    ).scalar_one_or_none()
+    claims = (
+        await db.execute(select(InsuranceClaim).where(InsuranceClaim.facility_id == facility_id))
+    ).scalars().all()
+    if scheme and not claims:
+        invoices = (
+            await db.execute(select(Invoice).where(Invoice.facility_id == facility_id))
+        ).scalars().all()
+        for i, patient_id in enumerate(patient_ids[:5]):
+            member = f"SHA{i + 1:09d}"
+            db.add(PatientInsurance(
+                id=_det(f"patient-insurance:{i}"),
+                facility_id=facility_id,
+                patient_id=patient_id,
+                scheme_id=scheme.id,
+                member_number=member,
+                principal_name="Self",
+                relationship="self",
+                valid_from=NOW - timedelta(days=30),
+                valid_to=NOW + timedelta(days=365),
+                is_active=True,
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            inv = invoices[i % len(invoices)] if invoices else None
+            db.add(InsuranceClaim(
+                id=_det(f"insurance-claim:{i}"),
+                facility_id=facility_id,
+                claim_number=f"CLM-{TODAY:%Y%m%d}-{i + 1:04d}",
+                patient_id=patient_id,
+                scheme_id=scheme.id,
+                invoice_id=inv.id if inv else None,
+                encounter_id=inv.encounter_id if inv else None,
+                member_number=member,
+                claim_amount=_kes_to_cents(3500 + i * 800),
+                approved_amount=_kes_to_cents(3000 + i * 500),
+                paid_amount=_kes_to_cents(2500 + i * 400),
+                status="paid" if i < 2 else "submitted",
+                submitted_date=NOW - timedelta(days=3),
+                claim_items=[{"service": "OPD consultation", "amount": 150000}],
+                diagnosis_codes=["J06.9"],
+                sha_reference=f"SHA-REF-{i + 1:05d}",
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 2
+        db.add(PreAuthorization(
+            id=_det("preauth:1"),
+            facility_id=facility_id,
+            auth_number=f"PA-{TODAY:%Y%m%d}-0001",
+            patient_id=patient_ids[3 % len(patient_ids)],
+            scheme_id=scheme.id,
+            member_number="SHA000000004",
+            service_description="Elective surgical procedure",
+            estimated_cost=_kes_to_cents(85_000),
+            approved_amount=_kes_to_cents(70_000),
+            diagnosis="Cholelithiasis",
+            status="approved",
+            request_date=NOW - timedelta(days=4),
+            response_date=NOW - timedelta(days=2),
+            valid_until=NOW + timedelta(days=30),
+            created_by=user_id,
+            updated_by=user_id,
+        ))
+        created += 1
+
+    templates = (
+        await db.execute(select(ReportTemplate).where(ReportTemplate.facility_id == facility_id))
+    ).scalars().all()
+    if not templates:
+        for i, (code, name, category, dept) in enumerate([
+            ("MOH_705A", "MOH 705A Outpatient Morbidity", "moh", "opd"),
+            ("PHARMACY_STOCK", "Pharmacy Stock Status", "operational", "pharmacy"),
+            ("FINANCE_DAILY", "Daily Revenue Summary", "financial", "billing"),
+        ]):
+            tpl = ReportTemplate(
+                id=_det(f"report-template:{code}"),
+                facility_id=facility_id,
+                name=name,
+                code=code,
+                description="Demo report template",
+                category=category,
+                department=dept,
+                report_type="summary",
+                parameters_schema={"type": "object"},
+                query_config={"source": "demo"},
+                columns_config=[{"key": "metric", "label": "Metric"}],
+                is_scheduled=i == 0,
+                schedule_cron="0 8 * * *" if i == 0 else None,
+                moh_form_number="MOH 705A" if i == 0 else None,
+                reporting_period="monthly",
+                created_by=user_id,
+                updated_by=user_id,
+            )
+            db.add(tpl)
+            db.add(GeneratedReport(
+                id=_det(f"generated-report:{code}"),
+                facility_id=facility_id,
+                template_id=tpl.id,
+                title=f"{name} - Demo",
+                report_number=f"RPT-{TODAY:%Y%m%d}-{i + 1:04d}",
+                parameters={"demo": True},
+                date_from=TODAY - timedelta(days=30),
+                date_to=TODAY,
+                result_data={"rows": [{"metric": "Patients", "value": len(patient_ids)}]},
+                summary_data={"patients": len(patient_ids), "status": "complete"},
+                row_count=1,
+                status="completed",
+                format="json",
+                generated_by=user_id,
+                generated_at=NOW,
+                expires_at=NOW + timedelta(days=30),
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+            created += 2
+
+    campaigns = (
+        await db.execute(select(SmsCampaign).where(SmsCampaign.facility_id == facility_id))
+    ).scalars().all()
+    if not campaigns:
+        campaign = SmsCampaign(
+            id=_det("sms-campaign:1"),
+            facility_id=facility_id,
+            name="Clinic appointment reminders",
+            message="Aifya Demo Hospital: please remember your appointment tomorrow.",
+            recipient_count=5,
+            sent_count=4,
+            failed_count=1,
+            status="completed",
+            completed_at=NOW,
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        db.add(campaign)
+        for i in range(5):
+            db.add(SmsDeliveryLog(
+                id=_det(f"sms-delivery:{i}"),
+                facility_id=facility_id,
+                campaign_id=campaign.id,
+                phone_number=f"+254712345{i + 1:03d}",
+                message=campaign.message,
+                status="delivered" if i < 4 else "failed",
+                provider_message_id=f"MSG-DEMO-{i + 1:04d}",
+                cost=Decimal("0.85"),
+                sent_at=NOW - timedelta(minutes=10),
+                delivered_at=NOW - timedelta(minutes=8) if i < 4 else None,
+                error_msg="Invalid number" if i == 4 else None,
+                created_by=user_id,
+                updated_by=user_id,
+            ))
+        created += 6
+
+    trials = (
+        await db.execute(select(ClinicalTrial).where(ClinicalTrial.facility_id == facility_id))
+    ).scalars().all()
+    if not trials:
+        trial = ClinicalTrial(
+            id=_det("trial:diabetes"),
+            facility_id=facility_id,
+            trial_code="AIFYA-DM-001",
+            pactr_number="PACTR202606001",
+            title="Pragmatic Diabetes Follow-up Study in Kenyan Primary Care",
+            short_title="Aifya Diabetes Follow-up",
+            phase="observational",
+            study_type="observational",
+            therapeutic_area="Endocrinology",
+            sponsor="Aifya Research Network",
+            principal_investigator_id=doctor_id,
+            co_investigators=[str(nurse_id)],
+            irb_approval_number="IRB-AFY-2026-001",
+            irb_approval_date=TODAY - timedelta(days=60),
+            irb_expiry_date=TODAY + timedelta(days=305),
+            ethics_committee="Aifya Demo ERC",
+            protocol_version="1.0",
+            protocol_date=TODAY - timedelta(days=70),
+            inclusion_criteria=["Age >= 18", "Type 2 diabetes diagnosis"],
+            exclusion_criteria=["Pregnancy", "Severe renal impairment"],
+            target_enrollment=120,
+            redcap_sync_enabled=False,
+            redcap_sync_mode="push_only",
+            status="recruiting",
+            start_date=TODAY - timedelta(days=30),
+            end_date=TODAY + timedelta(days=365),
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        db.add(trial)
+        await db.flush()
+        participant = TrialParticipant(
+            id=_det("trial-participant:1"),
+            facility_id=facility_id,
+            trial_id=trial.id,
+            patient_id=patient_ids[9 % len(patient_ids)],
+            participant_number="DM-001-0001",
+            randomization_arm="standard-care",
+            status="active",
+            screening_date=NOW - timedelta(days=10),
+            screened_by=doctor_id,
+            eligibility_check={"eligible": True},
+            ai_eligibility_score=0.91,
+            consent_version="1.0",
+            consent_date=NOW - timedelta(days=9),
+            enrollment_date=NOW - timedelta(days=8),
+            enrolled_by=doctor_id,
+            redcap_sync_status="synced",
+            created_by=user_id,
+            updated_by=user_id,
+        )
+        schedule = TrialVisitSchedule(
+            id=_det("trial-schedule:v1"),
+            trial_id=trial.id,
+            visit_code="V1",
+            visit_name="Baseline",
+            day_from_enrollment=0,
+            window_before_days=0,
+            window_after_days=7,
+            required_assessments=["HbA1c", "Blood pressure", "Medication review"],
+            sort_order=1,
+        )
+        db.add(participant)
+        db.add(schedule)
+        await db.flush()
+        db.add(TrialParticipantVisit(
+            id=_det("trial-participant-visit:1"),
+            facility_id=facility_id,
+            participant_id=participant.id,
+            schedule_id=schedule.id,
+            scheduled_date=TODAY - timedelta(days=8),
+            actual_date=TODAY - timedelta(days=8),
+            status="completed",
+            assessments_completed=["HbA1c", "Blood pressure"],
+            redcap_synced=True,
+            redcap_sync_at=NOW - timedelta(days=7),
+            created_by=user_id,
+            updated_by=user_id,
+        ))
+        db.add(TrialAdverseEvent(
+            id=_det("trial-ae:1"),
+            facility_id=facility_id,
+            participant_id=participant.id,
+            trial_id=trial.id,
+            ae_term="Mild nausea",
+            ctcae_grade=1,
+            severity="mild",
+            is_serious=False,
+            relatedness="unlikely",
+            onset_date=TODAY - timedelta(days=5),
+            outcome="resolved",
+            action_taken="none",
+            reported_by=doctor_id,
+            reported_date=NOW - timedelta(days=4),
+            created_by=user_id,
+            updated_by=user_id,
+        ))
+        db.add(TrialAIScreening(
+            id=_det("trial-ai-screening:1"),
+            facility_id=facility_id,
+            patient_id=patient_ids[9 % len(patient_ids)],
+            trial_id=trial.id,
+            eligibility_score=0.91,
+            criteria_met=["Age >= 18", "Type 2 diabetes diagnosis"],
+            criteria_not_met=[],
+            criteria_unknown=["Latest HbA1c"],
+            ai_reasoning="Demo patient has diabetes diagnosis and active follow-up.",
+            model_version="demo",
+            investigator_reviewed=True,
+            investigator_id=doctor_id,
+            investigator_decision="proceed_to_screen",
+        ))
+        created += 6
+
+    await db.flush()
+    print(f"  Specialty/admin modules: {created} created")
+    return created
+
+
 # ── Reset (soft delete) ──────────────────────────────────────────────────────
 
 
@@ -1405,7 +2924,17 @@ async def reset_demo_data(db: AsyncSession) -> None:
         Department, Staff, Patient, Encounter, Invoice, InvoiceItem, Payment,
         PharmacyItem, InsuranceScheme, Account, AccountingPeriod, Budget,
         FixedAsset, RecurringTemplate, Employee, EmployeeSalary, PayrollRun,
-        PayrollLeaveRequest, MpesaStkRequest,
+        PayrollLeaveRequest, MpesaStkRequest, DoctorSchedule, Appointment,
+        StaffProfile, Shift, ShiftAssignment, LeaveRequest, Attendance,
+        VitalSign, Diagnosis, Prescription, LabOrder, LabResult, ImagingOrder,
+        ImagingResult, Ward, Bed, Admission, NursingNote, EmergencyVisit,
+        OperatingTheatre, SurgicalCase, DentalChart, DentalVisit,
+        DentalTreatmentPlan, ANCProfile, ANCVisit, ChildRecord, Immunization,
+        Referral, InventoryItem, InventoryTransaction, Supplier, PurchaseOrder,
+        PurchaseOrderItem, PatientInsurance, InsuranceClaim, PreAuthorization,
+        ReportTemplate, GeneratedReport, SmsCampaign, SmsDeliveryLog,
+        ClinicalTrial, TrialParticipant, TrialParticipantVisit,
+        TrialAdverseEvent,
     ]
     for model in tables_with_soft_delete:
         await db.execute(
@@ -1448,7 +2977,10 @@ async def main(reset: bool = False) -> None:
 
             print("\n[3] Staff")
             staff_map = await seed_staff(db, facility_id, dept_map)
-            admin_staff_id = staff_map.get("AIFYA-001", admin_staff_id)
+            admin_staff_id = (
+                staff_map.get("AIFYA-LOCAL-ADMIN")
+                or staff_map.get("AIFYA-001", admin_staff_id)
+            )
 
             print("\n[4] Patients")
             patient_ids = await seed_patients(db, facility_id)
@@ -1511,6 +3043,26 @@ async def main(reset: bool = False) -> None:
             print("\n[17] M-Pesa Sample Records")
             await seed_mpesa_samples(db, facility_id, patient_ids, admin_staff_id)
 
+            print("\n[18] HR Operations")
+            await seed_hr_operations(
+                db, facility_id, dept_map, staff_map, admin_staff_id
+            )
+
+            print("\n[19] Clinical Workflow")
+            await seed_clinical_workflow(
+                db, facility_id, patient_ids, dept_map, staff_map, admin_staff_id
+            )
+
+            print("\n[20] IPD, Emergency, Theatre")
+            await seed_ipd_emergency_theatre(
+                db, facility_id, patient_ids, dept_map, staff_map, admin_staff_id
+            )
+
+            print("\n[21] Specialty + Admin Modules")
+            await seed_specialty_modules(
+                db, facility_id, patient_ids, dept_map, staff_map, admin_staff_id
+            )
+
             await db.commit()
             print_summary(facility_id)
 
@@ -1531,8 +3083,11 @@ def print_summary(facility_id: uuid.UUID) -> None:
         f"Employees (payroll): {len(EMPLOYEE_DEFINITIONS)}\n"
         f"Pharmacy items: {len(PHARMACY_ITEMS)}\n"
         f"Invoices: {len(INVOICE_SCENARIOS)}\n"
-        "GL transactions: ~50 (invoices + payments + expenses + payroll)\n"
-        "Payroll runs: 1 (approved, posted to GL)\n"
+        "Appointments, OPD notes, vitals, diagnoses, prescriptions: seeded\n"
+        "Lab, radiology, IPD, emergency, theatre, dental, MCH: seeded\n"
+        "Inventory, referrals, insurance claims, reports, SMS, trials: seeded\n"
+        "GL transactions: invoices + payments + expenses reconciled\n"
+        "Payroll runs: 1 (approved; GL bridge posts when account mappings match)\n"
         "\n"
         "DEMO USERS (create these in Keycloak separately):\n"
         "  admin@aifya.co.ke   / DemoAdmin2026!  -- Admin / Finance\n"

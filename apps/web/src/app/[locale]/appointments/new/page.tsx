@@ -11,7 +11,7 @@ import {
   useDoctorSchedules,
 } from "@/hooks/useAppointments";
 import { cn } from "@/lib/utils";
-import type { AvailableSlot } from "@aifya/shared";
+import type { AppointmentPriority, AppointmentType, AvailableSlot } from "@aifya/shared";
 
 /**
  * New Appointment Booking Page — select date, doctor, slot, and book.
@@ -31,8 +31,9 @@ export default function NewAppointmentPage() {
 
   // Form fields
   const [patientId, setPatientId] = useState("");
-  const [appointmentType, setAppointmentType] = useState("consultation");
-  const [priority, setPriority] = useState("routine");
+  const [appointmentType, setAppointmentType] =
+    useState<AppointmentType>("consultation");
+  const [priority, setPriority] = useState<AppointmentPriority>("routine");
   const [visitReason, setVisitReason] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -65,7 +66,7 @@ export default function NewAppointmentPage() {
       appointment_date: selectedSlot.date,
       start_time: selectedSlot.start_time,
       end_time: selectedSlot.end_time,
-      appointment_type: appointmentType as AppointmentType,
+      appointment_type: appointmentType,
       priority,
       visit_reason: visitReason || undefined,
       notes: notes || undefined,
@@ -209,7 +210,9 @@ export default function NewAppointmentPage() {
                 </label>
                 <select
                   value={appointmentType}
-                  onChange={(e) => setAppointmentType(e.target.value)}
+                  onChange={(e) =>
+                    setAppointmentType(e.target.value as AppointmentType)
+                  }
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
                 >
                   <option value="consultation">{t("type_consultation")}</option>
@@ -228,7 +231,9 @@ export default function NewAppointmentPage() {
                 </label>
                 <select
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
+                  onChange={(e) =>
+                    setPriority(e.target.value as AppointmentPriority)
+                  }
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
                 >
                   <option value="routine">{t("priority_routine")}</option>

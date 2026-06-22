@@ -76,11 +76,12 @@ export async function POST(request: Request) {
                 // Generate a fake mock token
                 const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
                 const payload = Buffer.from(JSON.stringify({
-                    sub: "mock-user-123",
+                    sub: "00000000-0000-0000-0000-000000000002",
+                    facility_id: "00000000-0000-0000-0000-000000000001",
                     email: email,
                     name: "Admin User",
                     preferred_username: "admin",
-                    realm_access: { roles: ["system_admin"] },
+                    realm_access: { roles: ["system_admin", "facility_admin", "doctor", "nurse"] },
                     exp: Math.floor(Date.now() / 1000) + (60 * 60)
                 })).toString("base64url");
                 const signature = "mock-signature";

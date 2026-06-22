@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import EventBase
@@ -250,10 +250,14 @@ class EmergencyService:
                 EmergencyVisit.status.in_(["arrived", "triaged", "in_treatment", "observation"])
             )
 
-        # Priority order: red first, then by arrival time
-        triage_order = func.array_position(
-            func.cast(["red", "orange", "yellow", "green", "blue"], type_=None),
-            EmergencyVisit.triage_color,
+        # Priority order: red first, then by arrival time.
+        triage_order = case(
+            (EmergencyVisit.triage_color == "red", 1),
+            (EmergencyVisit.triage_color == "orange", 2),
+            (EmergencyVisit.triage_color == "yellow", 3),
+            (EmergencyVisit.triage_color == "green", 4),
+            (EmergencyVisit.triage_color == "blue", 5),
+            else_=99,
         )
         query = query.order_by(triage_order.asc(), EmergencyVisit.arrival_time.asc())
 

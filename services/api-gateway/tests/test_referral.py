@@ -39,12 +39,12 @@ async def _create_referral(client: AsyncClient, patient_id: str) -> dict[str, ob
         json={
             "patient_id": patient_id,
             "direction": "outgoing",
-            "referral_type": "specialist",
-            "referring_facility": "County Hospital",
-            "referred_to_facility": "National Hospital",
+            "referral_type": "external",
+            "referring_facility_name": "County Hospital",
+            "receiving_facility_name": "National Hospital",
             "reason": "Advanced cardiac care",
             "urgency": "urgent",
-            "clinical_summary": "Patient with unstable angina",
+            "clinical_notes": "Patient with unstable angina",
         },
     )
     assert response.status_code == 201
@@ -90,12 +90,12 @@ async def test_create_referral(client: AsyncClient) -> None:
         json={
             "patient_id": patient_id,
             "direction": "outgoing",
-            "referral_type": "specialist",
-            "referring_facility": "County Hospital",
-            "referred_to_facility": "National Hospital",
+            "referral_type": "external",
+            "referring_facility_name": "County Hospital",
+            "receiving_facility_name": "National Hospital",
             "reason": "Advanced cardiac care",
             "urgency": "urgent",
-            "clinical_summary": "Patient with unstable angina",
+            "clinical_notes": "Patient with unstable angina",
         },
     )
 
@@ -103,12 +103,12 @@ async def test_create_referral(client: AsyncClient) -> None:
     data: dict[str, object] = response.json()
     assert data["patient_id"] == patient_id
     assert data["direction"] == "outgoing"
-    assert data["referral_type"] == "specialist"
-    assert data["referring_facility"] == "County Hospital"
-    assert data["referred_to_facility"] == "National Hospital"
+    assert data["referral_type"] == "external"
+    assert data["referring_facility_name"] == "County Hospital"
+    assert data["receiving_facility_name"] == "National Hospital"
     assert data["reason"] == "Advanced cardiac care"
     assert data["urgency"] == "urgent"
-    assert data["clinical_summary"] == "Patient with unstable angina"
+    assert data["clinical_notes"] == "Patient with unstable angina"
     assert "id" in data
     assert "created_at" in data
 
@@ -157,7 +157,7 @@ async def test_update_referral_status(client: AsyncClient) -> None:
         f"/api/v1/referrals/{referral_id}/status",
         json={
             "status": "accepted",
-            "notes": "Will review patient",
+            "response_notes": "Will review patient",
         },
     )
 

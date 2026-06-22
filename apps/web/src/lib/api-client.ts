@@ -113,6 +113,29 @@ class ApiClient {
     });
   }
 
+  /**
+   * PUT request with idempotency key.
+   * @param path - API path
+   * @param body - Request body
+   * @param idempotencyKey - Idempotency key for safe retries
+   * @returns Parsed response
+   */
+  async put<T>(
+    path: string,
+    body: unknown,
+    idempotencyKey?: string
+  ): Promise<T> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers["X-Idempotency-Key"] = idempotencyKey;
+    }
+    return this.request<T>(path, {
+      method: "PUT",
+      body: JSON.stringify(body),
+      headers,
+    });
+  }
+
 }
 
 export class ApiError extends Error {

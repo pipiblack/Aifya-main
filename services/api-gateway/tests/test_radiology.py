@@ -65,6 +65,7 @@ async def _create_imaging_order(
             "encounter_id": encounter_id,
             "modality": "xray",
             "body_part": "chest",
+            "study_description": "Chest X-ray",
             "clinical_indication": "Rule out pneumonia",
             "priority": "routine",
         },
@@ -115,6 +116,7 @@ async def test_create_imaging_order(client: AsyncClient) -> None:
             "encounter_id": encounter_id,
             "modality": "xray",
             "body_part": "chest",
+            "study_description": "Chest X-ray",
             "clinical_indication": "Rule out pneumonia",
             "priority": "routine",
         },
@@ -126,6 +128,7 @@ async def test_create_imaging_order(client: AsyncClient) -> None:
     assert data["encounter_id"] == encounter_id
     assert data["modality"] == "xray"
     assert data["body_part"] == "chest"
+    assert data["study_description"] == "Chest X-ray"
     assert data["clinical_indication"] == "Rule out pneumonia"
     assert data["priority"] == "routine"
     assert "id" in data
@@ -147,8 +150,8 @@ async def test_get_imaging_order(client: AsyncClient) -> None:
 
     assert response.status_code == 200
     data: dict[str, object] = response.json()
-    assert data["id"] == order_id
-    assert data["modality"] == "xray"
+    assert data["order"]["id"] == order_id
+    assert data["order"]["modality"] == "xray"
 
 
 # -- Orders: 404 --------------------------------------------------------------
@@ -177,7 +180,7 @@ async def test_schedule_imaging_order(client: AsyncClient) -> None:
     response = await client.post(
         f"/api/v1/radiology/orders/{order_id}/schedule",
         json={
-            "scheduled_datetime": "2026-05-01T10:00:00",
+            "scheduled_at": "2026-05-01T10:00:00",
             "room": "Radiology Room 1",
         },
     )
@@ -202,7 +205,7 @@ async def test_perform_imaging_order(client: AsyncClient) -> None:
         f"/api/v1/radiology/orders/{order_id}/perform",
         json={
             "accession_number": "ACC-2026-001",
-            "tech_notes": "PA and lateral views obtained",
+            "notes": "PA and lateral views obtained",
         },
     )
 

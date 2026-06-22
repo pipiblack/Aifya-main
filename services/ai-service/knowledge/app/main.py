@@ -15,6 +15,8 @@ from app.middleware import (
     RateLimitMiddleware,
     SecurityHeadersMiddleware,
 )
+from app.database import engine
+from app.models.document import Base
 from app.models.schemas import HealthResponse
 from app.routers import documents, query
 from app.services.document_service import check_minio_health, ensure_bucket
@@ -32,6 +34,9 @@ async def lifespan(app: FastAPI):
     Initializes Qdrant collection and MinIO bucket.
     """
     logger.info("app_startup", status="starting", service="knowledge-rag")
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     await ensure_collection()
     await ensure_bucket()

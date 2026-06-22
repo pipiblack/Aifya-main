@@ -176,7 +176,11 @@ export default function TransactionsPage() {
         description: form.description,
         reference_type: form.reference_type ?? "manual",
         department_id: form.department_id ?? null,
-        entries: form.entries,
+        entries: form.entries.map((entry) => ({
+          account_id: entry.account_id,
+          debit: entry.debit,
+          credit: entry.credit,
+        })),
       },
       {
         onSuccess: () => {

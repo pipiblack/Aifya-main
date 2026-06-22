@@ -4,6 +4,8 @@ Reuses Keycloak JWT validation from the api-gateway pattern.
 Extracts facility_id for multi-tenant query isolation.
 """
 
+from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass
 
@@ -20,6 +22,28 @@ settings = get_settings()
 security = HTTPBearer(auto_error=False)
 
 _jwks_cache: dict[str, dict] | None = None
+
+LOCAL_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")
+LOCAL_FACILITY_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+
+def _local_demo_user() -> CurrentUser:
+    """Return the local Docker demo user when auth bypass is enabled."""
+    return CurrentUser(
+        user_id=LOCAL_USER_ID,
+        facility_id=LOCAL_FACILITY_ID,
+        email="admin@aifya.local",
+        roles=[
+            "system_admin",
+            "facility_admin",
+            "admin",
+            "doctor",
+            "nurse",
+            "pharmacist",
+            "lab_tech",
+        ],
+        name="Aifya Local Admin",
+    )
 
 
 async def _get_keycloak_public_key() -> dict:
@@ -88,6 +112,8 @@ async def get_current_user(
     @raises HTTPException 401: If token is missing or invalid
     """
     if credentials is None:
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication token",
@@ -98,6 +124,8 @@ async def get_current_user(
         payload = await _decode_token(credentials.credentials)
     except (JWTError, httpx.HTTPError) as exc:
         logger.warning("auth_token_invalid", error=str(exc))
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
@@ -106,6 +134,8 @@ async def get_current_user(
 
     user_id_str = payload.get("sub")
     if not user_id_str or not isinstance(user_id_str, str):
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing subject claim",
@@ -113,6 +143,8 @@ async def get_current_user(
 
     facility_id_str = payload.get("facility_id")
     if not facility_id_str or not isinstance(facility_id_str, str):
+        if settings.local_auth_bypass:
+            return _local_demo_user()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token missing facility_id claim",

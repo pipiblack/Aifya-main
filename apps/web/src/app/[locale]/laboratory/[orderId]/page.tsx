@@ -294,6 +294,7 @@ export default function LabOrderDetailPage({
               key={result.id}
               result={result}
               t={t}
+              tc={tc}
               isActiveEntry={activeResultId === result.id}
               onStartEntry={() => {
                 setActiveResultId(result.id);
@@ -328,6 +329,7 @@ export default function LabOrderDetailPage({
 interface ResultCardProps {
   result: LabResultDetail;
   t: ReturnType<typeof useTranslations<"lab">>;
+  tc: ReturnType<typeof useTranslations<"common">>;
   isActiveEntry: boolean;
   onStartEntry: () => void;
   onCancelEntry: () => void;
@@ -357,6 +359,7 @@ interface ResultCardProps {
 function ResultCard({
   result,
   t,
+  tc,
   isActiveEntry,
   onStartEntry,
   onCancelEntry,

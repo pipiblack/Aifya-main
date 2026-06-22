@@ -11,6 +11,7 @@ import {
   useStatutoryRates,
   useCreateStatutoryRate,
   type StatutoryRate,
+  type StatutoryRateCreate,
 } from "@/hooks/usePayroll";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -38,7 +39,7 @@ const rateSchema = z.object({
   amount: z.coerce.number().optional(),
 });
 
-type RateForm = z.infer<typeof rateSchema>;
+type RateForm = StatutoryRateCreate;
 
 /**
  * Statutory rates configuration page — read-only history view, admin can add new effective records.

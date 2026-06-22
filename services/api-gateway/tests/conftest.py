@@ -1,5 +1,20 @@
+# ruff: noqa: E402
+import os
 import uuid
 from collections.abc import AsyncGenerator
+
+os.environ["DEBUG"] = "true"
+os.environ["SECRET_KEY"] = "test-secret-key"
+os.environ["AIFYA_TESTING"] = "true"
+DEFAULT_TEST_DATABASE_URL = (
+    "postgresql+asyncpg://aifya_user:change_me_in_production"
+    "@127.0.0.1:55432/aifya_test"
+)
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    DEFAULT_TEST_DATABASE_URL,
+)
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
 import pytest
 import pytest_asyncio
@@ -9,15 +24,15 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.database import Base, get_db
 from app.main import app
+from app.models.facility import Facility
+from app.models.staff import Staff
 
-# Use SQLite for tests (in-memory)
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
-
-engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
 test_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 FACILITY_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
@@ -54,7 +69,32 @@ app.dependency_overrides[get_current_user] = override_get_current_user
 async def setup_database() -> AsyncGenerator[None, None]:
     """Create and drop tables for each test."""
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+    async with test_session() as session:
+        session.add(
+            Facility(
+                id=FACILITY_ID,
+                name="Test Facility",
+                code="TEST",
+                facility_type="hospital",
+            )
+        )
+        session.add(
+            Staff(
+                id=USER_ID,
+                facility_id=FACILITY_ID,
+                keycloak_user_id=USER_ID,
+                employee_number="DOC-001",
+                first_name="Test",
+                last_name="Doctor",
+                role="doctor",
+                email="test@aifya.health",
+                created_by=USER_ID,
+                updated_by=USER_ID,
+            )
+        )
+        await session.commit()
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

@@ -15,6 +15,7 @@ import {
 import { useEncounterLabOrders, useCreateLabOrder } from "@/hooks/useEncounters";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/utils";
+import type { LabOrderCreate } from "@aifya/shared";
 
 const labOrderSchema = z.object({
   priority: z.enum(["stat", "urgent", "routine"]),
@@ -31,7 +32,7 @@ const labOrderSchema = z.object({
   ).min(1, "At least one test required"),
 });
 
-type LabOrderFormData = z.infer<typeof labOrderSchema>;
+type LabOrderFormData = Omit<LabOrderCreate, "encounter_id" | "patient_id">;
 
 interface LabOrderPanelProps {
   encounterId: string;

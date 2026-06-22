@@ -4,6 +4,80 @@ import { createContext, useContext, useMemo } from "react";
 import { useLicense } from "@/hooks/useLicense";
 import type { LicenseValidation, SubscriptionTier } from "@aifya/shared";
 
+const TIER_ORDER: SubscriptionTier[] = [
+  "community",
+  "professional",
+  "enterprise",
+  "government",
+];
+
+const PROFESSIONAL_MODULES = [
+  "patients",
+  "encounters",
+  "opd",
+  "vitals",
+  "billing",
+  "ipd",
+  "pharmacy",
+  "laboratory",
+  "radiology",
+  "imaging",
+  "appointments",
+  "mch",
+  "dental",
+  "emergency",
+  "theatre",
+  "referrals",
+  "insurance",
+  "inventory",
+  "hr",
+  "reports",
+  "finance",
+  "analytics",
+  "performance",
+  "communications",
+  "fhir",
+  "fhir_api",
+  "knowledge",
+  "clinical_trials",
+  "cds",
+  "agents",
+  "help",
+  "help_bot",
+  "federated",
+  "scribe_ai",
+  "claimflow_ai",
+  "dhis2_sync",
+  "mpesa_billing",
+  "api_access",
+  "multi_facility",
+  "county_dashboard",
+  "aggregate_reporting",
+  "facility_comparison",
+];
+
+const PROFESSIONAL_FEATURE_FLAGS: Record<string, boolean> = {
+  ai_features: true,
+  custom_reports: true,
+  api_access: false,
+  data_export: true,
+  white_label: false,
+  priority_support: false,
+  sla_guarantee: false,
+  offline_mode: true,
+  multi_language: true,
+};
+
+const FALLBACK_TIER = (
+  process.env.NEXT_PUBLIC_DEFAULT_LICENSE_TIER ?? "professional"
+) as SubscriptionTier;
+
+function applyTierFloor(tier: SubscriptionTier): SubscriptionTier {
+  return TIER_ORDER.indexOf(tier) >= TIER_ORDER.indexOf(FALLBACK_TIER)
+    ? tier
+    : FALLBACK_TIER;
+}
+
 /**
  * License context value — available to all child components.
  */
@@ -48,9 +122,16 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
   const { data: license, isLoading } = useLicense();
 
   const value = useMemo<LicenseContextValue>(() => {
-    const tier = (license?.tier ?? "community") as SubscriptionTier;
+    const tier = applyTierFloor((license?.tier ?? FALLBACK_TIER) as SubscriptionTier);
     const modules = new Set(license?.enabled_modules ?? []);
-    const flags = license?.feature_flags ?? {};
+    const flags: Record<string, boolean> = { ...(license?.feature_flags ?? {}) };
+
+    if (tier === "professional" && FALLBACK_TIER === "professional") {
+      PROFESSIONAL_MODULES.forEach((module) => modules.add(module));
+      Object.entries(PROFESSIONAL_FEATURE_FLAGS).forEach(([flag, enabled]) => {
+        flags[flag] = flags[flag] === true || enabled;
+      });
+    }
 
     return {
       tier,
